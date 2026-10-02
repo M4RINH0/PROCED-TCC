@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { buscarProjecao } from '../api.js'
-import { useProjecao } from '../hooks/useProjecao.js'
-import { ANO_FINAL, ANO_FINAL_IBGE, ANO_INICIAL, RECORTES } from '../series.js'
+import { EstadoConsulta, Segmentado, useConsulta } from '../../../shared/index.js'
+import { buscarSerie, valoresDoCenario } from '../api.js'
+import { ANO_FINAL, ANO_FINAL_IBGE, ANO_INICIAL, RECORTES, SERIES } from '../series.js'
+import GraficoSerie from './GraficoSerie.jsx'
 import LeituraAno from './LeituraAno.jsx'
 
-export default function PanoramaTela({ buscar = buscarProjecao }) {
-  const [ano, setAno] = useState(ANO_FINAL)
+export default function PanoramaTela({ buscar = buscarSerie }) {
+  const [ano, setAno] = useState(ANO_FINAL_IBGE)
   const [recorte, setRecorte] = useState(RECORTES[0].id)
-  const { status, dados, erro, recarregar } = useProjecao({ ano, recorte }, buscar)
+  const { status, dados, erro, recarregar } = useConsulta((opcoes) => buscar({ recorte }, opcoes), [recorte])
   const rotuloRecorte = RECORTES.find((r) => r.id === recorte).rotulo
+
+  const series = dados ? SERIES.map((s) => ({ id: s.id, pontos: valoresDoCenario(dados.pontos, s.id) })) : []
+  const modelados = series.filter((s) => s.pontos.some((p) => p.valor !== null)).map((s) => s.id)
+  const doAno = dados?.pontos.find((p) => p.ano === ano)
 
   return (
     <>
@@ -16,12 +21,13 @@ export default function PanoramaTela({ buscar = buscarProjecao }) {
         <div>
           <h1>Panorama da projeção</h1>
           <p>
-            Consumo residencial per capita projetado de {ANO_INICIAL} a {ANO_FINAL}, comparado à projeção oficial do
-            IBGE, que termina em {ANO_FINAL_IBGE}.
+            Consumo residencial per capita dos domicílios mononucleares (unipessoal e casal) de {ANO_INICIAL} a{' '}
+            {ANO_FINAL}. O cenário oficial aplica a TEC da POF à estrutura etária projetada pelo IBGE, que vai até{' '}
+            {ANO_FINAL_IBGE}.
           </p>
         </div>
       </div>
-      <section className="pan" aria-labelledby="h-leitura">
+      <section className="pan" aria-labelledby="h-serie">
         <div className="ctrls">
           <div className="fl">
             <label htmlFor="ano">
@@ -37,53 +43,36 @@ export default function PanoramaTela({ buscar = buscarProjecao }) {
               onChange={(e) => setAno(Number(e.target.value))}
               aria-valuetext={String(ano)}
             />
-            {ano > ANO_FINAL_IBGE && (
-              <div className="pf" style={{ padding: '4px 0 0' }}>
-                Sem projeção oficial após {ANO_FINAL_IBGE}
-              </div>
-            )}
           </div>
-          <div className="fl">
-            <span className="flab" id="recorte-rotulo">
-              Grupo exibido
-            </span>
-            <div className="seg" role="group" aria-labelledby="recorte-rotulo">
-              {RECORTES.map((r) => (
-                <button key={r.id} type="button" aria-pressed={recorte === r.id} onClick={() => setRecorte(r.id)}>
-                  {r.rotulo}
-                </button>
-              ))}
-            </div>
-          </div>
+          <Segmentado rotulo="Grupo exibido" opcoes={RECORTES} valor={recorte} aoMudar={setRecorte} />
         </div>
         <div className="ph">
-          <h2 id="h-leitura">
-            Leitura do ano <small>kWh/mês por pessoa</small>
+          <h2 id="h-serie">
+            Consumo residencial per capita <small>kWh/mês por pessoa</small>
           </h2>
         </div>
-        {status === 'carregando' && !dados && (
-          <div aria-busy="true" aria-label="Carregando dados">
-            <div className="skel" style={{ width: '40%' }} />
-            <div className="skel" style={{ width: '70%' }} />
-          </div>
+        <EstadoConsulta
+          status={status}
+          erro={erro}
+          temDados={Boolean(dados)}
+          parametros={`ano ${ano}, grupo ${rotuloRecorte}`}
+          aoTentarDeNovo={recarregar}
+        />
+        {dados && status !== 'erro' && (
+          <>
+            <div className="plot">
+              <GraficoSerie series={series} anoSelecionado={ano} />
+            </div>
+            <div className="ph">
+              <h2>
+                Leitura de <span className="ano">{ano}</span>
+              </h2>
+            </div>
+            <LeituraAno cenarios={doAno?.cenarios ?? []} modelados={modelados} />
+          </>
         )}
-        {status === 'erro' && (
-          <div className="pstate erro" role="alert">
-            <h3>Não foi possível carregar a projeção</h3>
-            <p>
-              {erro?.message}. Os parâmetros foram mantidos: ano <b>{ano}</b>, grupo <b>{rotuloRecorte}</b>.
-            </p>
-            <button type="button" className="btn" onClick={recarregar}>
-              Tentar novamente
-            </button>
-          </div>
-        )}
-        {dados && status !== 'erro' && <LeituraAno cenarios={dados.cenarios} />}
         <div className="pf">
-          <span>
-            Fonte: <span className="pend">a definir</span>
-            {dados?.dados_ilustrativos && '. Valores ilustrativos, não decorrem de apuração.'}
-          </span>
+          <span>Fonte: {dados?.fonte ?? 'carregando'}. Premissas em docs/premissas.md.</span>
         </div>
       </section>
     </>

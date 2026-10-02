@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ORIGEM_PADRAO = "http://localhost:5173"
+DOTENV = Path(__file__).resolve().parents[2] / ".env"
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,7 @@ class Configuracao:
     cors_origin: str
     supabase_url: str | None
     database_url: str | None
+    supabase_secret_key: str | None = None
 
 
 def _ler_dotenv(caminho: Path) -> dict[str, str]:
@@ -38,4 +40,5 @@ def carregar_configuracao(
         cors_origin=env.get("CORS_ORIGIN") or ORIGEM_PADRAO,
         supabase_url=env.get("SUPABASE_URL") or None,
         database_url=env.get("DATABASE_URL") or None,
+        supabase_secret_key=env.get("SUPABASE_SECRET_KEY") or None,
     )

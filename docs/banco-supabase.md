@@ -30,16 +30,17 @@ Nenhuma das 52.208 linhas de `fato_consumo_domiciliar` viola:
 
 Essas regras estão em `etl/modules/derivacao/regras.py`.
 
-## Divergências com as regras do projeto e o protótipo
+## Decisões tomadas a partir deste levantamento (02/10/2026)
 
-1. **Horizonte da projeção oficial.** As regras do projeto dizem que a projeção do IBGE termina
-   em 2060, mas a tabela vai até 2070 (a revisão de 2024 das Projeções da População
-   do IBGE chega a 2070). A API ainda corta em 2060.
-2. **Arranjos.** O banco tem 3 categorias; o protótipo mostra 7 (unipessoal 60+,
-   casal de idosos, casal sem filhos, monoparental etc.).
-3. **"Mononuclear".** No banco só o unipessoal leva esse rótulo; nas regras do projeto o
-   recorte mononuclear inclui o casal de idosos.
-4. **Unidade da POF** (decisão em aberto 2). O banco já tem consumo em kWh e gasto
-   em R$ lado a lado. Falta documentar como o kWh foi obtido.
-5. **Origem da carga.** O código que gerou essas tabelas não está neste repositório
-   (RNF08 exige ETL reproduzível a partir dos dados brutos).
+1. **Horizonte oficial:** usar a projeção do IBGE até 2070, como está no banco.
+2. **Arranjos:** seguir os 3 do banco. Mononuclear = unipessoal ou casal ou dupla;
+   casal de idosos = dois moradores com chefe de 60 anos ou mais (premissa P1).
+   Há 5.705 domicílios assim na amostra.
+
+## Pendências
+
+- **Unidade da POF:** o banco tem kWh e R$; falta documentar como o kWh foi obtido.
+- **Origem da carga:** o código que gerou as tabelas não está no repositório (RNF08).
+- **Pesos amostrais:** a tabela não traz o peso da POF (premissa P3).
+- **Protótipo:** `prototipo/proced.html` ainda mostra 7 arranjos e a fronteira de 2060;
+  é só referência visual.

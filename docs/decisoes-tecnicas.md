@@ -6,20 +6,26 @@
 |---|---|
 | Vite | build e servidor de desenvolvimento do React |
 | Vitest, React Testing Library, jsdom | testes do front-end (o jsdom é o ambiente de DOM que o Vitest exige) |
-| pytest, `TestClient` do FastAPI, httpx | testes do back-end (o `TestClient` depende do httpx) |
+| httpx | cliente HTTP da API para ler o Supabase; também usado pelo `TestClient` |
+| pytest, `TestClient` do FastAPI | testes do back-end |
 | uvicorn | servidor da API |
-| psycopg | driver do PostgreSQL (conexão pronta em `api/app/core/db.py`, ainda sem uso) |
+| psycopg | driver do PostgreSQL (conexão pronta em `api/app/core/db.py`, ainda sem uso: falta a `DATABASE_URL`) |
 
-Ainda não adotado: D3 (entra com o gráfico do Panorama).
+Não adotado: D3. Os gráficos são componentes SVG próprios, sem biblioteca.
 
 ## Rotas do front-end
 
 Roteamento por hash (`#pan`, `#dom`, `#eta`, `#sim`), feito em `web/src/app`,
 sem biblioteca de rotas, para não adicionar dependência.
 
-## Repositório ilustrativo da API
+## Leitura do banco
 
-Enquanto não há projeção calculada, o módulo `projecoes` usa
-`RepositorioIlustrativo`, que reproduz as funções do protótipo e marca
-`dados_ilustrativos: true`. Trocar por um repositório que leia o banco não muda o
-contrato.
+A API lê o Supabase pela REST (PostgREST) com a chave secreta, só no back-end
+(`api/app/core/supabase.py`). O Supabase devolve no máximo mil linhas por consulta e
+não permite agregação, então cada tabela é lida uma vez, paginada, e mantida em
+memória. Ao subir, a API faz essa leitura em segundo plano (cerca de 10 segundos).
+
+## Dependência entre módulos da API
+
+`arranjos` e `estrutura_etaria` usam a interface pública de `projecoes` (função `tec`,
+TEC por faixa e repositório). `projecoes` não depende de nenhum outro módulo.

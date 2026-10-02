@@ -1,3 +1,7 @@
 export { apiGet, montarUrl, ErroApi } from './http.js'
-export { umaCasa } from './formato.js'
+export { umaCasa, inteiro, reais } from './formato.js'
+export { useConsulta } from './useConsulta.js'
 export { default as EmConstrucao } from './components/EmConstrucao.jsx'
+export { default as EstadoConsulta } from './components/EstadoConsulta.jsx'
+export { default as Segmentado } from './components/Segmentado.jsx'
+export { default as BarraHorizontal } from './components/BarraHorizontal.jsx'

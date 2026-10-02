@@ -32,8 +32,8 @@ describe('App', () => {
     expect(document.documentElement.dataset.theme).not.toBe(antes)
   })
 
-  it('avisa que os dados são ilustrativos', () => {
+  it('não exibe mais o selo de dados ilustrativos', () => {
     render(<App />)
-    expect(screen.getByText('Dados ilustrativos')).toBeInTheDocument()
+    expect(screen.queryByText('Dados ilustrativos')).not.toBeInTheDocument()
   })
 })

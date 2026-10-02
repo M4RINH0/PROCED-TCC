@@ -1,7 +1,8 @@
-"""Módulo estrutura_etaria, RF05 e RF06: exibir e filtrar o consumo por faixa etária do chefe.
+"""Módulo estrutura_etaria, RF05 e RF06: pirâmide etária e consumo por faixa do chefe.
 
-Interface pública. Endpoint ainda não definido no contrato da API:
-propor o formato e combinar entre os integrantes antes de implementar.
+Interface pública.
 """
 
-__all__: list[str] = []
+from app.modules.estrutura_etaria.router import obter_repositorio, router
+
+__all__ = ["router", "obter_repositorio"]

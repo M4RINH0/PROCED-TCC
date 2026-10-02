@@ -1,40 +1,62 @@
-"""Fontes de valores das projeções.
+"""Acesso aos dados da projeção no Supabase (só leitura).
 
-Enquanto o esquema do banco não existe, o único repositório disponível é o
-ilustrativo, que reproduz as funções sintéticas de prototipo/proced.html.
-Os valores dele NÃO decorrem de apuração e saem com dados_ilustrativos=True.
+As tabelas são lidas uma vez e mantidas em memória: são estáticas e a API do
+Supabase devolve no máximo mil linhas por consulta.
 """
 
-import math
+import threading
+from dataclasses import dataclass
 from typing import Protocol
 
-from app.modules.projecoes.schemas import ANO_FINAL, ANO_INICIAL, CenarioId, Recorte
+from app.core import ClienteSupabase
+
+
+@dataclass(frozen=True)
+class Domicilio:
+    arranjo: str
+    idade_chefe: int
+    consumo_per_capita_kwh: float
 
 
 class RepositorioProjecoes(Protocol):
-    dados_ilustrativos: bool
+    def domicilios(self) -> list[Domicilio]: ...
 
-    def valor(self, cenario: CenarioId, ano: int, recorte: Recorte) -> float | None: ...
-
-
-def _forma(ano: int, k: float = 7.2) -> float:
-    """Curva logística normalizada: 0 em 2026, 1 em 2075."""
-    t = (ano - ANO_INICIAL) / (ANO_FINAL - ANO_INICIAL)
-
-    def s(x: float) -> float:
-        return 1 / (1 + math.exp(-k * (x - 0.5)))
-
-    return (s(t) - s(0)) / (s(1) - s(0))
+    def populacao_por_idade(self) -> dict[int, dict[int, int]]:
+        """Brasil, ambos os sexos: ano -> idade -> população."""
+        ...
 
 
-class RepositorioIlustrativo:
-    dados_ilustrativos = True
+class RepositorioSupabase:
+    def __init__(self, cliente: ClienteSupabase):
+        self._cliente = cliente
+        self._trava = threading.Lock()
+        self._domicilios: list[Domicilio] | None = None
+        self._populacao: dict[int, dict[int, int]] | None = None
 
-    def valor(self, cenario: CenarioId, ano: int, recorte: Recorte) -> float | None:
-        fator = 1.0 if recorte is Recorte.chefe_60_mais else 0.8
-        s = _forma(ano)
-        if cenario is CenarioId.mod:
-            return (158.4 + 71.9 * s) * fator
-        if cenario is CenarioId.ibge:
-            return (157.9 + 50.2 * s) * fator
-        return (159.2 + 103.1 * s) * fator
+    def domicilios(self) -> list[Domicilio]:
+        with self._trava:
+            if self._domicilios is None:
+                linhas = self._cliente.selecionar(
+                    "fato_consumo_domiciliar",
+                    "arranjo_familiar,idade_chefe,consumo_per_capita_kwh",
+                    {"order": "id_domicilio.asc"},
+                )
+                self._domicilios = [
+                    Domicilio(l["arranjo_familiar"], int(l["idade_chefe"]), float(l["consumo_per_capita_kwh"]))
+                    for l in linhas
+                ]
+            return self._domicilios
+
+    def populacao_por_idade(self) -> dict[int, dict[int, int]]:
+        with self._trava:
+            if self._populacao is None:
+                linhas = self._cliente.selecionar(
+                    "projecoes_populacao_idade",
+                    "ano,idade,populacao",
+                    {"localidade": "eq.Brasil", "sexo": "eq.Ambos", "order": "id.asc"},
+                )
+                populacao: dict[int, dict[int, int]] = {}
+                for l in linhas:
+                    populacao.setdefault(int(l["ano"]), {})[int(l["idade"])] = int(l["populacao"])
+                self._populacao = populacao
+            return self._populacao

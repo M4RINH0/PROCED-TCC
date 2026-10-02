@@ -50,7 +50,6 @@ export default function App() {
           ))}
         </nav>
         <div className="acts">
-          <span className="illus">Dados ilustrativos</span>
           <button type="button" className="ib" onClick={alternarTema}>
             {tema === 'dark' ? 'Tema claro' : 'Tema escuro'}
           </button>

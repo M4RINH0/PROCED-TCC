@@ -1,7 +1,13 @@
 import { umaCasa } from '../../../shared/index.js'
 import { ANO_FINAL_IBGE, SERIES } from '../series.js'
 
-export default function LeituraAno({ cenarios }) {
+export function textoSemValor(id, temAlgumValor) {
+  if (id === 'ibge') return `Sem projeção oficial após ${ANO_FINAL_IBGE}`
+  return temAlgumValor ? 'sem dado' : 'Cenário ainda não modelado'
+}
+
+/* cenarios: [{ id, valor }] do ano; modelados: ids que têm valor em algum ano da série */
+export default function LeituraAno({ cenarios, modelados = [] }) {
   const valorDe = (id) => cenarios.find((c) => c.id === id)?.valor ?? null
   return (
     <div className="leitura">
@@ -14,9 +20,7 @@ export default function LeituraAno({ cenarios }) {
               <span style={{ color: 'var(--ink-2)' }}>{serie.rotulo}</span>
             </span>
             {valor === null ? (
-              <span className="sem">
-                {serie.id === 'ibge' ? `Sem projeção oficial após ${ANO_FINAL_IBGE}` : 'sem dado'}
-              </span>
+              <span className="sem">{textoSemValor(serie.id, modelados.includes(serie.id))}</span>
             ) : (
               <span className="v num">
                 {umaCasa(valor)}

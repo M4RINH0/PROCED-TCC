@@ -7,7 +7,7 @@ export const SERIES = [
 
 export const ANO_INICIAL = 2026
 export const ANO_FINAL = 2075
-export const ANO_FINAL_IBGE = 2060
+export const ANO_FINAL_IBGE = 2070
 
 export const RECORTES = [
   { id: 'chefe_60_mais', rotulo: 'Chefe 60+' },

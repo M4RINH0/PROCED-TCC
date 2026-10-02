@@ -1,7 +1,8 @@
 """Módulo fontes, RF10: fonte e período de referência dos dados.
 
-Interface pública. Endpoint ainda não definido no contrato da API:
-propor o formato e combinar entre os integrantes antes de implementar.
+Interface pública.
 """
 
-__all__: list[str] = []
+from app.modules.fontes.router import router
+
+__all__ = ["router"]
