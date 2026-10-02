@@ -15,12 +15,19 @@ from app.modules.projecoes.schemas import (
     FiltroArranjo,
     Recorte,
 )
-from app.modules.projecoes.service import obter_consumo_por_faixa
+from app.modules.projecoes.faixas import CASAL_OU_DUPLA, FAIXAS_CHEFE, MULTIPESSOAL, UNIPESSOAL
+from app.modules.projecoes.service import EstruturaDomicilios, obter_consumo_por_faixa, obter_estrutura_domicilios
 
 __all__ = [
     "router",
     "obter_repositorio",
     "obter_consumo_por_faixa",
+    "obter_estrutura_domicilios",
+    "EstruturaDomicilios",
+    "FAIXAS_CHEFE",
+    "UNIPESSOAL",
+    "CASAL_OU_DUPLA",
+    "MULTIPESSOAL",
     "RepositorioProjecoes",
     "tec",
     "tbc",

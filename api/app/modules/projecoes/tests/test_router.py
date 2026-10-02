@@ -18,9 +18,9 @@ def test_entrada_valida_segue_o_contrato():
         "recorte": "chefe_60_mais",
         "unidade": "kWh/mes/pessoa",
         "cenarios": [
-            {"id": "mod", "valor": None},
-            {"id": "ibge", "valor": 153.3},
-            {"id": "alt", "valor": None},
+            {"id": "mod", "valor": None, "variacao_kwh": None, "variacao_pct": None},
+            {"id": "ibge", "valor": 153.3, "variacao_kwh": None, "variacao_pct": None},
+            {"id": "alt", "valor": None, "variacao_kwh": None, "variacao_pct": None},
         ],
         "dados_ilustrativos": False,
         "fonte": "POF 2017 a 2018 e Projeções da População (IBGE)",

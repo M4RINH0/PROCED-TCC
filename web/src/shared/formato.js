@@ -10,3 +10,8 @@ export function inteiro(valor) {
 export function reais(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+
+/* Valor com sinal explícito; o sinal de menos é o matemático (U+2212), como no protótipo */
+export function comSinal(valor) {
+  return (valor >= 0 ? '+' : '−') + umaCasa(Math.abs(valor))
+}

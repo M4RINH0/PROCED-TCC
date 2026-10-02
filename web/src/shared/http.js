@@ -9,6 +9,15 @@ export class ErroApi extends Error {
   }
 }
 
+/* Menu Demonstração: simula a API fora do ar para apresentar a recuperação */
+let falhaSimulada = false
+export function definirFalhaSimulada(ligada) {
+  falhaSimulada = Boolean(ligada)
+}
+export function falhaEstaSimulada() {
+  return falhaSimulada
+}
+
 export function montarUrl(caminho, parametros = {}, base = BASE) {
   const url = new URL(base + caminho)
   Object.entries(parametros).forEach(([chave, valor]) => {
@@ -18,6 +27,7 @@ export function montarUrl(caminho, parametros = {}, base = BASE) {
 }
 
 export async function apiGet(caminho, parametros, { fetcher = fetch, base = BASE, signal } = {}) {
+  if (falhaSimulada) throw new ErroApi('Não foi possível conectar à API (falha simulada)', 0)
   let resposta
   try {
     resposta = await fetcher(montarUrl(caminho, parametros, base), { signal })

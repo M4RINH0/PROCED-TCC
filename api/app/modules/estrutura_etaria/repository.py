@@ -3,29 +3,42 @@ from typing import Protocol
 
 from app.core import ClienteSupabase
 
+ANO_INICIAL = 2026
+
 
 class RepositorioPiramide(Protocol):
     def populacao_por_sexo(self, ano: int) -> dict[str, dict[int, int]]:
-        """Brasil no ano: {"Homem": {idade: pop}, "Mulher": {idade: pop}}."""
+        """Brasil no ano: {"Homem": {idade: pop}, "Mulher": {idade: pop}}; vazio se não houver o ano."""
         ...
+
+    def anos(self) -> list[int]: ...
 
 
 class RepositorioSupabase:
+    """Lê de uma vez a população do Brasil por sexo e idade, de 2026 em diante."""
+
     def __init__(self, cliente: ClienteSupabase):
         self._cliente = cliente
         self._trava = threading.Lock()
-        self._cache: dict[int, dict[str, dict[int, int]]] = {}
+        self._dados: dict[int, dict[str, dict[int, int]]] | None = None
 
-    def populacao_por_sexo(self, ano: int) -> dict[str, dict[int, int]]:
+    def _carregar(self) -> dict[int, dict[str, dict[int, int]]]:
         with self._trava:
-            if ano not in self._cache:
+            if self._dados is None:
                 linhas = self._cliente.selecionar(
                     "projecoes_populacao_idade",
-                    "sexo,idade,populacao",
-                    {"localidade": "eq.Brasil", "sexo": "in.(Homem,Mulher)", "ano": f"eq.{int(ano)}", "order": "id.asc"},
+                    "ano,sexo,idade,populacao",
+                    {"localidade": "eq.Brasil", "sexo": "in.(Homem,Mulher)", "ano": f"gte.{ANO_INICIAL}", "order": "id.asc"},
                 )
-                por_sexo: dict[str, dict[int, int]] = {"Homem": {}, "Mulher": {}}
+                dados: dict[int, dict[str, dict[int, int]]] = {}
                 for l in linhas:
-                    por_sexo[l["sexo"]][int(l["idade"])] = int(l["populacao"])
-                self._cache[ano] = por_sexo
-            return self._cache[ano]
+                    ano = dados.setdefault(int(l["ano"]), {"Homem": {}, "Mulher": {}})
+                    ano[l["sexo"]][int(l["idade"])] = int(l["populacao"])
+                self._dados = dados
+            return self._dados
+
+    def populacao_por_sexo(self, ano: int) -> dict[str, dict[int, int]]:
+        return self._carregar().get(ano, {"Homem": {}, "Mulher": {}})
+
+    def anos(self) -> list[int]:
+        return sorted(self._carregar())

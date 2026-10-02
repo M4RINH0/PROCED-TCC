@@ -29,3 +29,19 @@ memória. Ao subir, a API faz essa leitura em segundo plano (cerca de 10 segundo
 
 `arranjos` e `estrutura_etaria` usam a interface pública de `projecoes` (função `tec`,
 TEC por faixa e repositório). `projecoes` não depende de nenhum outro módulo.
+
+## Design do front-end
+
+O CSS do `prototipo/proced.html` foi copiado inteiro para `web/src/app/estilos.css`,
+e as telas usam as mesmas classes e estrutura. Diferenças em relação ao protótipo,
+porque o dado real é outro:
+
+- Domicílios: 6 categorias (3 arranjos do banco, com chefe 60+ ou abaixo) em vez de 7;
+  o mini histórico de cada linha mostra a participação no tempo, porque a TEC da POF
+  não muda com o ano.
+- Estrutura etária: o consumo por faixa do chefe é um gráfico de barras, não de linhas,
+  pelo mesmo motivo.
+- Simulador: o histograma mostra as faixas do chefe do arranjo escolhido.
+- Fronteira oficial em 2070, não em 2060; o selo do topo diz "Cenário do modelo pendente".
+- Controle da taxa de envelhecimento desativado até o cenário do modelo existir.
+- Exportar avisa que o RF08 está pendente.

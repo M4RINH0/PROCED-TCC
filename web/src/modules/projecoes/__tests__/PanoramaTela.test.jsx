@@ -9,45 +9,58 @@ const serie = (recorte) => ({
   dados_ilustrativos: false,
   pontos: Array.from({ length: 50 }, (_, i) => {
     const ano = 2026 + i
+    const valor = ano > 2070 ? null : recorte === 'chefe_60_mais' ? 94.3 : 89.1
     return {
       ano,
       cenarios: [
-        { id: 'mod', valor: null },
-        { id: 'ibge', valor: ano > 2070 ? null : recorte === 'chefe_60_mais' ? 94.3 : 89.1 },
-        { id: 'alt', valor: null },
+        { id: 'mod', valor: null, variacao_kwh: null, variacao_pct: null },
+        { id: 'ibge', valor, variacao_kwh: valor === null ? null : 0, variacao_pct: valor === null ? null : 0 },
+        { id: 'alt', valor: null, variacao_kwh: null, variacao_pct: null },
       ],
+      participacao_60_mais_pct: ano > 2070 ? null : 30,
+      amplitude_kwh: null,
+      modelo_menos_oficial_kwh: null,
     }
   }),
 })
 
+const buscarOk = () => vi.fn(({ recorte }) => Promise.resolve(serie(recorte)))
+
 describe('PanoramaTela', () => {
-  it('carrega a série e mostra a leitura do ano selecionado', async () => {
-    const buscar = vi.fn(({ recorte }) => Promise.resolve(serie(recorte)))
-    render(<PanoramaTela buscar={buscar} />)
+  it('carrega a série e mostra a leitura do ano recebido da linha do tempo', async () => {
+    const buscar = buscarOk()
+    render(<PanoramaTela ano={2050} aoMudarAno={() => {}} buscar={buscar} />)
     expect(screen.getByLabelText('Carregando dados')).toBeInTheDocument()
-    const ibge = await screen.findByTestId('reg-ibge')
-    expect(within(ibge).getByText(/94,3/)).toBeInTheDocument()
+    expect(await within(await screen.findByTestId('reg-ibge')).findByText('94,3 kWh/mês')).toBeInTheDocument()
     expect(buscar).toHaveBeenCalledWith({ recorte: 'chefe_60_mais' }, expect.anything())
     expect(screen.getByText(/Fonte: POF 2017 a 2018/)).toBeInTheDocument()
-    expect(within(screen.getByTestId('reg-mod')).getByText('Cenário ainda não modelado')).toBeInTheDocument()
+    expect(screen.getByText(/a projeção oficial é de/)).toBeInTheDocument()
   })
 
-  it('troca o ano sem nova consulta e mostra a ausência do oficial depois de 2070', async () => {
-    const buscar = vi.fn(({ recorte }) => Promise.resolve(serie(recorte)))
-    render(<PanoramaTela buscar={buscar} />)
-    await screen.findByTestId('reg-ibge')
-    fireEvent.change(screen.getByLabelText(/^Ano/), { target: { value: '2072' } })
-    expect(within(screen.getByTestId('reg-ibge')).getByText('Sem projeção oficial após 2070')).toBeInTheDocument()
-    expect(buscar).toHaveBeenCalledTimes(1)
+  it('mostra a ausência do oficial depois de 2070', async () => {
+    render(<PanoramaTela ano={2072} aoMudarAno={() => {}} buscar={buscarOk()} />)
+    expect(await within(await screen.findByTestId('reg-ibge')).findByText('Sem projeção oficial após 2070')).toBeInTheDocument()
+    expect(screen.getByText(/não há projeção oficial/)).toBeInTheDocument()
   })
 
   it('consulta de novo ao trocar o grupo', async () => {
-    const buscar = vi.fn(({ recorte }) => Promise.resolve(serie(recorte)))
-    render(<PanoramaTela buscar={buscar} />)
-    await screen.findByTestId('reg-ibge')
+    const buscar = buscarOk()
+    render(<PanoramaTela ano={2050} aoMudarAno={() => {}} buscar={buscar} />)
+    await screen.findByTestId('linha-ibge')
     fireEvent.click(screen.getByRole('button', { name: 'Abaixo de 60' }))
-    await waitFor(() => expect(within(screen.getByTestId('reg-ibge')).getByText(/89,1/)).toBeInTheDocument())
+    await waitFor(() => expect(within(screen.getByTestId('reg-ibge')).getByText('89,1 kWh/mês')).toBeInTheDocument())
     expect(buscar).toHaveBeenLastCalledWith({ recorte: 'mononuclear_abaixo_60' }, expect.anything())
+  })
+
+  it('não deixa esconder a última série visível', async () => {
+    const avisar = vi.fn()
+    render(<PanoramaTela ano={2050} aoMudarAno={() => {}} avisar={avisar} buscar={buscarOk()} />)
+    await screen.findByTestId('linha-ibge')
+    fireEvent.click(screen.getByRole('button', { name: 'Modelo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Alternativo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'IBGE oficial' }))
+    expect(avisar).toHaveBeenCalledWith('Mantenha ao menos uma série visível')
+    expect(screen.getByRole('button', { name: 'IBGE oficial' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('mostra o erro no contexto, preserva os parâmetros e permite tentar de novo', async () => {
@@ -55,11 +68,18 @@ describe('PanoramaTela', () => {
       .fn()
       .mockRejectedValueOnce(new Error('A API respondeu com o código 503'))
       .mockImplementation(({ recorte }) => Promise.resolve(serie(recorte)))
-    render(<PanoramaTela buscar={buscar} />)
+    render(<PanoramaTela ano={2050} aoMudarAno={() => {}} buscar={buscar} />)
     const alerta = await screen.findByRole('alert')
-    expect(alerta).toHaveTextContent('ano 2070, grupo Chefe 60+')
+    expect(alerta).toHaveTextContent('ano 2050, grupo Chefe 60+')
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-    expect(await screen.findByTestId('reg-ibge')).toBeInTheDocument()
+    expect(await screen.findByTestId('linha-ibge')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('abre a gaveta de fontes', async () => {
+    const abrirGaveta = vi.fn()
+    render(<PanoramaTela ano={2050} aoMudarAno={() => {}} abrirGaveta={abrirGaveta} buscar={buscarOk()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver fontes' }))
+    expect(abrirGaveta).toHaveBeenCalledWith('fontes')
   })
 })

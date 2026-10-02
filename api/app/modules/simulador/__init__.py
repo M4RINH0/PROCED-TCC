@@ -1,7 +1,8 @@
-"""Módulo simulador, RF07 e RF09: consulta combinada e persistência de cenários calculados.
+"""Módulo simulador, RF07 e RF09: consulta combinada (RF07); persistência (RF09) pendente.
 
-Interface pública. Endpoint ainda não definido no contrato da API:
-propor o formato e combinar entre os integrantes antes de implementar.
+Interface pública.
 """
 
-__all__: list[str] = []
+from app.modules.simulador.router import router
+
+__all__ = ["router"]

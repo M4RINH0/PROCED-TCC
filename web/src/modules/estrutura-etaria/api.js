@@ -1,8 +1,8 @@
 import { apiGet } from '../../shared/index.js'
 
-/* GET /estrutura-etaria/piramide?ano= (RF05) */
-export function buscarPiramide({ ano }, opcoes) {
-  return apiGet('/estrutura-etaria/piramide', { ano }, opcoes)
+/* GET /estrutura-etaria/piramides: uma pirâmide por ano, de 2026 a 2070 (RF05) */
+export function buscarPiramides(opcoes) {
+  return apiGet('/estrutura-etaria/piramides', {}, opcoes)
 }
 
 /* GET /estrutura-etaria/consumo-chefe?arranjo= (RF05, RF06) */

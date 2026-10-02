@@ -16,6 +16,9 @@ class RepositorioFalso:
     def populacao_por_sexo(self, ano):
         return POR_SEXO
 
+    def anos(self):
+        return [2026, 2070, 2071]
+
 
 class RepositorioProjecoesFalso:
     """60 a 69 mononucleares: 100 e 120 kWh -> TEC 110 com 2 domicílios."""
@@ -55,18 +58,24 @@ def test_ano_sem_populacao_falha():
         montar_piramide(2030, {"Homem": {}, "Mulher": {}})
 
 
-def test_repositorio_filtra_brasil_por_sexo_e_ano_e_guarda_em_cache():
+def test_repositorio_le_todos_os_anos_de_uma_vez_e_guarda_em_cache():
     chamadas = []
 
     class Cliente:
         def selecionar(self, tabela, colunas, filtros=None):
             chamadas.append(filtros)
-            return [{"sexo": "Homem", "idade": 0, "populacao": 5}, {"sexo": "Mulher", "idade": 0, "populacao": 6}]
+            return [
+                {"ano": 2030, "sexo": "Homem", "idade": 0, "populacao": 5},
+                {"ano": 2030, "sexo": "Mulher", "idade": 0, "populacao": 6},
+                {"ano": 2031, "sexo": "Homem", "idade": 0, "populacao": 7},
+            ]
 
     repo = RepositorioSupabase(Cliente())
     assert repo.populacao_por_sexo(2030) == {"Homem": {0: 5}, "Mulher": {0: 6}}
-    repo.populacao_por_sexo(2030)
-    assert len(chamadas) == 1 and chamadas[0]["ano"] == "eq.2030" and chamadas[0]["localidade"] == "eq.Brasil"
+    assert repo.populacao_por_sexo(2099) == {"Homem": {}, "Mulher": {}}
+    assert repo.anos() == [2030, 2031]
+    assert len(chamadas) == 1
+    assert chamadas[0]["ano"] == "gte.2026" and chamadas[0]["localidade"] == "eq.Brasil"
 
 
 @pytest.fixture
@@ -98,3 +107,9 @@ def test_endpoint_consumo_chefe_padrao_mononucleares(cliente):
 
 def test_endpoint_consumo_chefe_filtro_invalido(cliente):
     assert cliente.get("/estrutura-etaria/consumo-chefe", params={"arranjo": "familia"}).status_code == 422
+
+
+def test_endpoint_piramides_para_em_2070(cliente):
+    r = cliente.get("/estrutura-etaria/piramides")
+    assert r.status_code == 200
+    assert [p["ano"] for p in r.json()["piramides"]] == [2026, 2070]

@@ -36,7 +36,8 @@ def test_cors_nao_libera_outra_origem():
 def test_documentacao_gerada_pelo_codigo():
     caminhos = _cliente().get("/openapi.json").json()["paths"]
     for caminho in ["/projecoes", "/projecoes/serie", "/arranjos", "/estrutura-etaria/piramide",
-                    "/estrutura-etaria/consumo-chefe", "/fontes"]:
+                    "/estrutura-etaria/consumo-chefe", "/fontes",
+                    "/arranjos/composicao", "/estrutura-etaria/piramides", "/simulador"]:
         assert caminho in caminhos
 
 

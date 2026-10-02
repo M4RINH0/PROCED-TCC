@@ -28,7 +28,7 @@ describe('App', () => {
   it('alterna o tema no elemento raiz', () => {
     render(<App />)
     const antes = document.documentElement.dataset.theme
-    fireEvent.click(screen.getByRole('button', { name: /Tema/ }))
+    fireEvent.click(screen.getByRole('button', { name: /tema/i }))
     expect(document.documentElement.dataset.theme).not.toBe(antes)
   })
 

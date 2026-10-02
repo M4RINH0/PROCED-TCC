@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core import DOTENV, Configuracao, ErroConfiguracao, ErroFonteDados, carregar_configuracao
-from app.modules import arranjos, estrutura_etaria, fontes, projecoes
+from app.modules import arranjos, estrutura_etaria, fontes, projecoes, simulador
 
 log = logging.getLogger("proced")
 
@@ -36,7 +36,12 @@ def aquecer(cargas: Iterable[Callable[[], object]]) -> int:
 
 def _cargas_iniciais() -> list[Callable[[], object]]:
     repo = projecoes.obter_repositorio()
-    return [repo.domicilios, repo.populacao_por_idade, arranjos.obter_repositorio().coeficientes]
+    return [
+        repo.domicilios,
+        repo.populacao_por_idade,
+        arranjos.obter_repositorio().coeficientes,
+        estrutura_etaria.obter_repositorio().anos,
+    ]
 
 
 @asynccontextmanager
@@ -62,7 +67,7 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
     )
     app.add_exception_handler(ErroFonteDados, _fonte_indisponivel)
     app.add_exception_handler(ErroConfiguracao, _fonte_indisponivel)
-    for modulo in (projecoes, arranjos, estrutura_etaria, fontes):
+    for modulo in (projecoes, arranjos, estrutura_etaria, simulador, fontes):
         app.include_router(modulo.router)
     return app
 

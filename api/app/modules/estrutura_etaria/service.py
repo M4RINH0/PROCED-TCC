@@ -1,7 +1,12 @@
 """Estrutura etária (RF05, RF06): pirâmide da população e consumo por faixa do chefe."""
 
 from app.modules.estrutura_etaria.repository import RepositorioPiramide
-from app.modules.estrutura_etaria.schemas import ConsumoChefeResposta, FaixaPiramide, PiramideResposta
+from app.modules.estrutura_etaria.schemas import (
+    ConsumoChefeResposta,
+    FaixaPiramide,
+    PiramideResposta,
+    PiramidesResposta,
+)
 from app.modules.projecoes import FiltroArranjo, RepositorioProjecoes, obter_consumo_por_faixa
 
 # (rótulo, idade mínima, idade máxima); a idade 90 da projeção agrega 90 ou mais
@@ -36,3 +41,8 @@ def obter_piramide(ano: int, repositorio: RepositorioPiramide) -> PiramideRespos
 
 def obter_consumo_chefe(filtro: FiltroArranjo, repositorio: RepositorioProjecoes) -> ConsumoChefeResposta:
     return ConsumoChefeResposta(arranjo=filtro, faixas=obter_consumo_por_faixa(filtro, repositorio))
+
+
+def obter_piramides(repositorio: RepositorioPiramide, ano_final: int) -> PiramidesResposta:
+    anos = [a for a in repositorio.anos() if a <= ano_final]
+    return PiramidesResposta(piramides=[montar_piramide(a, repositorio.populacao_por_sexo(a)) for a in anos])

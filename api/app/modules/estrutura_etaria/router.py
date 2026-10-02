@@ -11,8 +11,9 @@ from app.modules.estrutura_etaria.schemas import (
     ANO_INICIAL_PIRAMIDE,
     ConsumoChefeResposta,
     PiramideResposta,
+    PiramidesResposta,
 )
-from app.modules.estrutura_etaria.service import obter_consumo_chefe, obter_piramide
+from app.modules.estrutura_etaria.service import obter_consumo_chefe, obter_piramide, obter_piramides
 
 router = APIRouter(prefix="/estrutura-etaria", tags=["estrutura etária"])
 
@@ -28,6 +29,13 @@ def consultar_piramide(
     repositorio: Annotated[RepositorioPiramide, Depends(obter_repositorio)],
 ) -> PiramideResposta:
     return obter_piramide(ano, repositorio)
+
+
+@router.get("/piramides", response_model=PiramidesResposta, summary="Pirâmides etárias do Brasil, 2026 a 2070")
+def consultar_piramides(
+    repositorio: Annotated[RepositorioPiramide, Depends(obter_repositorio)],
+) -> PiramidesResposta:
+    return obter_piramides(repositorio, ANO_FINAL_PIRAMIDE)
 
 
 @router.get("/consumo-chefe", response_model=ConsumoChefeResposta, summary="Consumo por faixa etária do chefe")

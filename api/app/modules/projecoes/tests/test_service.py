@@ -92,3 +92,73 @@ def test_consumo_por_faixa_filtra_arranjo():
     todos = {f.faixa: f for f in consumo_por_faixa(DOMICILIOS, FiltroArranjo.todos)}
     # 70 a 79: (150 + 999) / 2 = 574,5
     assert todos["70 a 79"].consumo_per_capita_kwh == 574.5
+
+
+# --- série: variação e participação de 60+ ---
+
+from app.modules.projecoes.schemas import Cenario
+from app.modules.projecoes.service import EstruturaDomicilios, com_variacao, participacao_60_mais
+from app.modules.projecoes.faixas import CASAL_OU_DUPLA, MULTIPESSOAL, UNIPESSOAL
+
+
+def test_participacao_60_mais():
+    # 2030: total 9500, 60+ = 1000 + 1000 + 500 = 2500 -> 26,32%
+    assert participacao_60_mais(POPULACAO[2030]) == 26.32
+    assert participacao_60_mais({}) is None
+
+
+def test_com_variacao_em_relacao_a_2026():
+    base = [Cenario(id=CenarioId.ibge, valor=100.0), Cenario(id=CenarioId.mod, valor=None)]
+    atual = [Cenario(id=CenarioId.ibge, valor=110.0), Cenario(id=CenarioId.mod, valor=None)]
+    ibge, mod = com_variacao(atual, base)
+    assert (ibge.variacao_kwh, ibge.variacao_pct) == (10.0, 10.0)
+    assert mod.variacao_kwh is None and mod.variacao_pct is None
+
+
+def test_serie_traz_participacao_60_mais_ate_2070():
+    s = obter_serie(Recorte.chefe_60_mais, RepositorioFalso())
+    por_ano = {p.ano: p.participacao_60_mais_pct for p in s.pontos}
+    assert por_ano[2030] == 26.32
+    assert por_ano[2040] is None  # ano ausente na tabela de teste
+    assert por_ano[2071] is None
+
+
+# --- estrutura de domicílios por faixa e arranjo ---
+
+def test_estrutura_aplica_chefia_constante_por_arranjo():
+    e = EstruturaDomicilios(DOMICILIOS, POPULACAO)
+    # (60 a 69, unipessoal): 1 / 1000 em 2018; 2030 tem 1000 -> 1,0
+    # (80+, casal): 1 / 250 em 2018; 2030 tem 500 -> 2,0
+    em_2030 = e.no_ano(2030)
+    assert em_2030[("60 a 69", UNIPESSOAL)] == pytest.approx(1.0)
+    assert em_2030[("80+", CASAL_OU_DUPLA)] == pytest.approx(2.0)
+    assert e.amostra[("70 a 79", MULTIPESSOAL)] == 1
+
+
+def test_estrutura_sem_projecao_depois_de_2070():
+    e = EstruturaDomicilios(DOMICILIOS, POPULACAO)
+    assert e.no_ano(2071) is None
+    assert e.no_ano(2040) is None
+
+
+def test_tec_do_grupo_soma_as_faixas():
+    e = EstruturaDomicilios(DOMICILIOS, POPULACAO)
+    # unipessoal 60+: 100 (62 anos) e 150 (75 anos) -> (100 + 150) / 2 = 125
+    assert e.tec_do_grupo(["60 a 69", "70 a 79", "80+"], UNIPESSOAL) == (2, 125.0)
+    assert e.tec_do_grupo(["50 a 59"], UNIPESSOAL) == (0, None)
+
+
+def test_estrutura_exige_populacao_de_2018():
+    with pytest.raises(ValueError):
+        EstruturaDomicilios(DOMICILIOS, {2030: POPULACAO[2030]})
+
+
+def test_comparativos_entre_cenarios():
+    from app.modules.projecoes.service import comparativos
+
+    # mod 120, ibge 100, alt 90: amplitude 120 - 90 = 30; modelo menos oficial 120 - 100 = 20
+    tres = [Cenario(id=CenarioId.mod, valor=120.0), Cenario(id=CenarioId.ibge, valor=100.0), Cenario(id=CenarioId.alt, valor=90.0)]
+    assert comparativos(tres) == (30.0, 20.0)
+    # só o oficial tem valor: sem amplitude nem diferença
+    so_ibge = [Cenario(id=CenarioId.mod, valor=None), Cenario(id=CenarioId.ibge, valor=100.0)]
+    assert comparativos(so_ibge) == (None, None)

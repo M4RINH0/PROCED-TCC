@@ -1,8 +1,8 @@
 /* Significado fixo das séries: cor, traço e rótulo (nunca só a cor) */
 export const SERIES = [
-  { id: 'mod', rotulo: 'Projeção do modelo' },
-  { id: 'ibge', rotulo: 'Projeção oficial IBGE' },
-  { id: 'alt', rotulo: 'Cenário alternativo (ML)' },
+  { id: 'mod', rotulo: 'Projeção do modelo', curto: 'Modelo', cor: 'teal', traco: 'solid' },
+  { id: 'ibge', rotulo: 'Projeção oficial IBGE', curto: 'IBGE oficial', cor: 'orange', traco: 'dashed' },
+  { id: 'alt', rotulo: 'Cenário alternativo (ML)', curto: 'Alternativo', cor: 'cobalt', traco: 'dotted' },
 ]
 
 export const ANO_INICIAL = 2026

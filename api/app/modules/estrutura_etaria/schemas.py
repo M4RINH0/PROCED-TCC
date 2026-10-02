@@ -29,3 +29,8 @@ class ConsumoChefeResposta(BaseModel):
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     faixas: list[FaixaConsumo]
     fonte: str = FONTE_CONSUMO
+
+
+class PiramidesResposta(BaseModel):
+    piramides: list[PiramideResposta]
+    fonte: str = FONTE_PIRAMIDE
