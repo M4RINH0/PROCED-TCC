@@ -533,3 +533,7 @@ main.nodock~.toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .sem{font-size:13px;font-weight:600;color:var(--muted)}
 .tx:disabled{opacity:.45;cursor:not-allowed}
 .illus.ok{background:var(--teal-soft)}
+/* A linha do tempo anda de ano em ano. A transição liga o valor de um ano ao do seguinte
+   (0,12 s, o tempo de um ano no play), sem criar dado intermediário. */
+.plot svg rect.p60,.plot svg rect.plo{transition:x .12s linear,width .12s linear}
+circle.dot{transition:cy .12s linear}
