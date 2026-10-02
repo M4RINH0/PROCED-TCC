@@ -23,7 +23,7 @@ cd PROCED-TCC
 cd api
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env    # só na primeira vez: sobrescreve o .env existente
 ```
 
 Abra `api/.env` e preencha `SUPABASE_SECRET_KEY` com a chave secreta do Supabase
@@ -41,11 +41,12 @@ Ao subir, ela lê o banco em segundo plano por cerca de 10 segundos.
 ```bash
 cd web
 npm install
-cp .env.example .env
+cp .env.example .env    # só na primeira vez
 npm run dev
 ```
 
-Abra http://localhost:5173.
+Abra http://localhost:5173. O front-end precisa estar nessa porta, que é a liberada no CORS da API;
+se aparecer "Port 5173 is already in use", feche o outro processo que está nela.
 
 ### 4. Testes
 
