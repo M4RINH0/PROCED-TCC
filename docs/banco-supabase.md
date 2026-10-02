@@ -28,7 +28,7 @@ Nenhuma das 52.208 linhas de `fato_consumo_domiciliar` viola:
 - `is_60_mais` verdadeiro se e somente se `idade_chefe` for 60 ou mais;
 - `consumo_per_capita_kwh = consumo_total_kwh / qtd_moradores` (conferido em amostra).
 
-Essas regras estão em `etl/modules/derivacao/regras.py`.
+Essas regras estão em `backend/etl/derivacao.py`.
 
 ## Decisões tomadas a partir deste levantamento (02/10/2026)
 

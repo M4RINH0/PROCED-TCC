@@ -9,30 +9,32 @@
 | httpx | cliente HTTP da API para ler o Supabase; também usado pelo `TestClient` |
 | pytest, `TestClient` do FastAPI | testes do back-end |
 | uvicorn | servidor da API |
-| psycopg | driver do PostgreSQL (conexão pronta em `api/app/core/db.py`, ainda sem uso: falta a `DATABASE_URL`) |
 
 Não adotado: D3. Os gráficos são componentes SVG próprios, sem biblioteca.
 
 ## Rotas do front-end
 
-Roteamento por hash (`#pan`, `#dom`, `#eta`, `#sim`), feito em `web/src/app`,
+Roteamento por hash (`#pan`, `#dom`, `#eta`, `#sim`), feito em `frontend/src/rotas.js` e `frontend/src/hooks/useRotaHash.js`,
 sem biblioteca de rotas, para não adicionar dependência.
 
 ## Leitura do banco
 
 A API lê o Supabase pela REST (PostgREST) com a chave secreta, só no back-end
-(`api/app/core/supabase.py`). O Supabase devolve no máximo mil linhas por consulta e
+(`backend/app/supabase.py` e `backend/app/dados.py`). O Supabase devolve no máximo mil linhas por consulta e
 não permite agregação, então cada tabela é lida uma vez, paginada, e mantida em
 memória. Ao subir, a API faz essa leitura em segundo plano (cerca de 10 segundos).
 
-## Dependência entre módulos da API
+## Organização das pastas (02/10/2026)
 
-`arranjos` e `estrutura_etaria` usam a interface pública de `projecoes` (função `tec`,
-TEC por faixa e repositório). `projecoes` não depende de nenhum outro módulo.
+A estrutura por módulos autocontidos (`api/app/modules/...`, `web/src/modules/...`) foi
+trocada por camadas com um arquivo por página: `pages/` no front-end e `routes/`,
+`services/` e `schemas/` no back-end. O ETL passou para dentro de `backend/`, e as
+pastas sem uso (`db/`, etapas vazias do ETL, módulo de exportação, conexão direta
+com o Postgres e `psycopg`) foram removidas. Os endereços da API não mudaram.
 
 ## Design do front-end
 
-O CSS do `prototipo/proced.html` foi copiado inteiro para `web/src/app/estilos.css`,
+O CSS do `prototipo/proced.html` foi copiado inteiro para `frontend/src/estilos.css`,
 e as telas usam as mesmas classes e estrutura. Diferenças em relação ao protótipo,
 porque o dado real é outro:
 

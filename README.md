@@ -17,16 +17,16 @@ git clone https://github.com/M4RINH0/PROCED-TCC.git
 cd PROCED-TCC
 ```
 
-### 2. API (terminal 1)
+### 2. Back-end (terminal 1)
 
 ```bash
-cd api
+cd backend
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt
 cp .env.example .env    # só na primeira vez: sobrescreve o .env existente
 ```
 
-Abra `api/.env` e preencha `SUPABASE_SECRET_KEY` com a chave secreta do Supabase
+Abra `backend/.env` e preencha `SUPABASE_SECRET_KEY` com a chave secreta do Supabase
 (Project Settings, API Keys). Depois:
 
 ```bash
@@ -39,7 +39,7 @@ Ao subir, ela lê o banco em segundo plano por cerca de 10 segundos.
 ### 3. Front-end (terminal 2)
 
 ```bash
-cd web
+cd frontend
 npm install
 cp .env.example .env    # só na primeira vez
 npm run dev
@@ -51,9 +51,8 @@ se aparecer "Port 5173 is already in use", feche o outro processo que está nela
 ### 4. Testes
 
 ```bash
-cd api && .venv/Scripts/python -m pytest      # API
-cd etl && .venv/Scripts/python -m pytest      # ETL (crie o .venv como na API, com etl/requirements.txt)
-cd web && npm test                            # front-end
+cd backend && .venv/Scripts/python -m pytest   # API e ETL
+cd frontend && npm test                        # front-end
 ```
 
 ## Documentação
