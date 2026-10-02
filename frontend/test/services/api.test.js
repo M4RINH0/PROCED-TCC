@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { valoresDoCenario } from '../utils/series.js'
-import { buscarSerie } from './api.js'
+import { valoresDoCenario } from '../../src/utils/series.js'
+import { buscarSerie } from '../../src/services/api.js'
 
 describe('buscarSerie', () => {
   it('chama GET /projecoes/serie com o recorte', async () => {

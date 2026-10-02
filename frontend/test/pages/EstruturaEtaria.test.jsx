@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import Piramide from '../components/Piramide.jsx'
-import { buscarConsumoChefe, buscarPiramides } from '../services/api.js'
-import EstruturaEtaria from './EstruturaEtaria.jsx'
+import Piramide from '../../src/components/Piramide.jsx'
+import { buscarConsumoChefe, buscarPiramides } from '../../src/services/api.js'
+import EstruturaEtaria from '../../src/pages/EstruturaEtaria.jsx'
 
 const FAIXAS = ['0 a 9', '10 a 19', '20 a 29', '30 a 39', '40 a 49', '50 a 59', '60 a 69', '70 a 79', '80+']
 const pir = (ano, pct) => ({ ano, participacao_60_mais_pct: pct, faixas: FAIXAS.map((faixa) => ({ faixa, homens_pct: 5, mulheres_pct: 6 })) })

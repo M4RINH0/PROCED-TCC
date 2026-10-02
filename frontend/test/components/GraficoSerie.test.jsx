@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import GraficoSerie, { dominioY, marcasY } from './GraficoSerie.jsx'
+import GraficoSerie, { dominioY, marcasY } from '../../src/components/GraficoSerie.jsx'
 
 const ibge = {
   id: 'ibge',

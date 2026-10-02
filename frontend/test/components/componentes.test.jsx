@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import EstadoConsulta from './EstadoConsulta.jsx'
-import Segmentado from './Segmentado.jsx'
+import EstadoConsulta from '../../src/components/EstadoConsulta.jsx'
+import Segmentado from '../../src/components/Segmentado.jsx'
 
 describe('EstadoConsulta', () => {
   it('mostra o carregamento só quando ainda não há dados', () => {

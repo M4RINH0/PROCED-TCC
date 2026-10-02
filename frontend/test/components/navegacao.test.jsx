@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import Gaveta from './Gaveta.jsx'
-import LinhaDoTempo, { posicao } from './LinhaDoTempo.jsx'
-import MenuDemonstracao from './MenuDemonstracao.jsx'
+import Gaveta from '../../src/components/Gaveta.jsx'
+import LinhaDoTempo, { posicao } from '../../src/components/LinhaDoTempo.jsx'
+import MenuDemonstracao from '../../src/components/MenuDemonstracao.jsx'
 
 afterEach(() => vi.unstubAllGlobals())
 

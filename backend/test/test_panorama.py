@@ -12,7 +12,7 @@ from app.services.panorama import (
     obter_serie,
     participacao_60_mais,
 )
-from tests.dados_teste import DOMICILIOS, POPULACAO, RepositorioFalso
+from test.dados_teste import DOMICILIOS, POPULACAO, RepositorioFalso
 
 
 def _valores(resposta):

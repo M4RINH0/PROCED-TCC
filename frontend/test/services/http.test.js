@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { apiGet, ErroApi, montarUrl } from './http.js'
+import { apiGet, ErroApi, montarUrl } from '../../src/services/http.js'
 
 const BASE = 'http://api.teste'
 

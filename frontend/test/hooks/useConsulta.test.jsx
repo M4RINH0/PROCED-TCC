@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { useConsulta } from './useConsulta.js'
+import { useConsulta } from '../../src/hooks/useConsulta.js'
 
 describe('useConsulta', () => {
   it('começa carregando e termina com os dados', async () => {

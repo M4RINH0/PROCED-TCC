@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { buscarArranjos, buscarComposicao } from '../services/api.js'
-import { noFiltro } from '../utils/categorias.js'
-import Domicilios from './Domicilios.jsx'
+import { buscarArranjos, buscarComposicao } from '../../src/services/api.js'
+import { noFiltro } from '../../src/utils/categorias.js'
+import Domicilios from '../../src/pages/Domicilios.jsx'
 
 const cat = (id, arranjo, idoso, casas, pct, kwh) => ({
   id,

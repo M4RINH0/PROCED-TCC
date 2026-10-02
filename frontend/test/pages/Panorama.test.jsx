@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import Panorama from './Panorama.jsx'
+import Panorama from '../../src/pages/Panorama.jsx'
 
 const serie = (recorte) => ({
   recorte,

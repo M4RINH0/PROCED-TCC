@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import LeituraAno, { textoSemValor } from './LeituraAno.jsx'
+import LeituraAno, { textoSemValor } from '../../src/components/LeituraAno.jsx'
 
 const todas = { mod: true, ibge: true, alt: true }
 const ponto = (ibge, extra = {}) => ({

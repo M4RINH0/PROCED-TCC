@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROTA_PADRAO, ROTAS, rotaDoHash } from './rotas.js'
+import { ROTA_PADRAO, ROTAS, rotaDoHash } from '../src/rotas.js'
 
 describe('rotaDoHash', () => {
   it('reconhece cada rota pelo hash', () => {

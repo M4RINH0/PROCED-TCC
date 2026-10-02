@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inteiro, reais, umaCasa } from './formato.js'
+import { inteiro, reais, umaCasa } from '../../src/utils/formato.js'
 
 describe('umaCasa', () => {
   it('usa vírgula decimal', () => expect(umaCasa(230.3)).toBe('230,3'))

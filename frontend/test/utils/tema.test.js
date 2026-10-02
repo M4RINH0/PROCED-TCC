@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerTema, salvarTema, temaEfetivo } from './tema.js'
+import { lerTema, salvarTema, temaEfetivo } from '../../src/utils/tema.js'
 
 const memoria = () => {
   const dados = {}

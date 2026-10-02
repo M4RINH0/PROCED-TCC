@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from app.main import criar_app
 from app.dados import obter_dados
-from tests.dados_teste import RepositorioFalso
+from test.dados_teste import RepositorioFalso
 
 app = criar_app()
 app.dependency_overrides[obter_dados] = RepositorioFalso

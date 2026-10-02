@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { buscarSimulacao } from '../services/api.js'
-import { lerTaxa } from '../utils/formato.js'
-import Simulador from './Simulador.jsx'
+import { buscarSimulacao } from '../../src/services/api.js'
+import { lerTaxa } from '../../src/utils/formato.js'
+import Simulador from '../../src/pages/Simulador.jsx'
 
 const resposta = (p, extra = {}) => ({
   ano: p.ano,

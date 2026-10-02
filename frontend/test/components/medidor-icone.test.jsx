@@ -1,10 +1,10 @@
 import { render, renderHook, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useTamanho } from '../hooks/useTamanho.js'
-import { apiGet, definirFalhaSimulada, falhaEstaSimulada } from '../services/http.js'
-import { comSinal } from '../utils/formato.js'
-import Icone from './Icone.jsx'
-import Odometro, { digitos } from './Odometro.jsx'
+import { useTamanho } from '../../src/hooks/useTamanho.js'
+import { apiGet, definirFalhaSimulada, falhaEstaSimulada } from '../../src/services/http.js'
+import { comSinal } from '../../src/utils/formato.js'
+import Icone from '../../src/components/Icone.jsx'
+import Odometro, { digitos } from '../../src/components/Odometro.jsx'
 
 describe('Odometro', () => {
   it('separa os dígitos no formato 000,0', () => {
