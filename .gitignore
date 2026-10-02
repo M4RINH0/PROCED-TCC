@@ -1,0 +1,4 @@
+# Segredos: nunca commitar .env nem credenciais
+.env
+.env.*
+!.env.example
