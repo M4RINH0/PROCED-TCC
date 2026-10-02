@@ -1,11 +1,10 @@
 import { comSinal, umaCasa } from '../utils/formato.js'
-import { ANO_FINAL_IBGE, SERIES } from '../utils/series.js'
+import { SERIES } from '../utils/series.js'
 import Odometro from './Odometro.jsx'
 
-export function textoSemValor(id, modelado) {
+export function textoSemValor(modelado) {
   if (!modelado) return 'Cenário ainda não modelado'
-  if (id === 'ibge') return `Sem projeção oficial após ${ANO_FINAL_IBGE}`
-  return 'sem dado'
+  return 'Sem dado neste ano'
 }
 
 /* Painel "Leitura do ano" do protótipo. ponto: item da série no ano; modelados: ids com valor em algum ano */
@@ -30,7 +29,7 @@ export default function LeituraAno({ ponto, ano, modelados, visiveis }) {
             <Odometro valor={valor} unidade="kWh/mês" />
             <span className="dl">
               {valor === null
-                ? textoSemValor(s.id, modelados.includes(s.id))
+                ? textoSemValor(modelados.includes(s.id))
                 : c.variacao_kwh === null || c.variacao_kwh === undefined
                   ? `${umaCasa(valor)} kWh/mês por pessoa`
                   : `${comSinal(c.variacao_kwh)} kWh desde 2026 (${comSinal(c.variacao_pct)}%)`}

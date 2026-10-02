@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from app.dados import Dados, obter_dados
-from app.dominio import ANO_FINAL_IBGE, ANO_INICIAL, FiltroArranjo
+from app.dominio import ANO_FINAL, ANO_INICIAL, FiltroArranjo
 from app.schemas.estrutura_etaria import ConsumoChefeResposta, PiramideResposta, PiramidesResposta
 from app.services.estrutura_etaria import obter_consumo_chefe, obter_piramide, obter_piramides
 
@@ -16,7 +16,7 @@ DadosDep = Annotated[Dados, Depends(obter_dados)]
 
 @router.get("/piramide", response_model=PiramideResposta, summary="Pirâmide etária do Brasil num ano")
 def consultar_piramide(
-    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL_IBGE, description="Ano de 2026 a 2070")],
+    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
     dados: DadosDep,
 ) -> PiramideResposta:
     return obter_piramide(ano, dados)

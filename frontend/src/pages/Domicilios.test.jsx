@@ -77,9 +77,9 @@ describe('Domicilios', () => {
     expect(container.querySelectorAll('path.hs.hl')).toHaveLength(21)
   })
 
-  it('avisa que não há projeção depois de 2070', async () => {
-    render(<Domicilios ano={2072} buscar={buscar()} />)
-    expect(await screen.findByRole('heading', { name: 'Sem projeção oficial após 2070' })).toBeInTheDocument()
+  it('avisa quando o ano não está na projeção', async () => {
+    render(<Domicilios ano={2040} buscar={buscar()} />)
+    expect(await screen.findByRole('heading', { name: 'Sem dado para 2040' })).toBeInTheDocument()
   })
 
   it('mostra o erro com o ano preservado', async () => {

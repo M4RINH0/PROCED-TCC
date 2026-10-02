@@ -55,9 +55,9 @@ describe('EstruturaEtaria', () => {
     expect(screen.getByText('sem dado')).toBeInTheDocument()
   })
 
-  it('avisa que a pirâmide termina em 2070', async () => {
-    render(<EstruturaEtaria ano={2073} {...props()} />)
-    expect(await screen.findByRole('heading', { name: 'Sem projeção oficial após 2070' })).toBeInTheDocument()
+  it('avisa quando o ano não está na projeção', async () => {
+    render(<EstruturaEtaria ano={2040} {...props()} />)
+    expect(await screen.findByRole('heading', { name: 'Sem dado para 2040' })).toBeInTheDocument()
   })
 
   it('consulta o consumo de novo ao mudar o arranjo', async () => {

@@ -2,15 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import Icone from './Icone.jsx'
 
 export const ANO_INICIAL = 2026
-export const ANO_FINAL = 2075
-export const ANO_FINAL_IBGE = 2070
+export const ANO_FINAL = 2070
 const ANOS_POR_SEGUNDO = 9
 const MARCAS = [
   [2026, 's'],
   [2035, 'm'],
   [2045, 'm'],
-  [2070, 'b'],
-  [2075, 'e'],
+  [2055, 'm'],
+  [2070, 'e'],
 ]
 
 export const posicao = (ano) => ((ano - ANO_INICIAL) / (ANO_FINAL - ANO_INICIAL)) * 100
@@ -62,7 +61,7 @@ export default function LinhaDoTempo({ ano, aoMudarAno, oculta }) {
   const inteiro = Math.round(ano)
   return (
     <div className={oculta ? 'dock hide' : 'dock'} role="group" aria-label="Linha do tempo" aria-hidden={oculta}>
-      <button type="button" className="play" aria-label={tocando ? 'Pausar' : 'Reproduzir os 50 anos'} onClick={tocando ? parar : tocar}>
+      <button type="button" className="play" aria-label={tocando ? 'Pausar' : 'Reproduzir os 45 anos'} onClick={tocando ? parar : tocar}>
         <Icone nome={tocando ? 'pause' : 'play'} />
       </button>
       <div className="dyear">
@@ -72,7 +71,6 @@ export default function LinhaDoTempo({ ano, aoMudarAno, oculta }) {
       <div className="tl">
         <div className="tl-track">
           <div className="tl-fill" style={{ width: `${posicao(ano)}%` }} />
-          <div className="tl-off" style={{ '--bp': `${posicao(ANO_FINAL_IBGE).toFixed(2)}%` }} title={`Sem projeção oficial após ${ANO_FINAL_IBGE}`} />
         </div>
         <input
           type="range"
@@ -95,7 +93,6 @@ export default function LinhaDoTempo({ ano, aoMudarAno, oculta }) {
           ))}
         </div>
       </div>
-      <div className="dnote">Hachura: sem projeção oficial após {ANO_FINAL_IBGE}</div>
     </div>
   )
 }

@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from app.calculo import tec
 from app.dados import Domicilio
 from app.dominio import (
-    ANO_FINAL_IBGE,
+    ANO_FINAL,
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
     CASAL_OU_DUPLA,
@@ -96,7 +96,7 @@ class EstruturaDomicilios:
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
         """(faixa, arranjo) -> domicílios estimados; None sem projeção para o ano."""
-        if ano > ANO_FINAL_IBGE or ano not in self.populacao:
+        if ano not in self.populacao:
             return None
         return {
             chave: c * populacao_da_faixa(self.populacao[ano], self._faixas[chave[0]])
@@ -140,7 +140,7 @@ def maior_resto(valores: list[float], total: int = 100) -> list[int]:
 
 def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
     anos, por_ano = [], []
-    for ano in range(ANO_INICIAL, ANO_FINAL_IBGE + 1):
+    for ano in range(ANO_INICIAL, ANO_FINAL + 1):
         domicilios = estrutura.no_ano(ano)
         if domicilios is None:
             continue

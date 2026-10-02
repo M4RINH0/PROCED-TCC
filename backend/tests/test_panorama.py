@@ -40,7 +40,6 @@ def test_tbc_ibge_com_envelhecimento_em_2030():
 def test_tbc_ibge_nula_depois_de_2070_e_em_ano_sem_projecao():
     p = ParametrosRecorte(Recorte.chefe_60_mais, DOMICILIOS, POPULACAO)
     assert p.tbc_ibge(2070) is not None
-    assert p.tbc_ibge(2071) is None
     assert p.tbc_ibge(2040) is None  # ano ausente na tabela de população
 
 
@@ -66,19 +65,19 @@ def test_obter_projecao_segue_o_contrato():
     assert "POF" in r.fonte
 
 
-@pytest.mark.parametrize("ano", [2025, 2076])
+@pytest.mark.parametrize("ano", [2025, 2071])
 def test_obter_projecao_rejeita_ano_fora_do_horizonte(ano):
     with pytest.raises(ValueError):
         obter_projecao(ano, Recorte.chefe_60_mais, RepositorioFalso())
 
 
-def test_obter_serie_cobre_2026_a_2075():
+def test_obter_serie_cobre_2026_a_2070():
     s = obter_serie(Recorte.chefe_60_mais, RepositorioFalso())
-    assert [p.ano for p in s.pontos] == list(range(2026, 2076))
+    assert [p.ano for p in s.pontos] == list(range(2026, 2071))
     por_ano = {p.ano: _valores(p)[CenarioId.ibge] for p in s.pontos}
     assert por_ano[2030] == 153.3
     assert por_ano[2070] is not None
-    assert por_ano[2071] is None and por_ano[2075] is None
+    assert max(por_ano) == 2070
 
 
 def test_consumo_por_faixa_mononucleares():
@@ -120,7 +119,6 @@ def test_serie_traz_participacao_60_mais_ate_2070():
     por_ano = {p.ano: p.participacao_60_mais_pct for p in s.pontos}
     assert por_ano[2030] == 26.32
     assert por_ano[2040] is None  # ano ausente na tabela de teste
-    assert por_ano[2071] is None
 
 
 # --- estrutura de domicílios por faixa e arranjo ---
@@ -137,7 +135,6 @@ def test_estrutura_aplica_chefia_constante_por_arranjo():
 
 def test_estrutura_sem_projecao_depois_de_2070():
     e = EstruturaDomicilios(DOMICILIOS, POPULACAO)
-    assert e.no_ano(2071) is None
     assert e.no_ano(2040) is None
 
 

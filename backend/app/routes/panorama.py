@@ -17,13 +17,13 @@ ParamRecorte = Annotated[Recorte, Query(description="Grupo de domicílios mononu
 
 @router.get("", response_model=ProjecaoResposta, summary="Projeção dos cenários num ano")
 def consultar_projecao(
-    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2075")],
+    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
     recorte: ParamRecorte,
     dados: DadosDep,
 ) -> ProjecaoResposta:
     return obter_projecao(ano, recorte, dados)
 
 
-@router.get("/serie", response_model=SerieResposta, summary="Série dos cenários de 2026 a 2075")
+@router.get("/serie", response_model=SerieResposta, summary="Série dos cenários de 2026 a 2070")
 def consultar_serie(recorte: ParamRecorte, dados: DadosDep) -> SerieResposta:
     return obter_serie(recorte, dados)

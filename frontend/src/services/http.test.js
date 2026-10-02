@@ -5,8 +5,8 @@ const BASE = 'http://api.teste'
 
 describe('montarUrl', () => {
   it('junta caminho e parâmetros', () => {
-    expect(montarUrl('/projecoes', { ano: 2075, recorte: 'chefe_60_mais' }, BASE)).toBe(
-      'http://api.teste/projecoes?ano=2075&recorte=chefe_60_mais',
+    expect(montarUrl('/projecoes', { ano: 2070, recorte: 'chefe_60_mais' }, BASE)).toBe(
+      'http://api.teste/projecoes?ano=2070&recorte=chefe_60_mais',
     )
   })
   it('ignora parâmetros nulos ou indefinidos', () => {

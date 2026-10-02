@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react'
 import { useTamanho } from '../hooks/useTamanho.js'
 import { umaCasa } from '../utils/formato.js'
-import { ANO_FINAL, ANO_FINAL_IBGE, ANO_INICIAL, SERIES } from '../utils/series.js'
+import { ANO_FINAL, ANO_INICIAL, SERIES } from '../utils/series.js'
 
 /* Faixa do eixo como no protótipo: folga de 6 kWh e múltiplos de 20 */
 export function dominioY(series) {
@@ -75,12 +75,11 @@ export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
 
   const xc = x(ano)
   const dx = Math.max(m.l + 22, Math.min(xc, W - 24)) - xc
-  const anosEixo = mob ? [2026, 2050, 2075] : [2026, 2035, 2045, 2055, 2070, 2075]
+  const anosEixo = mob ? [2026, 2050, 2070] : [2026, 2035, 2045, 2055, 2070]
 
   return (
     <div className="plot" ref={ref} tabIndex={0} onKeyDown={teclado} aria-label="Gráfico da projeção. Use as setas para mudar o ano.">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Consumo residencial per capita projetado, ${ANO_INICIAL} a ${ANO_FINAL}`}>
-        <rect className="fut" x={x(ANO_FINAL_IBGE)} y={m.t} width={m.l + iw - x(ANO_FINAL_IBGE)} height={ih} />
         {marcasY([lo, hi], mob ? 4 : 5).map((v) => (
           <g key={v}>
             <line className="gl" x1={m.l} x2={m.l + iw} y1={y(v)} y2={y(v)} />
@@ -95,10 +94,6 @@ export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
           </text>
         ))}
         <line className="bl" x1={m.l} x2={m.l + iw} y1={m.t + ih} y2={m.t + ih} />
-        <line className="b60" x1={x(ANO_FINAL_IBGE)} x2={x(ANO_FINAL_IBGE)} y1={m.t - 6} y2={m.t + ih} />
-        <text className="b60t" x={x(ANO_FINAL_IBGE) - 8} y={m.t + 13} textAnchor="end">
-          {mob ? 'sem oficial' : `Sem projeção oficial após ${ANO_FINAL_IBGE}`}
-        </text>
         {topo.length > 1 && (
           <path
             className="band"

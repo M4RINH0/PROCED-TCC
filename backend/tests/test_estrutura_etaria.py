@@ -16,7 +16,7 @@ class RepositorioFalso:
         return POR_SEXO
 
     def anos_piramide(self):
-        return [2026, 2070, 2071]
+        return [2026, 2070]
 
 
 class RepositorioProjecoesFalso:

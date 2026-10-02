@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Gaveta from './components/Gaveta.jsx'
 import Icone from './components/Icone.jsx'
-import LinhaDoTempo, { ANO_FINAL_IBGE, ANO_INICIAL } from './components/LinhaDoTempo.jsx'
+import LinhaDoTempo, { ANO_FINAL, ANO_INICIAL } from './components/LinhaDoTempo.jsx'
 import MenuDemonstracao from './components/MenuDemonstracao.jsx'
 import { useRotaHash } from './hooks/useRotaHash.js'
 import { ROTAS } from './rotas.js'
@@ -14,7 +14,7 @@ const reduzMovimento = () => globalThis.matchMedia?.('(prefers-reduced-motion: r
 export default function App() {
   const [rota, navegar] = useRotaHash()
   const [tema, setTema] = useState(() => temaEfetivo(lerTema(), prefereEscuro()))
-  const [ano, setAno] = useState(ANO_FINAL_IBGE)
+  const [ano, setAno] = useState(ANO_FINAL)
   const [gaveta, setGaveta] = useState(null)
   const [falha, setFalha] = useState(false)
   const [recarga, setRecarga] = useState(0)
@@ -26,16 +26,16 @@ export default function App() {
     document.documentElement.dataset.theme = tema
   }, [tema])
 
-  /* abertura: o único movimento automático, o ano percorre 2026 a 2070 uma vez */
+  /* abertura: o único movimento automático, o ano percorre o horizonte uma vez */
   useEffect(() => {
     if (reduzMovimento() || typeof requestAnimationFrame === 'undefined') return undefined
     const inicio = performance.now()
     let quadro = 0
     const passo = (agora) => {
       const p = Math.min(1, (agora - inicio) / 1500)
-      setAno(ANO_INICIAL + (ANO_FINAL_IBGE - ANO_INICIAL) * (1 - Math.pow(1 - p, 3)))
+      setAno(ANO_INICIAL + (ANO_FINAL - ANO_INICIAL) * (1 - Math.pow(1 - p, 3)))
       if (p < 1) quadro = requestAnimationFrame(passo)
-      else setAno(ANO_FINAL_IBGE)
+      else setAno(ANO_FINAL)
     }
     quadro = requestAnimationFrame(passo)
     return () => cancelAnimationFrame(quadro)

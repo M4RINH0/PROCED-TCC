@@ -14,15 +14,15 @@ describe('valoresDoCenario', () => {
   it('extrai o valor de um cenário em cada ano, mantendo os nulos', () => {
     const pontos = [
       { ano: 2070, cenarios: [{ id: 'ibge', valor: 94.6 }] },
-      { ano: 2071, cenarios: [{ id: 'ibge', valor: null }] },
+      { ano: 2069, cenarios: [{ id: 'ibge', valor: null }] },
     ]
     expect(valoresDoCenario(pontos, 'ibge')).toEqual([
       { ano: 2070, valor: 94.6 },
-      { ano: 2071, valor: null },
+      { ano: 2069, valor: null },
     ])
     expect(valoresDoCenario(pontos, 'mod')).toEqual([
       { ano: 2070, valor: null },
-      { ano: 2071, valor: null },
+      { ano: 2069, valor: null },
     ])
   })
 })

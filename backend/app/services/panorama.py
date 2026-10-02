@@ -16,7 +16,6 @@ from app.calculo import tbc_pd, tec
 from app.dados import Domicilio
 from app.dominio import (
     ANO_FINAL,
-    ANO_FINAL_IBGE,
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
     FAIXAS_DO_RECORTE,
@@ -47,7 +46,7 @@ class ParametrosRecorte:
             self.chefia[faixa.rotulo] = len(grupo) / populacao_da_faixa(populacao[ANO_REFERENCIA_POF], faixa)
 
     def tbc_ibge(self, ano: int) -> float | None:
-        if ano > ANO_FINAL_IBGE or ano not in self.populacao:
+        if ano not in self.populacao:
             return None
         ndom = {
             f.rotulo: self.chefia[f.rotulo] * populacao_da_faixa(self.populacao[ano], f) for f in self.faixas
@@ -119,7 +118,7 @@ def _ponto(parametros: ParametrosRecorte, ano: int, base: list[Cenario], populac
     return PontoSerie(
         ano=ano,
         cenarios=cenarios,
-        participacao_60_mais_pct=participacao_60_mais(populacao[ano]) if ano <= ANO_FINAL_IBGE and ano in populacao else None,
+        participacao_60_mais_pct=participacao_60_mais(populacao[ano]) if ano in populacao else None,
         amplitude_kwh=amplitude,
         modelo_menos_oficial_kwh=diferenca,
     )

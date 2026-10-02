@@ -106,12 +106,11 @@ function Exportar({ ano, aoFechar, avisar }) {
           <input type="radio" name="esc" />
           <span>
             <b>Série completa</b>
-            <small>2026 a 2075</small>
+            <small>2026 a 2070</small>
           </span>
         </label>
         <div className="note-box">
-          Cada valor sai acompanhado da coluna de origem. Anos posteriores a 2070 vêm com a célula da projeção oficial vazia.
-          A exportação (RF08) ainda não tem endpoint na API.
+          Cada valor sai acompanhado da coluna de origem. A exportação (RF08) ainda não tem endpoint na API.
         </div>
       </div>
       <div className="dr-f">

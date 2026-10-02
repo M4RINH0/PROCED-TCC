@@ -7,16 +7,16 @@ import MenuDemonstracao from './MenuDemonstracao.jsx'
 afterEach(() => vi.unstubAllGlobals())
 
 describe('LinhaDoTempo', () => {
-  it('posiciona os anos de 2026 a 2075 de 0% a 100%', () => {
-    expect([posicao(2026), posicao(2075)]).toEqual([0, 100])
-    expect(posicao(2070)).toBeCloseTo(89.8, 1)
+  it('posiciona os anos de 2026 a 2070 de 0% a 100%', () => {
+    expect([posicao(2026), posicao(2070)]).toEqual([0, 100])
+    expect(posicao(2048)).toBe(50)
   })
 
-  it('mostra o ano, marca 2070 e avisa a mudança do controle', () => {
+  it('mostra o ano e avisa a mudança do controle', () => {
     const aoMudarAno = vi.fn()
     render(<LinhaDoTempo ano={2050.4} aoMudarAno={aoMudarAno} />)
     expect(screen.getByText('2050', { selector: 'b' })).toBeInTheDocument()
-    expect(screen.getByText('Hachura: sem projeção oficial após 2070')).toBeInTheDocument()
+    expect(screen.queryByText(/Hachura/)).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Ano da projeção'), { target: { value: '2060' } })
     expect(aoMudarAno).toHaveBeenCalledWith(2060)
   })
@@ -25,8 +25,8 @@ describe('LinhaDoTempo', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: true }))
     const aoMudarAno = vi.fn()
     render(<LinhaDoTempo ano={2030} aoMudarAno={aoMudarAno} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Reproduzir os 50 anos' }))
-    expect(aoMudarAno).toHaveBeenCalledWith(2075)
+    fireEvent.click(screen.getByRole('button', { name: 'Reproduzir os 45 anos' }))
+    expect(aoMudarAno).toHaveBeenCalledWith(2070)
   })
 
   it('fica escondida no simulador', () => {

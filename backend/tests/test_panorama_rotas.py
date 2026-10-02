@@ -27,14 +27,12 @@ def test_entrada_valida_segue_o_contrato():
     }
 
 
-def test_ausencia_de_dado_oficial_depois_de_2070():
-    r = cliente.get("/projecoes", params={"ano": 2071, "recorte": "chefe_60_mais"})
-    assert r.status_code == 200
-    ibge = next(c for c in r.json()["cenarios"] if c["id"] == "ibge")
-    assert ibge["valor"] is None
+def test_horizonte_termina_em_2070():
+    assert cliente.get("/projecoes", params={"ano": 2070, "recorte": "chefe_60_mais"}).status_code == 200
+    assert cliente.get("/projecoes", params={"ano": 2071, "recorte": "chefe_60_mais"}).status_code == 422
 
 
-@pytest.mark.parametrize("ano", [2025, 2076, "dois mil"])
+@pytest.mark.parametrize("ano", [2025, 2071, "dois mil"])
 def test_ano_invalido_retorna_422(ano):
     assert cliente.get("/projecoes", params={"ano": ano, "recorte": "chefe_60_mais"}).status_code == 422
 
@@ -53,6 +51,6 @@ def test_serie_tem_50_anos_e_oficial_ate_2070():
     r = cliente.get("/projecoes/serie", params={"recorte": "chefe_60_mais"})
     assert r.status_code == 200
     pontos = r.json()["pontos"]
-    assert len(pontos) == 50 and pontos[0]["ano"] == 2026 and pontos[-1]["ano"] == 2075
+    assert len(pontos) == 45 and pontos[0]["ano"] == 2026 and pontos[-1]["ano"] == 2070
     ibge = {p["ano"]: next(c["valor"] for c in p["cenarios"] if c["id"] == "ibge") for p in pontos}
-    assert ibge[2070] is not None and ibge[2071] is None
+    assert ibge[2070] is not None

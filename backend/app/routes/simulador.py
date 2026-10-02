@@ -14,7 +14,7 @@ router = APIRouter(prefix="/simulador", tags=["simulador"])
 
 @router.get("", response_model=SimulacaoResposta, summary="Consumo projetado de um tipo de domicílio num ano")
 def consultar_simulacao(
-    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2075")],
+    ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
     faixa: Annotated[FaixaSim, Query(description="Faixa etária do chefe")],
     arranjo: Annotated[ArranjoSim, Query()],
     base: Annotated[BaseSim, Query(description="Cenário de projeção")],

@@ -6,7 +6,7 @@ import { useTamanho } from '../hooks/useTamanho.js'
 import { buscarSimulacao } from '../services/api.js'
 import { lerTaxa, umaCasa } from '../utils/formato.js'
 
-export const ANOS = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070, 2075]
+export const ANOS = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070]
 export const FAIXAS = [
   { id: 'ate_29', rotulo: 'até 29' },
   { id: '30_39', rotulo: '30 a 39' },

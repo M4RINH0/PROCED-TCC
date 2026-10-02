@@ -36,11 +36,6 @@ def test_oficial_devolve_a_tec_da_combinacao():
     assert len(r.por_faixa) == 7
 
 
-def test_oficial_sem_valor_depois_de_2070():
-    r = _sim(ano=2071)
-    assert r.valor is None and "2070" in r.motivo_sem_valor
-
-
 @pytest.mark.parametrize("base", [BaseSim.mod, BaseSim.alt])
 def test_cenarios_nao_modelados(base):
     r = _sim(base=base)
@@ -68,7 +63,7 @@ def test_endpoint_entrada_valida(cliente):
 
 
 @pytest.mark.parametrize(
-    "campo, valor", [("ano", 2076), ("faixa", "90_99"), ("arranjo", "familia"), ("base", "pde"), ("taxa", 11), ("taxa", -1)]
+    "campo, valor", [("ano", 2071), ("faixa", "90_99"), ("arranjo", "familia"), ("base", "pde"), ("taxa", 11), ("taxa", -1)]
 )
 def test_endpoint_entrada_invalida_retorna_422(cliente, campo, valor):
     assert cliente.get("/simulador", params={**PARAMS, campo: valor}).status_code == 422

@@ -44,6 +44,6 @@ porque o dado real é outro:
 - Estrutura etária: o consumo por faixa do chefe é um gráfico de barras, não de linhas,
   pelo mesmo motivo.
 - Simulador: o histograma mostra as faixas do chefe do arranjo escolhido.
-- Fronteira oficial em 2070, não em 2060; o selo do topo diz "Cenário do modelo pendente".
+- Horizonte de 2026 a 2070, sem a área hachurada depois da projeção oficial; o selo do topo diz "Cenário do modelo pendente".
 - Controle da taxa de envelhecimento desativado até o cenário do modelo existir.
 - Exportar avisa que o RF08 está pendente.

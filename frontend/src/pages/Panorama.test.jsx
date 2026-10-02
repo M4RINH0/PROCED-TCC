@@ -7,9 +7,9 @@ const serie = (recorte) => ({
   unidade: 'kWh/mes/pessoa',
   fonte: 'POF 2017 a 2018 e Projeções da População (IBGE)',
   dados_ilustrativos: false,
-  pontos: Array.from({ length: 50 }, (_, i) => {
+  pontos: Array.from({ length: 45 }, (_, i) => {
     const ano = 2026 + i
-    const valor = ano > 2070 ? null : recorte === 'chefe_60_mais' ? 94.3 : 89.1
+    const valor = recorte === 'chefe_60_mais' ? 94.3 : 89.1
     return {
       ano,
       cenarios: [
@@ -17,7 +17,7 @@ const serie = (recorte) => ({
         { id: 'ibge', valor, variacao_kwh: valor === null ? null : 0, variacao_pct: valor === null ? null : 0 },
         { id: 'alt', valor: null, variacao_kwh: null, variacao_pct: null },
       ],
-      participacao_60_mais_pct: ano > 2070 ? null : 30,
+      participacao_60_mais_pct: 30,
       amplitude_kwh: null,
       modelo_menos_oficial_kwh: null,
     }
@@ -37,10 +37,15 @@ describe('Panorama', () => {
     expect(screen.getByText(/a projeção oficial é de/)).toBeInTheDocument()
   })
 
-  it('mostra a ausência do oficial depois de 2070', async () => {
-    render(<Panorama ano={2072} aoMudarAno={() => {}} buscar={buscarOk()} />)
-    expect(await within(await screen.findByTestId('reg-ibge')).findByText('Sem projeção oficial após 2070')).toBeInTheDocument()
-    expect(screen.getByText(/não há projeção oficial/)).toBeInTheDocument()
+  it('avisa quando falta o dado oficial do ano', async () => {
+    const buscar = vi.fn(({ recorte }) => {
+      const r = serie(recorte)
+      r.pontos[24].cenarios[1].valor = null
+      return Promise.resolve(r)
+    })
+    render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscar} />)
+    expect(await within(await screen.findByTestId('reg-ibge')).findByText('Sem dado neste ano')).toBeInTheDocument()
+    expect(screen.getByText(/Sem dado da projeção oficial/)).toBeInTheDocument()
   })
 
   it('consulta de novo ao trocar o grupo', async () => {

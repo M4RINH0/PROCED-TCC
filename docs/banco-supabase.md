@@ -32,7 +32,7 @@ Essas regras estão em `backend/etl/derivacao.py`.
 
 ## Decisões tomadas a partir deste levantamento (02/10/2026)
 
-1. **Horizonte oficial:** usar a projeção do IBGE até 2070, como está no banco.
+1. **Horizonte:** o estudo vai de 2026 a 2070, o mesmo fim da projeção do IBGE no banco.
 2. **Arranjos:** seguir os 3 do banco. Mononuclear = unipessoal ou casal ou dupla;
    casal de idosos = dois moradores com chefe de 60 anos ou mais (premissa P1).
    Há 5.705 domicílios assim na amostra.

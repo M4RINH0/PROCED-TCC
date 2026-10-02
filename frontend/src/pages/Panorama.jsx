@@ -6,15 +6,14 @@ import LeituraAno from '../components/LeituraAno.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarSerie } from '../services/api.js'
 import { comSinal, umaCasa } from '../utils/formato.js'
-import { ANO_FINAL_IBGE, RECORTES, SERIES, valoresDoCenario } from '../utils/series.js'
+import { RECORTES, SERIES, valoresDoCenario } from '../utils/series.js'
 
 function frase(ponto, ano) {
   const ibge = ponto?.cenarios.find((c) => c.id === 'ibge')
   if (!ibge || ibge.valor === null) {
     return (
       <>
-        Em <b>{ano}</b> não há projeção oficial: a série do IBGE termina em {ANO_FINAL_IBGE}. O cenário do modelo ainda
-        não foi formulado.
+        Sem dado da projeção oficial para <b>{ano}</b>. O cenário do modelo ainda não foi formulado.
       </>
     )
   }

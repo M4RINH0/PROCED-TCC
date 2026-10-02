@@ -7,7 +7,6 @@ import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarConsumoChefe, buscarPiramides } from '../services/api.js'
 import { inteiro, umaCasa } from '../utils/formato.js'
 
-export const ANO_FINAL_PROJECAO = 2070
 
 export const ARRANJOS = [
   { id: 'mononucleares', rotulo: 'Mononucleares' },
@@ -32,7 +31,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
 
   let frase = 'Carregando dados…'
   if (pir.status === 'erro') frase = 'Dados indisponíveis no momento. Os controles continuam ativos e serão aplicados quando a conexão voltar.'
-  else if (pir.dados && !doAno) frase = `Sem projeção oficial após ${ANO_FINAL_PROJECAO}: a pirâmide do IBGE vai até ${ANO_FINAL_PROJECAO}.`
+  else if (pir.dados && !doAno) frase = `Sem dado da pirâmide etária para ${anoInteiro}.`
   else if (doAno && inicial) {
     frase = (
       <>
@@ -81,8 +80,8 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
             <div className="plot">
               {pir.dados && pir.status !== 'erro' ? (
                 <div className="pstate">
-                  <h3>Sem projeção oficial após {ANO_FINAL_PROJECAO}</h3>
-                  <p>Volte a linha do tempo até {ANO_FINAL_PROJECAO} para ver a pirâmide.</p>
+                  <h3>Sem dado para {anoInteiro}</h3>
+                  <p>A projeção populacional do IBGE não tem este ano.</p>
                 </div>
               ) : (
                 <EstadoConsulta status={pir.status} erro={pir.erro} temDados={Boolean(pir.dados)} parametros={`ano ${anoInteiro}`} aoTentarDeNovo={pir.recarregar} />

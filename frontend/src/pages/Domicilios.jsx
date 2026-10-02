@@ -7,7 +7,6 @@ import { buscarComposicao } from '../services/api.js'
 import { ANOS_HISTORICO, APARENCIA, FILTROS, noFiltro } from '../utils/categorias.js'
 import { umaCasa } from '../utils/formato.js'
 
-const ANO_FINAL_PROJECAO = 2070
 
 function Historico({ categoria, anos, ano, maximo }) {
   const W = 118
@@ -43,7 +42,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
   const { status, dados, erro, recarregar } = useConsulta((o) => buscar(o), [versao])
   const anoInteiro = Math.round(ano)
   const indice = dados ? dados.anos.indexOf(anoInteiro) : -1
-  const semProjecao = dados && indice < 0
+  const semDado = dados && indice < 0
   const categorias = dados?.categorias ?? []
   const casas = categorias.map((c) => (indice >= 0 ? c.casas[indice] : 0))
   const recorte = categorias.filter((c) => c.mononuclear && c.chefe_60_mais)
@@ -51,7 +50,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
 
   let frase = 'Carregando dados…'
   if (status === 'erro') frase = 'Dados indisponíveis no momento. Os controles continuam ativos e serão aplicados quando a conexão voltar.'
-  else if (semProjecao) frase = `Sem projeção oficial após ${ANO_FINAL_PROJECAO}: a composição dos domicílios vai até ${ANO_FINAL_PROJECAO}.`
+  else if (semDado) frase = `Sem dado da composição dos domicílios para ${anoInteiro}.`
   else if (dados) {
     const agora = recorte.reduce((s, c) => s + c.casas[indice], 0)
     const inicio = recorte.reduce((s, c) => s + c.casas[0], 0)
@@ -79,14 +78,14 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
               Cem domicílios brasileiros <small>cada casa representa 1%</small>
             </h2>
           </div>
-          {dados && status !== 'erro' && !semProjecao ? (
+          {dados && status !== 'erro' && !semDado ? (
             <GradeCasas categorias={categorias} casas={casas} filtro={filtro} destaque={destaque} />
           ) : (
             <div className="iso">
-              {semProjecao ? (
+              {semDado ? (
                 <div className="pstate">
-                  <h3>Sem projeção oficial após {ANO_FINAL_PROJECAO}</h3>
-                  <p>A estrutura dos domicílios depende da projeção populacional do IBGE. Volte a linha do tempo até {ANO_FINAL_PROJECAO}.</p>
+                  <h3>Sem dado para {anoInteiro}</h3>
+                  <p>A projeção populacional do IBGE não tem este ano.</p>
                 </div>
               ) : (
                 <EstadoConsulta status={status} erro={erro} temDados={Boolean(dados)} parametros={`ano ${anoInteiro}`} aoTentarDeNovo={recarregar} />

@@ -25,9 +25,9 @@ describe('LeituraAno', () => {
     expect(screen.getByText('25,4%')).toBeInTheDocument()
   })
 
-  it('marca a ausência da série oficial depois de 2070 em vez de mostrar um traço', () => {
-    render(<LeituraAno ponto={ponto(null, { participacao_60_mais_pct: null })} ano={2072} modelados={['ibge']} visiveis={todas} />)
-    expect(within(screen.getByTestId('reg-ibge')).getByText('Sem projeção oficial após 2070')).toBeInTheDocument()
+  it('avisa a falta do valor do ano em vez de mostrar um traço', () => {
+    render(<LeituraAno ponto={ponto(null, { participacao_60_mais_pct: null })} ano={2050} modelados={['ibge']} visiveis={todas} />)
+    expect(within(screen.getByTestId('reg-ibge')).getByText('Sem dado neste ano')).toBeInTheDocument()
   })
 
   it('diz que o cenário não foi modelado e mostra "sem dado" nos comparativos', () => {
@@ -49,5 +49,8 @@ describe('LeituraAno', () => {
 })
 
 describe('textoSemValor', () => {
-  it('usa "sem dado" para cenário modelado sem valor no ano', () => expect(textoSemValor('mod', true)).toBe('sem dado'))
+  it('distingue cenário não modelado de ano sem valor', () => {
+    expect(textoSemValor(false)).toBe('Cenário ainda não modelado')
+    expect(textoSemValor(true)).toBe('Sem dado neste ano')
+  })
 })

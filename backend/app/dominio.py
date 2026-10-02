@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 ANO_INICIAL = 2026
-ANO_FINAL = 2075
-ANO_FINAL_IBGE = 2070  # a projeção oficial do IBGE termina aqui
+ANO_FINAL = 2070  # horizonte do estudo: o mesmo ano em que termina a projeção oficial do IBGE
 ANO_REFERENCIA_POF = 2018  # POF 2017 a 2018
 IDADE_IDOSO = 60
 

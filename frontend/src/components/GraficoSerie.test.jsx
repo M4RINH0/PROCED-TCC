@@ -7,7 +7,6 @@ const ibge = {
   pontos: [
     { ano: 2026, valor: 94.3 },
     { ano: 2070, valor: 94.6 },
-    { ano: 2071, valor: null },
   ],
 }
 const vazio = { id: 'mod', pontos: [{ ano: 2026, valor: null }] }
@@ -36,10 +35,10 @@ describe('GraficoSerie', () => {
     expect(screen.getByText('94,6 em 2070')).toBeInTheDocument()
   })
 
-  it('marca a fronteira de 2070 e o ano selecionado', () => {
+  it('marca o ano selecionado e não desenha fronteira depois de 2070', () => {
     render(<GraficoSerie series={[ibge]} visiveis={todas} ano={2050} aoMudarAno={() => {}} />)
-    expect(screen.getByText('Sem projeção oficial após 2070')).toBeInTheDocument()
     expect(screen.getByText('2050')).toBeInTheDocument()
+    expect(screen.queryByText(/Sem projeção oficial/)).not.toBeInTheDocument()
   })
 
   it('não desenha série escondida pela legenda', () => {
@@ -54,6 +53,6 @@ describe('GraficoSerie', () => {
     fireEvent.keyDown(grafico, { key: 'ArrowRight' })
     fireEvent.keyDown(grafico, { key: 'ArrowLeft', shiftKey: true })
     fireEvent.keyDown(grafico, { key: 'End' })
-    expect(aoMudarAno.mock.calls.map((c) => c[0])).toEqual([2051, 2045, 2075])
+    expect(aoMudarAno.mock.calls.map((c) => c[0])).toEqual([2051, 2045, 2070])
   })
 })
