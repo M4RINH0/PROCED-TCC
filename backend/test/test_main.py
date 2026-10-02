@@ -14,7 +14,7 @@ class Quebrado:
     def domicilios(self):
         raise ErroFonteDados("fora do ar")
 
-    def populacao_por_idade(self):
+    def populacao_por_idade(self, localidade="Brasil"):
         raise ErroFonteDados("fora do ar")
 
 

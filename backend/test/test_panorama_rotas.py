@@ -24,6 +24,8 @@ def test_entrada_valida_segue_o_contrato():
         ],
         "dados_ilustrativos": False,
         "fonte": "POF 2017 a 2018 e Projeções da População (IBGE)",
+        "localidade": "Brasil",
+        "domicilios_amostra": 4,
     }
 
 

@@ -537,3 +537,13 @@ main.nodock~.toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
    (0,12 s, o tempo de um ano no play), sem criar dado intermediário. */
 .plot svg rect.p60,.plot svg rect.plo{transition:x .12s linear,width .12s linear}
 circle.dot{transition:cy .12s linear}
+
+/* filtro de região e estado, no topo de cada página */
+.vh-lado{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.filtro-local{display:flex;align-items:flex-end;gap:8px}
+.filtro-local .fl label{margin-bottom:4px}
+.filtro-local select{height:34px;min-width:150px;padding:0 10px;font:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--rule);border-radius:var(--r-ctl);cursor:pointer}
+.filtro-local select:focus{outline:0;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
+.filtro-local select:disabled{opacity:.5;cursor:not-allowed}
+@media (max-width:760px){.vh-lado{align-items:stretch}.filtro-local select{min-width:0;flex:1 1 0}.filtro-local .fl{flex:1 1 0}}

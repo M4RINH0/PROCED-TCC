@@ -10,6 +10,7 @@ Toda premissa adotada onde faltar dado entra aqui, com fonte citável.
 | P4 | A faixa de chefe "até 29" usa a população de 12 a 29 anos (12 é a menor idade de chefe na amostra). | `fato_consumo_domiciliar` | P2 |
 | P5 | A faixa "80+" inclui a idade 90 da projeção, que agrega 90 anos ou mais. | `projecoes_populacao_idade` | Pirâmide e P2 |
 | P6 | A TEC de cada faixa fica fixa nos níveis da POF 2017 a 2018; só a estrutura etária muda (padronização direta, eq:tbc-pd). | Metodologia do TCC | Cenário oficial |
+| P7 | Em uma região ou UF, a TEC vem só dos domicílios da POF daquela localidade e a taxa de chefia usa a projeção do IBGE da mesma localidade. As amostras ficam pequenas (o Amapá tem 3 domicílios na faixa de 80 anos ou mais), por isso as telas mostram o tamanho da amostra. | POF 2017 a 2018 e Projeções da População (IBGE) | Filtro de localidade em todas as páginas |
 
 Pendências de confirmação:
 - Como o `consumo_total_kwh` do banco foi obtido a partir da POF e se é mensal.

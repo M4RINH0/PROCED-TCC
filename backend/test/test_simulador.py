@@ -21,7 +21,7 @@ class RepositorioFalso:
             SimpleNamespace(arranjo=C, idade_chefe=72, consumo_per_capita_kwh=999.0),
         ]
 
-    def populacao_por_idade(self):
+    def populacao_por_idade(self, localidade="Brasil"):
         return {}
 
 

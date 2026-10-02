@@ -42,9 +42,9 @@ function Fontes() {
   )
 }
 
-function Api({ ano, avisar }) {
-  const params = { ano: Math.round(ano), recorte: 'chefe_60_mais' }
-  const { status, dados } = useConsulta((o) => buscarProjecao(params, o), [params.ano])
+function Api({ ano, localidade, avisar }) {
+  const params = { ano: Math.round(ano), recorte: 'chefe_60_mais', localidade }
+  const { status, dados } = useConsulta((o) => buscarProjecao(params, o), [params.ano, localidade])
   const texto = dados ? JSON.stringify(dados, null, 2) : status === 'erro' ? 'Não foi possível consultar a API.' : 'Consultando…'
   return (
     <>
@@ -56,7 +56,7 @@ function Api({ ano, avisar }) {
         <div className="method">
           <em>GET</em>
           <span>
-            /projecoes?ano={params.ano}&amp;recorte={params.recorte}
+            /projecoes?ano={params.ano}&amp;recorte={params.recorte}&amp;localidade={params.localidade}
           </span>
         </div>
         <pre className="code">{texto}</pre>
@@ -132,7 +132,7 @@ function Exportar({ ano, aoFechar, avisar }) {
 
 const TITULOS = { fontes: ['db', 'Fonte dos dados'], api: ['api', 'Contrato da API'], exportar: ['down', 'Exportar dados'] }
 
-export default function Gaveta({ tipo, ano, aoFechar, avisar }) {
+export default function Gaveta({ tipo, ano, localidade = 'Brasil', aoFechar, avisar }) {
   const ref = useRef(null)
   const anterior = useRef(null)
   const fechar = useRef(aoFechar)
@@ -170,7 +170,7 @@ export default function Gaveta({ tipo, ano, aoFechar, avisar }) {
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drT" tabIndex={-1} ref={ref}>
         <Cabecalho icone={icone} titulo={titulo} aoFechar={aoFechar} />
         {tipo === 'fontes' && <Fontes />}
-        {tipo === 'api' && <Api ano={ano} avisar={avisar} />}
+        {tipo === 'api' && <Api ano={ano} localidade={localidade} avisar={avisar} />}
         {tipo === 'exportar' && <Exportar ano={ano} aoFechar={aoFechar} avisar={avisar} />}
       </aside>
     </>

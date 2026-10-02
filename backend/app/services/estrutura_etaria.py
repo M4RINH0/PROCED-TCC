@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from app.calculo import tec
 from app.dados import Domicilio
-from app.dominio import ANO_FINAL, FAIXAS_CHEFE, IDADE_IDOSO, FiltroArranjo, da_faixa, filtrar
+from app.dominio import ANO_FINAL, BRASIL, FAIXAS_CHEFE, IDADE_IDOSO, FiltroArranjo, da_faixa, da_localidade, filtrar
 from app.schemas.estrutura_etaria import (
     ConsumoChefeResposta,
     FaixaConsumo,
@@ -55,14 +55,17 @@ def montar_piramide(ano: int, por_sexo: dict[str, dict[int, int]]) -> PiramideRe
     return PiramideResposta(ano=ano, faixas=faixas, participacao_60_mais_pct=pct(idosos))
 
 
-def obter_piramide(ano: int, dados) -> PiramideResposta:
-    return montar_piramide(ano, dados.populacao_por_sexo(ano))
+def obter_piramide(ano: int, dados, localidade: str = BRASIL) -> PiramideResposta:
+    return montar_piramide(ano, dados.populacao_por_sexo(ano, localidade))
 
 
-def obter_piramides(dados, ano_final: int = ANO_FINAL) -> PiramidesResposta:
-    anos = [a for a in dados.anos_piramide() if a <= ano_final]
-    return PiramidesResposta(piramides=[montar_piramide(a, dados.populacao_por_sexo(a)) for a in anos])
+def obter_piramides(dados, localidade: str = BRASIL, ano_final: int = ANO_FINAL) -> PiramidesResposta:
+    anos = [a for a in dados.anos_piramide(localidade) if a <= ano_final]
+    return PiramidesResposta(
+        piramides=[montar_piramide(a, dados.populacao_por_sexo(a, localidade)) for a in anos], localidade=localidade
+    )
 
 
-def obter_consumo_chefe(filtro: FiltroArranjo, dados) -> ConsumoChefeResposta:
-    return ConsumoChefeResposta(arranjo=filtro, faixas=consumo_por_faixa(dados.domicilios(), filtro))
+def obter_consumo_chefe(filtro: FiltroArranjo, dados, localidade: str = BRASIL) -> ConsumoChefeResposta:
+    domicilios = da_localidade(dados.domicilios(), localidade)
+    return ConsumoChefeResposta(arranjo=filtro, faixas=consumo_por_faixa(domicilios, filtro), localidade=localidade)

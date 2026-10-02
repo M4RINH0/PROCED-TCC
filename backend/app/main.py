@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import DOTENV, Configuracao, ErroConfiguracao, ErroFonteDados, carregar_configuracao
 from app.dados import obter_dados
-from app.routes import domicilios, estrutura_etaria, fontes, panorama, simulador
+from app.routes import domicilios, estrutura_etaria, fontes, localidades, panorama, simulador
 
 log = logging.getLogger("proced")
 
@@ -63,7 +63,7 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
     )
     app.add_exception_handler(ErroFonteDados, _fonte_indisponivel)
     app.add_exception_handler(ErroConfiguracao, _fonte_indisponivel)
-    for pagina in (panorama, domicilios, estrutura_etaria, simulador, fontes):
+    for pagina in (panorama, domicilios, estrutura_etaria, simulador, fontes, localidades):
         app.include_router(pagina.router)
     return app
 

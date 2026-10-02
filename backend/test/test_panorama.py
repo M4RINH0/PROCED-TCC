@@ -43,10 +43,13 @@ def test_tbc_ibge_nula_depois_de_2070_e_em_ano_sem_projecao():
     assert p.tbc_ibge(2040) is None  # ano ausente na tabela de população
 
 
-def test_recorte_abaixo_de_60():
-    # até 29: 80 (n=1, pop 2000); 30 a 39: sem mononuclear -> falha; o recorte exige dados em todas as faixas
-    with pytest.raises(ValueError):
-        ParametrosRecorte(Recorte.mononuclear_abaixo_60, DOMICILIOS, POPULACAO)
+def test_recorte_com_faixa_sem_amostra_fica_sem_valor():
+    # abaixo de 60: até 29 tem 1 domicílio, 40 a 49 tem 1; 30 a 39 e 50 a 59 não têm nenhum.
+    # Sem amostra numa faixa, a padronização não fecha: o valor fica nulo em vez de dar erro.
+    p = ParametrosRecorte(Recorte.mononuclear_abaixo_60, DOMICILIOS, POPULACAO)
+    assert p.completo is False
+    assert p.amostra == 2
+    assert p.tbc_ibge(2030) is None
 
 
 def test_exige_populacao_do_ano_de_referencia():

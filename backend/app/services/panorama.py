@@ -18,11 +18,13 @@ from app.dominio import (
     ANO_FINAL,
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
+    BRASIL,
     FAIXAS_DO_RECORTE,
     IDADE_IDOSO,
     FiltroArranjo,
     Recorte,
     da_faixa,
+    da_localidade,
     filtrar,
     populacao_da_faixa,
 )
@@ -40,13 +42,19 @@ class ParametrosRecorte:
         self.populacao = populacao
         self.tec: dict[str, float] = {}
         self.chefia: dict[str, float] = {}
+        self.amostra = 0
+        self.completo = True  # False se alguma faixa do recorte não tem domicílio na amostra
         for faixa in self.faixas:
             grupo = da_faixa(mononucleares, faixa)
+            self.amostra += len(grupo)
+            if not grupo:
+                self.completo = False
+                continue
             self.tec[faixa.rotulo] = tec(sum(d.consumo_per_capita_kwh for d in grupo), len(grupo))
             self.chefia[faixa.rotulo] = len(grupo) / populacao_da_faixa(populacao[ANO_REFERENCIA_POF], faixa)
 
     def tbc_ibge(self, ano: int) -> float | None:
-        if ano not in self.populacao:
+        if not self.completo or ano not in self.populacao:
             return None
         ndom = {
             f.rotulo: self.chefia[f.rotulo] * populacao_da_faixa(self.populacao[ano], f) for f in self.faixas
@@ -68,14 +76,22 @@ def _cenarios(parametros: ParametrosRecorte, ano: int) -> list[Cenario]:
     ]
 
 
-def _parametros(recorte: Recorte, dados) -> ParametrosRecorte:
-    return ParametrosRecorte(recorte, dados.domicilios(), dados.populacao_por_idade())
+def _parametros(recorte: Recorte, dados, localidade: str) -> ParametrosRecorte:
+    domicilios = da_localidade(dados.domicilios(), localidade)
+    return ParametrosRecorte(recorte, domicilios, dados.populacao_por_idade(localidade))
 
 
-def obter_projecao(ano: int, recorte: Recorte, dados) -> ProjecaoResposta:
+def obter_projecao(ano: int, recorte: Recorte, dados, localidade: str = BRASIL) -> ProjecaoResposta:
     _validar_ano(ano)
-    parametros = _parametros(recorte, dados)
-    return ProjecaoResposta(ano=ano, recorte=recorte, cenarios=_cenarios(parametros, ano), dados_ilustrativos=False)
+    parametros = _parametros(recorte, dados, localidade)
+    return ProjecaoResposta(
+        ano=ano,
+        recorte=recorte,
+        cenarios=_cenarios(parametros, ano),
+        dados_ilustrativos=False,
+        localidade=localidade,
+        domicilios_amostra=parametros.amostra,
+    )
 
 
 def participacao_60_mais(populacao_do_ano: dict[int, int]) -> float | None:
@@ -124,9 +140,11 @@ def _ponto(parametros: ParametrosRecorte, ano: int, base: list[Cenario], populac
     )
 
 
-def obter_serie(recorte: Recorte, dados) -> SerieResposta:
-    parametros = _parametros(recorte, dados)
-    populacao = dados.populacao_por_idade()
+def obter_serie(recorte: Recorte, dados, localidade: str = BRASIL) -> SerieResposta:
+    parametros = _parametros(recorte, dados, localidade)
+    populacao = dados.populacao_por_idade(localidade)
     base = _cenarios(parametros, ANO_INICIAL)
     pontos = [_ponto(parametros, a, base, populacao) for a in range(ANO_INICIAL, ANO_FINAL + 1)]
-    return SerieResposta(recorte=recorte, pontos=pontos, dados_ilustrativos=False)
+    return SerieResposta(
+        recorte=recorte, pontos=pontos, dados_ilustrativos=False, localidade=localidade, domicilios_amostra=parametros.amostra
+    )

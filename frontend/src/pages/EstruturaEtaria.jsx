@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import BarrasFaixa from '../components/BarrasFaixa.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
+import FiltroLocal from '../components/FiltroLocal.jsx'
 import Icone from '../components/Icone.jsx'
 import Piramide from '../components/Piramide.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -18,10 +19,12 @@ export const ARRANJOS = [
 
 const FAIXAS_60 = new Set(['60 a 69', '70 a 79', '80+'])
 
-export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPiramides, buscarConsumo = buscarConsumoChefe }) {
+const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+
+export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPiramides, buscarConsumo = buscarConsumoChefe, local = LOCAL_PADRAO }) {
   const [arranjo, setArranjo] = useState('mononucleares')
-  const pir = useConsulta((o) => buscarPir(o), [versao])
-  const consumo = useConsulta((o) => buscarConsumo({ arranjo }, o), [arranjo, versao])
+  const pir = useConsulta((o) => buscarPir({ localidade: local.valor }, o), [local.valor, versao])
+  const consumo = useConsulta((o) => buscarConsumo({ arranjo, localidade: local.valor }, o), [arranjo, local.valor, versao])
   const anoInteiro = Math.round(ano)
   const piramides = pir.dados?.piramides ?? []
   const doAno = piramides.find((p) => p.ano === anoInteiro)
@@ -35,7 +38,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
   else if (doAno && inicial) {
     frase = (
       <>
-        A população de <b>60 anos ou mais</b> passa de <b>{umaCasa(inicial.participacao_60_mais_pct)}%</b> em {inicial.ano} para{' '}
+        {local.nome}: a população de <b>60 anos ou mais</b> passa de <b>{umaCasa(inicial.participacao_60_mais_pct)}%</b> em {inicial.ano} para{' '}
         <b>{umaCasa(doAno.participacao_60_mais_pct)}%</b> em {anoInteiro}. Onde o contorno de {inicial.ano} fica dentro da barra, a faixa cresceu.
       </>
     )
@@ -48,10 +51,13 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
           <h1>Estrutura etária</h1>
           <p>{frase}</p>
         </div>
-        <span className="rec">
-          <Icone nome="target" />
-          Recorte: chefe com 60 anos ou mais
-        </span>
+        <div className="vh-lado">
+          <FiltroLocal local={local} />
+          <span className="rec">
+            <Icone nome="target" />
+            Recorte: chefe com 60 anos ou mais
+          </span>
+        </div>
       </div>
       <div className="body g-eta">
         <section className="pan" aria-labelledby="h-pyr">
@@ -84,12 +90,12 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
                   <p>A projeção populacional do IBGE não tem este ano.</p>
                 </div>
               ) : (
-                <EstadoConsulta status={pir.status} erro={pir.erro} temDados={Boolean(pir.dados)} parametros={`ano ${anoInteiro}`} aoTentarDeNovo={pir.recarregar} />
+                <EstadoConsulta status={pir.status} erro={pir.erro} temDados={Boolean(pir.dados)} parametros={`ano ${anoInteiro}, ${local.nome}`} aoTentarDeNovo={pir.recarregar} />
               )}
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {pir.dados?.fonte ?? 'IBGE'}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
+            <span>Fonte: {pir.dados?.fonte ?? 'IBGE'}, {local.nome}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
           </div>
         </section>
         <section className="pan split-v" aria-labelledby="h-ch">
@@ -137,14 +143,14 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
                 status={consumo.status}
                 erro={consumo.erro}
                 temDados={Boolean(consumo.dados)}
-                parametros={`arranjo ${rotuloArranjo}`}
+                parametros={`arranjo ${rotuloArranjo}, ${local.nome}`}
                 aoTentarDeNovo={consumo.recarregar}
                 mudo={pir.status === 'erro'}
               />
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {consumo.dados?.fonte ?? 'POF'}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
+            <span>Fonte: {consumo.dados?.fonte ?? 'POF'}, {local.nome}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
           </div>
         </section>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
+import FiltroLocal from '../components/FiltroLocal.jsx'
 import GradeCasas from '../components/GradeCasas.jsx'
 import Segmentado from '../components/Segmentado.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -36,10 +37,12 @@ function Historico({ categoria, anos, ano, maximo }) {
   )
 }
 
-export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao }) {
+const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+
+export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao, local = LOCAL_PADRAO }) {
   const [filtro, setFiltro] = useState('todos')
   const [destaque, setDestaque] = useState(null)
-  const { status, dados, erro, recarregar } = useConsulta((o) => buscar(o), [versao])
+  const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ localidade: local.valor }, o), [local.valor, versao])
   const anoInteiro = Math.round(ano)
   const indice = dados ? dados.anos.indexOf(anoInteiro) : -1
   const semDado = dados && indice < 0
@@ -56,7 +59,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
     const inicio = recorte.reduce((s, c) => s + c.casas[0], 0)
     frase = (
       <>
-        Em <b>{anoInteiro}</b>, <b>{agora} de cada 100 domicílios</b> são mononucleares com chefe de 60 anos ou mais. Em{' '}
+        Em <b>{anoInteiro}</b>, <b>{agora} de cada 100 domicílios</b> são mononucleares com chefe de 60 anos ou mais ({local.nome}). Em{' '}
         {dados.anos[0]} eram {inicio}.
       </>
     )
@@ -69,7 +72,10 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
           <h1>Domicílios por arranjo</h1>
           <p>{frase}</p>
         </div>
-        <Segmentado rotulo="Filtrar arranjos" opcoes={FILTROS} valor={filtro} aoMudar={setFiltro} />
+        <div className="vh-lado">
+          <FiltroLocal local={local} />
+          <Segmentado rotulo="Filtrar arranjos" opcoes={FILTROS} valor={filtro} aoMudar={setFiltro} />
+        </div>
       </div>
       <div className="body g-dom">
         <section className="pan" aria-labelledby="h-iso">
@@ -88,7 +94,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
                   <p>A projeção populacional do IBGE não tem este ano.</p>
                 </div>
               ) : (
-                <EstadoConsulta status={status} erro={erro} temDados={Boolean(dados)} parametros={`ano ${anoInteiro}`} aoTentarDeNovo={recarregar} />
+                <EstadoConsulta status={status} erro={erro} temDados={Boolean(dados)} parametros={`ano ${anoInteiro}, ${local.nome}`} aoTentarDeNovo={recarregar} />
               )}
             </div>
           )}
@@ -101,7 +107,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao 
             ))}
           </div>
           <div className="pf">
-            <span>Fonte: {dados?.fonte ?? 'POF e IBGE'}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
+            <span>Fonte: {dados?.fonte ?? 'POF e IBGE'}, {local.nome}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
           </div>
         </section>
         <section className="pan" aria-labelledby="h-rows">

@@ -25,10 +25,10 @@ const props = () => ({
 describe('api da estrutura etária', () => {
   it('monta as URLs dos dois endpoints', async () => {
     const fetcher = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) })
-    await buscarPiramides({ fetcher, base: 'http://api' })
+    await buscarPiramides({ localidade: 'Sul' }, { fetcher, base: 'http://api' })
     await buscarConsumoChefe({ arranjo: 'todos' }, { fetcher, base: 'http://api' })
     expect(fetcher.mock.calls.map((c) => c[0])).toEqual([
-      'http://api/estrutura-etaria/piramides',
+      'http://api/estrutura-etaria/piramides?localidade=Sul',
       'http://api/estrutura-etaria/consumo-chefe?arranjo=todos',
     ])
   })
@@ -65,7 +65,7 @@ describe('EstruturaEtaria', () => {
     render(<EstruturaEtaria ano={2070} {...p} />)
     await screen.findByText('1.817')
     fireEvent.click(screen.getByRole('button', { name: 'Multipessoal' }))
-    await waitFor(() => expect(p.buscarConsumo).toHaveBeenLastCalledWith({ arranjo: 'multipessoal' }, expect.anything()))
+    await waitFor(() => expect(p.buscarConsumo).toHaveBeenLastCalledWith({ arranjo: 'multipessoal', localidade: 'Brasil' }, expect.anything()))
     expect(p.buscarPir).toHaveBeenCalledTimes(1)
   })
 

@@ -45,7 +45,10 @@ describe('Simulador', () => {
     const buscar = buscarOk()
     render(<Simulador buscar={buscar} />)
     expect(await screen.findByText('115,7 kWh/mês por pessoa')).toBeInTheDocument()
-    expect(buscar).toHaveBeenCalledWith({ ano: 2070, faixa: '70_79', arranjo: 'unipessoal', base: 'ibge', taxa: 1.7 }, expect.anything())
+    expect(buscar).toHaveBeenCalledWith(
+      { ano: 2070, faixa: '70_79', arranjo: 'unipessoal', base: 'ibge', taxa: 1.7, localidade: 'Brasil' },
+      expect.anything(),
+    )
     expect(screen.getByText(/média de 1.218 domicílios/)).toBeInTheDocument()
   })
 

@@ -4,6 +4,19 @@ A documentação interativa é gerada pelo código (RNF09): rode a API e abra
 `http://localhost:8000/docs`. Todos os endpoints são `GET`, validam os parâmetros
 (422 quando inválidos) e respondem 503 quando o banco não responde.
 
+## Filtro de localidade (todos os endpoints de dados)
+
+Todos os endpoints abaixo, menos `/fontes` e `/localidades`, aceitam o parâmetro
+opcional `localidade`: `Brasil` (padrão), uma região (`Norte`, `Nordeste`,
+`Centro-Oeste`, `Sudeste`, `Sul`) ou a sigla de uma UF (`DF`, `SP`...). O cálculo usa
+só os domicílios da POF da localidade e a projeção populacional do IBGE da mesma
+localidade. Toda resposta devolve o campo `localidade`.
+
+## `GET /localidades`
+
+Regiões e os estados de cada uma, para montar os filtros:
+`{ "padrao": "Brasil", "regioes": [ { "nome": "Norte", "estados": [ {"sigla": "AC", "nome": "Acre"} ] } ] }`.
+
 ## `GET /projecoes` (RF01, RF11)
 
 | Parâmetro | Regra |
@@ -16,10 +29,12 @@ A documentação interativa é gerada pelo código (RNF09): rode a API e abra
   "cenarios": [ {"id":"mod","valor":null}, {"id":"ibge","valor":94.4},
                 {"id":"alt","valor":null} ],
   "dados_ilustrativos": false,
-  "fonte": "POF 2017 a 2018 e Projeções da População (IBGE)" }
+  "fonte": "POF 2017 a 2018 e Projeções da População (IBGE)",
+  "localidade": "Brasil", "domicilios_amostra": 9120 }
 ```
 
-- `ibge`: TBC padronizada (premissas P2 e P6).
+- `ibge`: TBC padronizada (premissas P2 e P6); `null` se alguma faixa do recorte não tiver domicílio na amostra da localidade.
+- `domicilios_amostra`: domicílios da POF no recorte e na localidade.
 - `mod` e `alt`: `null` até a formulação ser definida.
 
 ## `GET /projecoes/serie` (RF01, RF11)

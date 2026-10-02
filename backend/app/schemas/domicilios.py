@@ -27,6 +27,7 @@ class ArranjosResposta(BaseModel):
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     arranjos: list[ArranjoConsumo]
     fonte: str = FONTE
+    localidade: str = "Brasil"
 
 
 FONTE_COMPOSICAO = (
@@ -49,3 +50,4 @@ class ComposicaoResposta(BaseModel):
     anos: list[int]
     categorias: list[CategoriaComposicao]
     fonte: str = FONTE_COMPOSICAO
+    localidade: str = "Brasil"

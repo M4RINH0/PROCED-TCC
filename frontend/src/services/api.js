@@ -2,41 +2,46 @@
 import { apiGet } from './http.js'
 
 /* Panorama: GET /projecoes/serie?recorte= (RF01, RF11) */
-export function buscarSerie({ recorte }, opcoes) {
-  return apiGet('/projecoes/serie', { recorte }, opcoes)
+export function buscarSerie({ recorte, localidade }, opcoes) {
+  return apiGet('/projecoes/serie', { recorte, localidade }, opcoes)
 }
 
 /* Gaveta API: GET /projecoes?ano=&recorte= (RF11) */
-export function buscarProjecao({ ano, recorte }, opcoes) {
-  return apiGet('/projecoes', { ano, recorte }, opcoes)
+export function buscarProjecao({ ano, recorte, localidade }, opcoes) {
+  return apiGet('/projecoes', { ano, recorte, localidade }, opcoes)
 }
 
 /* Domicílios: GET /arranjos?grupo= (RF03, RF04) */
-export function buscarArranjos({ grupo }, opcoes) {
-  return apiGet('/arranjos', { grupo }, opcoes)
+export function buscarArranjos({ grupo, localidade }, opcoes) {
+  return apiGet('/arranjos', { grupo, localidade }, opcoes)
 }
 
 /* Domicílios: GET /arranjos/composicao, participação de cada arranjo de 2026 a 2070 */
-export function buscarComposicao(opcoes) {
-  return apiGet('/arranjos/composicao', {}, opcoes)
+export function buscarComposicao({ localidade }, opcoes) {
+  return apiGet('/arranjos/composicao', { localidade }, opcoes)
 }
 
 /* Estrutura etária: GET /estrutura-etaria/piramides, uma pirâmide por ano de 2026 a 2070 (RF05) */
-export function buscarPiramides(opcoes) {
-  return apiGet('/estrutura-etaria/piramides', {}, opcoes)
+export function buscarPiramides({ localidade }, opcoes) {
+  return apiGet('/estrutura-etaria/piramides', { localidade }, opcoes)
 }
 
 /* Estrutura etária: GET /estrutura-etaria/consumo-chefe?arranjo= (RF05, RF06) */
-export function buscarConsumoChefe({ arranjo }, opcoes) {
-  return apiGet('/estrutura-etaria/consumo-chefe', { arranjo }, opcoes)
+export function buscarConsumoChefe({ arranjo, localidade }, opcoes) {
+  return apiGet('/estrutura-etaria/consumo-chefe', { arranjo, localidade }, opcoes)
 }
 
 /* Simulador: GET /simulador?ano=&faixa=&arranjo=&base=&taxa= (RF07) */
-export function buscarSimulacao({ ano, faixa, arranjo, base, taxa }, opcoes) {
-  return apiGet('/simulador', { ano, faixa, arranjo, base, taxa }, opcoes)
+export function buscarSimulacao({ ano, faixa, arranjo, base, taxa, localidade }, opcoes) {
+  return apiGet('/simulador', { ano, faixa, arranjo, base, taxa, localidade }, opcoes)
 }
 
 /* Gaveta Fontes: GET /fontes (RF10) */
 export function buscarFontes(opcoes) {
   return apiGet('/fontes', {}, opcoes)
+}
+
+/* Filtros: GET /localidades, regiões e estados de cada uma */
+export function buscarLocalidades(opcoes) {
+  return apiGet('/localidades', {}, opcoes)
 }

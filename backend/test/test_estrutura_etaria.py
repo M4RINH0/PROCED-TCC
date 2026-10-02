@@ -12,10 +12,10 @@ POR_SEXO = {"Homem": {5: 10, 65: 30}, "Mulher": {5: 20, 90: 40}}
 
 
 class RepositorioFalso:
-    def populacao_por_sexo(self, ano):
+    def populacao_por_sexo(self, ano, localidade="Brasil"):
         return POR_SEXO
 
-    def anos_piramide(self):
+    def anos_piramide(self, localidade="Brasil"):
         return [2026, 2070]
 
 
@@ -29,7 +29,7 @@ class RepositorioProjecoesFalso:
             SimpleNamespace(arranjo="Multipessoal (3+)", idade_chefe=65, consumo_per_capita_kwh=999.0),
         ]
 
-    def populacao_por_idade(self):
+    def populacao_por_idade(self, localidade="Brasil"):
         return {}
 
 

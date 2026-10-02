@@ -53,3 +53,4 @@ class SimulacaoResposta(BaseModel):
     por_faixa: list[FaixaConsumo]
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     fonte: str = FONTE
+    localidade: str = "Brasil"

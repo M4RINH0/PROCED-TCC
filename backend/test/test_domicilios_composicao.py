@@ -23,7 +23,7 @@ class RepositorioFalso:
     def domicilios(self):
         return DOMICILIOS
 
-    def populacao_por_idade(self):
+    def populacao_por_idade(self, localidade="Brasil"):
         return POPULACAO
 
 

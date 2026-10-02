@@ -5,31 +5,34 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from app.dados import Dados, obter_dados
-from app.dominio import ANO_FINAL, ANO_INICIAL, FiltroArranjo
+from app.dominio import ANO_FINAL, ANO_INICIAL, FiltroArranjo, Localidade
 from app.schemas.estrutura_etaria import ConsumoChefeResposta, PiramideResposta, PiramidesResposta
 from app.services.estrutura_etaria import obter_consumo_chefe, obter_piramide, obter_piramides
 
 router = APIRouter(prefix="/estrutura-etaria", tags=["estrutura etária"])
 
 DadosDep = Annotated[Dados, Depends(obter_dados)]
+ParamLocalidade = Annotated[Localidade, Query(description="Brasil, região ou sigla da UF")]
 
 
-@router.get("/piramide", response_model=PiramideResposta, summary="Pirâmide etária do Brasil num ano")
+@router.get("/piramide", response_model=PiramideResposta, summary="Pirâmide etária da localidade num ano")
 def consultar_piramide(
     ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
     dados: DadosDep,
+    localidade: ParamLocalidade = Localidade.Brasil,
 ) -> PiramideResposta:
-    return obter_piramide(ano, dados)
+    return obter_piramide(ano, dados, localidade.value)
 
 
-@router.get("/piramides", response_model=PiramidesResposta, summary="Pirâmides etárias do Brasil, 2026 a 2070")
-def consultar_piramides(dados: DadosDep) -> PiramidesResposta:
-    return obter_piramides(dados)
+@router.get("/piramides", response_model=PiramidesResposta, summary="Pirâmides etárias da localidade, 2026 a 2070")
+def consultar_piramides(dados: DadosDep, localidade: ParamLocalidade = Localidade.Brasil) -> PiramidesResposta:
+    return obter_piramides(dados, localidade.value)
 
 
 @router.get("/consumo-chefe", response_model=ConsumoChefeResposta, summary="Consumo por faixa etária do chefe")
 def consultar_consumo_chefe(
     dados: DadosDep,
     arranjo: Annotated[FiltroArranjo, Query()] = FiltroArranjo.mononucleares,
+    localidade: ParamLocalidade = Localidade.Brasil,
 ) -> ConsumoChefeResposta:
-    return obter_consumo_chefe(arranjo, dados)
+    return obter_consumo_chefe(arranjo, dados, localidade.value)

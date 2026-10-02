@@ -31,6 +31,8 @@ class ProjecaoResposta(BaseModel):
     cenarios: list[Cenario]
     dados_ilustrativos: bool
     fonte: str = FONTE
+    localidade: str = "Brasil"
+    domicilios_amostra: int = Field(default=0, description="domicílios da POF no recorte e na localidade")
 
 
 class PontoSerie(BaseModel):
@@ -47,3 +49,5 @@ class SerieResposta(BaseModel):
     pontos: list[PontoSerie]
     dados_ilustrativos: bool
     fonte: str = FONTE
+    localidade: str = "Brasil"
+    domicilios_amostra: int = Field(default=0, description="domicílios da POF no recorte e na localidade")

@@ -8,7 +8,7 @@ class ClienteFalso:
     def selecionar(self, tabela, colunas, filtros=None):
         self.chamadas.append((tabela, colunas, filtros))
         if tabela == "fato_consumo_domiciliar":
-            return [{"arranjo_familiar": "Casal ou Dupla", "idade_chefe": 70, "consumo_per_capita_kwh": 92.5}]
+            return [{"sigla_uf": "DF", "arranjo_familiar": "Casal ou Dupla", "idade_chefe": 70, "consumo_per_capita_kwh": 92.5}]
         return [
             {"ano": 2018, "idade": 60, "populacao": 10},
             {"ano": 2018, "idade": 61, "populacao": 20},
@@ -18,7 +18,7 @@ class ClienteFalso:
 
 def test_converte_linhas_de_domicilio():
     repo = Dados(ClienteFalso())
-    assert repo.domicilios() == [Domicilio("Casal ou Dupla", 70, 92.5)]
+    assert repo.domicilios() == [Domicilio("Casal ou Dupla", 70, 92.5, "DF")]
 
 
 def test_agrupa_populacao_por_ano_e_idade_do_brasil_ambos_os_sexos():

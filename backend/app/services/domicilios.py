@@ -9,11 +9,14 @@ from app.dominio import (
     ANO_FINAL,
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
+    BRASIL,
     CASAL_OU_DUPLA,
     FAIXAS_CHEFE,
     MULTIPESSOAL,
     UNIPESSOAL,
+    da_localidade,
     populacao_da_faixa,
+    ufs_da_localidade,
 )
 from app.schemas.domicilios import ArranjoConsumo, ArranjosResposta, CategoriaComposicao, ComposicaoResposta, Grupo
 
@@ -65,8 +68,10 @@ def agregar(linhas: list[dict], grupo: Grupo) -> list[ArranjoConsumo]:
     return resultado
 
 
-def obter_arranjos(grupo: Grupo, dados) -> ArranjosResposta:
-    return ArranjosResposta(grupo=grupo, arranjos=agregar(dados.coeficientes(), grupo))
+def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosResposta:
+    ufs = ufs_da_localidade(localidade)
+    linhas = [l for l in dados.coeficientes() if ufs is None or l["sigla_uf"] in ufs]
+    return ArranjosResposta(grupo=grupo, arranjos=agregar(linhas, grupo), localidade=localidade)
 
 
 # ---------- composição dos domicílios no tempo ----------
@@ -170,5 +175,7 @@ def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
     return ComposicaoResposta(anos=anos, categorias=categorias)
 
 
-def obter_composicao(dados) -> ComposicaoResposta:
-    return montar_composicao(EstruturaDomicilios(dados.domicilios(), dados.populacao_por_idade()))
+def obter_composicao(dados, localidade: str = BRASIL) -> ComposicaoResposta:
+    domicilios = da_localidade(dados.domicilios(), localidade)
+    resposta = montar_composicao(EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade)))
+    return resposta.model_copy(update={"localidade": localidade})

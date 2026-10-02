@@ -32,8 +32,8 @@ describe('api de arranjos', () => {
   it('monta as URLs', async () => {
     const fetcher = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) })
     await buscarArranjos({ grupo: 'abaixo_60' }, { fetcher, base: 'http://api' })
-    await buscarComposicao({ fetcher, base: 'http://api' })
-    expect(fetcher.mock.calls.map((c) => c[0])).toEqual(['http://api/arranjos?grupo=abaixo_60', 'http://api/arranjos/composicao'])
+    await buscarComposicao({ localidade: 'DF' }, { fetcher, base: 'http://api' })
+    expect(fetcher.mock.calls.map((c) => c[0])).toEqual(['http://api/arranjos?grupo=abaixo_60', 'http://api/arranjos/composicao?localidade=DF'])
   })
 })
 

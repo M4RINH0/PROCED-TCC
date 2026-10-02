@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from app.dados import Dados, obter_dados
-from app.dominio import ANO_FINAL, ANO_INICIAL
+from app.dominio import ANO_FINAL, ANO_INICIAL, Localidade
 from app.schemas.simulador import ArranjoSim, BaseSim, FaixaSim, SimulacaoResposta
 from app.services.simulador import simular
 
@@ -20,5 +20,6 @@ def consultar_simulacao(
     base: Annotated[BaseSim, Query(description="Cenário de projeção")],
     dados: Annotated[Dados, Depends(obter_dados)],
     taxa: Annotated[float | None, Query(ge=0, le=10, description="Taxa de envelhecimento anual; usada pelo cenário do modelo")] = None,
+    localidade: Annotated[Localidade, Query(description="Brasil, região ou sigla da UF")] = Localidade.Brasil,
 ) -> SimulacaoResposta:
-    return simular(ano, faixa, arranjo, base, taxa, dados)
+    return simular(ano, faixa, arranjo, base, taxa, dados, localidade.value)

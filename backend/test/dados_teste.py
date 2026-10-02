@@ -36,5 +36,5 @@ class RepositorioFalso:
     def domicilios(self):
         return self._d
 
-    def populacao_por_idade(self):
+    def populacao_por_idade(self, localidade="Brasil"):
         return self._p

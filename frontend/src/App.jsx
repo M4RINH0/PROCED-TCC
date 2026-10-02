@@ -3,9 +3,12 @@ import Gaveta from './components/Gaveta.jsx'
 import Icone from './components/Icone.jsx'
 import LinhaDoTempo, { ANO_FINAL, ANO_INICIAL } from './components/LinhaDoTempo.jsx'
 import MenuDemonstracao from './components/MenuDemonstracao.jsx'
+import { useConsulta } from './hooks/useConsulta.js'
 import { useRotaHash } from './hooks/useRotaHash.js'
 import { ROTAS } from './rotas.js'
+import { buscarLocalidades } from './services/api.js'
 import { definirFalhaSimulada } from './services/http.js'
+import { BRASIL, nomeDaLocalidade } from './utils/localidades.js'
 import { lerTema, salvarTema, temaEfetivo } from './utils/tema.js'
 
 const prefereEscuro = () => globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
@@ -19,6 +22,8 @@ export default function App() {
   const [falha, setFalha] = useState(false)
   const [recarga, setRecarga] = useState(0)
   const [aviso, setAviso] = useState('')
+  const [localidade, setLocalidade] = useState(BRASIL)
+  const listaLocalidades = useConsulta((o) => buscarLocalidades(o), [])
   const temporizador = useRef(0)
   const atual = ROTAS.find((r) => r.id === rota)
 
@@ -60,6 +65,9 @@ export default function App() {
     setRecarga((r) => r + 1)
     avisar(nova ? 'Falha de conexão simulada' : 'Conexão restabelecida')
   }
+
+  const regioes = listaLocalidades.dados?.regioes ?? []
+  const local = { valor: localidade, nome: nomeDaLocalidade(regioes, localidade), regioes, aoMudar: setLocalidade }
 
   const escuro = tema === 'dark'
   return (
@@ -113,10 +121,11 @@ export default function App() {
           aoMudarAno={setAno}
           abrirGaveta={setGaveta}
           avisar={avisar}
+          local={local}
         />
       </main>
       <LinhaDoTempo ano={ano} aoMudarAno={setAno} oculta={!atual.linhaDoTempo} />
-      {gaveta && <Gaveta tipo={gaveta} ano={ano} aoFechar={() => setGaveta(null)} avisar={avisar} />}
+      {gaveta && <Gaveta tipo={gaveta} ano={ano} localidade={localidade} aoFechar={() => setGaveta(null)} avisar={avisar} />}
       <div className={aviso ? 'toast on' : 'toast'} role="status" aria-live="polite">
         {aviso}
       </div>

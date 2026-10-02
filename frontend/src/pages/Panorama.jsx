@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
+import FiltroLocal from '../components/FiltroLocal.jsx'
 import GraficoSerie from '../components/GraficoSerie.jsx'
 import Icone from '../components/Icone.jsx'
 import LeituraAno from '../components/LeituraAno.jsx'
@@ -8,7 +9,10 @@ import { buscarSerie } from '../services/api.js'
 import { comSinal, umaCasa } from '../utils/formato.js'
 import { RECORTES, SERIES, valoresDoCenario } from '../utils/series.js'
 
-function frase(ponto, ano) {
+
+const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+
+function frase(ponto, ano, nome) {
   const ibge = ponto?.cenarios.find((c) => c.id === 'ibge')
   if (!ibge || ibge.valor === null) {
     return (
@@ -19,17 +23,17 @@ function frase(ponto, ano) {
   }
   return (
     <>
-      Em <b>{ano}</b>, a projeção oficial é de <b>{umaCasa(ibge.valor)} kWh/mês por pessoa</b> nos domicílios do recorte
+      Em <b>{ano}</b>, a projeção oficial é de <b>{umaCasa(ibge.valor)} kWh/mês por pessoa</b> nos domicílios do recorte ({nome})
       {ibge.variacao_pct !== null && ibge.variacao_pct !== undefined && <>, {comSinal(ibge.variacao_pct)}% em relação a 2026</>}.
       O cenário do modelo ainda não foi formulado.
     </>
   )
 }
 
-export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = () => {}, avisar = () => {}, buscar = buscarSerie }) {
+export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = () => {}, avisar = () => {}, buscar = buscarSerie, local = LOCAL_PADRAO }) {
   const [recorte, setRecorte] = useState(RECORTES[0].id)
   const [visiveis, setVisiveis] = useState({ mod: true, ibge: true, alt: true })
-  const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ recorte }, o), [recorte, versao])
+  const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ recorte, localidade: local.valor }, o), [recorte, local.valor, versao])
   const anoInteiro = Math.round(ano)
   const rotuloRecorte = RECORTES.find((r) => r.id === recorte).rotulo
 
@@ -56,13 +60,16 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
               ? 'Dados indisponíveis no momento. Os controles continuam ativos e serão aplicados quando a conexão voltar.'
               : carregando
                 ? 'Carregando dados…'
-                : frase(ponto, anoInteiro)}
+                : frase(ponto, anoInteiro, local.nome)}
           </p>
         </div>
-        <span className="rec">
-          <Icone nome="target" />
-          Recorte: domicílio mononuclear (unipessoal e casal), chefe {recorte === 'chefe_60_mais' ? 'com 60 anos ou mais' : 'abaixo de 60 anos'}
-        </span>
+        <div className="vh-lado">
+          <FiltroLocal local={local} />
+          <span className="rec">
+            <Icone nome="target" />
+            Recorte: domicílio mononuclear (unipessoal e casal), chefe {recorte === 'chefe_60_mais' ? 'com 60 anos ou mais' : 'abaixo de 60 anos'}
+          </span>
+        </div>
       </div>
       <div className="body g-pan">
         <section className="pan" aria-labelledby="h-pan">
@@ -100,13 +107,18 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
                 status={status}
                 erro={erro}
                 temDados={Boolean(dados)}
-                parametros={`ano ${anoInteiro}, grupo ${rotuloRecorte}`}
+                parametros={`ano ${anoInteiro}, grupo ${rotuloRecorte}, ${local.nome}`}
                 aoTentarDeNovo={recarregar}
               />
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {dados?.fonte ?? 'POF e IBGE'}. Linha cheia até o ano selecionado; esmaecida depois dele.</span>
+            <span>
+              Fonte: {dados?.fonte ?? 'POF e IBGE'}, {local.nome}.
+              {typeof dados?.domicilios_amostra === 'number' &&
+                ` Amostra da POF: ${dados.domicilios_amostra.toLocaleString('pt-BR')} domicílios no recorte.`} Linha cheia até o ano
+              selecionado; esmaecida depois dele.
+            </span>
             <button type="button" className="lnk" onClick={() => abrirGaveta('fontes')}>
               Ver fontes
             </button>

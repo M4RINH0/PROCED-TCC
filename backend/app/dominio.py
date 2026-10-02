@@ -76,3 +76,48 @@ def da_faixa(domicilios: Iterable, faixa: Faixa) -> list:
 
 def populacao_da_faixa(populacao_do_ano: dict[int, int], faixa: Faixa) -> int:
     return sum(p for idade, p in populacao_do_ano.items() if faixa.contem(idade))
+
+
+# ---------- localidades: Brasil, regiões e UFs (mesmos nomes da tabela de projeção) ----------
+
+BRASIL = "Brasil"
+
+REGIOES = {
+    "Norte": ("AC", "AM", "AP", "PA", "RO", "RR", "TO"),
+    "Nordeste": ("AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"),
+    "Centro-Oeste": ("DF", "GO", "MS", "MT"),
+    "Sudeste": ("ES", "MG", "RJ", "SP"),
+    "Sul": ("PR", "RS", "SC"),
+}
+
+NOMES_UF = {
+    "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá", "BA": "Bahia", "CE": "Ceará",
+    "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás", "MA": "Maranhão", "MG": "Minas Gerais",
+    "MS": "Mato Grosso do Sul", "MT": "Mato Grosso", "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco",
+    "PI": "Piauí", "PR": "Paraná", "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RO": "Rondônia",
+    "RR": "Roraima", "RS": "Rio Grande do Sul", "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo",
+    "TO": "Tocantins",
+}
+
+Localidade = Enum(
+    "Localidade",
+    {nome.replace("-", "_"): nome for nome in (BRASIL, *REGIOES, *NOMES_UF)},
+    type=str,
+)
+
+
+def ufs_da_localidade(localidade: str) -> set[str] | None:
+    """UFs que compõem a localidade; None para o Brasil inteiro (sem filtro)."""
+    if localidade == BRASIL:
+        return None
+    if localidade in REGIOES:
+        return set(REGIOES[localidade])
+    if localidade in NOMES_UF:
+        return {localidade}
+    raise ValueError(f"localidade desconhecida: {localidade}")
+
+
+def da_localidade(domicilios: Iterable, localidade: str) -> list:
+    """Domicílios da POF que pertencem à localidade."""
+    ufs = ufs_da_localidade(localidade)
+    return list(domicilios) if ufs is None else [d for d in domicilios if d.uf in ufs]

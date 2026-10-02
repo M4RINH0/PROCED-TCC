@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import FiltroLocal from '../components/FiltroLocal.jsx'
 import Icone from '../components/Icone.jsx'
 import Odometro from '../components/Odometro.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
@@ -65,14 +66,16 @@ function HistoricoFaixas({ porFaixa, faixa }) {
   )
 }
 
-export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao }) {
+const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+
+export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao, local = LOCAL_PADRAO }) {
   const [form, setForm] = useState(PADRAO)
   const taxa = lerTaxa(form.taxa)
   const valido = taxa !== null
-  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, taxa }
+  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, taxa, localidade: local.valor }
   const { status, dados, erro, recarregar } = useConsulta(
     (o) => (valido ? buscar(params, o) : Promise.resolve(null)),
-    [form.ano, form.faixa, form.arranjo, form.base, taxa, versao],
+    [form.ano, form.faixa, form.arranjo, form.base, taxa, local.valor, versao],
   )
   const mudar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
 
@@ -155,6 +158,9 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
         <div>
           <h1>Simulador de cenário</h1>
           <p>Combine os parâmetros para obter o consumo projetado de um tipo de domicílio num ano específico.</p>
+        </div>
+        <div className="vh-lado">
+          <FiltroLocal local={local} />
         </div>
       </div>
       <div className="body g-sim">
@@ -249,7 +255,7 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
           <div className="bill">
             <div className="bill-h">
               <b id="h-bill">Demonstrativo de consumo projetado</b>
-              <span>POF 2017 a 2018 e IBGE</span>
+              <span>POF 2017 a 2018 e IBGE, {local.nome}</span>
             </div>
             <dl className="bill-kv">
               {[

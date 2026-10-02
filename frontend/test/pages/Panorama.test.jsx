@@ -7,6 +7,8 @@ const serie = (recorte) => ({
   unidade: 'kWh/mes/pessoa',
   fonte: 'POF 2017 a 2018 e Projeções da População (IBGE)',
   dados_ilustrativos: false,
+  localidade: 'Brasil',
+  domicilios_amostra: 9120,
   pontos: Array.from({ length: 45 }, (_, i) => {
     const ano = 2026 + i
     const valor = recorte === 'chefe_60_mais' ? 94.3 : 89.1
@@ -32,7 +34,8 @@ describe('Panorama', () => {
     render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscar} />)
     expect(screen.getByLabelText('Carregando dados')).toBeInTheDocument()
     expect(await within(await screen.findByTestId('reg-ibge')).findByText('94,3 kWh/mês')).toBeInTheDocument()
-    expect(buscar).toHaveBeenCalledWith({ recorte: 'chefe_60_mais' }, expect.anything())
+    expect(buscar).toHaveBeenCalledWith({ recorte: 'chefe_60_mais', localidade: 'Brasil' }, expect.anything())
+    expect(screen.getByText(/Amostra da POF: 9.120 domicílios no recorte/)).toBeInTheDocument()
     expect(screen.getByText(/Fonte: POF 2017 a 2018/)).toBeInTheDocument()
     expect(screen.getByText(/a projeção oficial é de/)).toBeInTheDocument()
   })
@@ -54,7 +57,7 @@ describe('Panorama', () => {
     await screen.findByTestId('linha-ibge')
     fireEvent.click(screen.getByRole('button', { name: 'Abaixo de 60' }))
     await waitFor(() => expect(within(screen.getByTestId('reg-ibge')).getByText('89,1 kWh/mês')).toBeInTheDocument())
-    expect(buscar).toHaveBeenLastCalledWith({ recorte: 'mononuclear_abaixo_60' }, expect.anything())
+    expect(buscar).toHaveBeenLastCalledWith({ recorte: 'mononuclear_abaixo_60', localidade: 'Brasil' }, expect.anything())
   })
 
   it('não deixa esconder a última série visível', async () => {
@@ -86,5 +89,14 @@ describe('Panorama', () => {
     render(<Panorama ano={2050} aoMudarAno={() => {}} abrirGaveta={abrirGaveta} buscar={buscarOk()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Ver fontes' }))
     expect(abrirGaveta).toHaveBeenCalledWith('fontes')
+  })
+
+  it('consulta a localidade escolhida e mostra o nome dela', async () => {
+    const buscar = buscarOk()
+    const local = { valor: 'DF', nome: 'Distrito Federal', regioes: [], aoMudar: () => {} }
+    render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscar} local={local} />)
+    await screen.findByTestId('linha-ibge')
+    expect(buscar).toHaveBeenCalledWith({ recorte: 'chefe_60_mais', localidade: 'DF' }, expect.anything())
+    expect(screen.getByText(/nos domicílios do recorte \(Distrito Federal\)/)).toBeInTheDocument()
   })
 })
