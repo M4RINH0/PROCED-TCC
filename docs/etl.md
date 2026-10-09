@@ -17,6 +17,7 @@ O processo foi executado inteiramente no Google BigQuery, utilizando a técnica 
 - **Filtragem Hierárquica:**
   - Filtramos apenas a Pessoa de Referência (`V0306 IN ('01', '1')`) para garantir que cada domicílio fosse contabilizado apenas uma vez.
   - Realizamos o `JOIN` entre as tabelas usando a chave composta `id_domicilio`.
+- **Inclusão de Pesos Amostrais:** Extraímos a variável `peso_final` (da tabela `morador_2017`) e a incorporamos à tabela. O peso amostral é fundamental para corrigir os vieses da amostra e garantir que as médias reflitam o cenário real da população brasileira.
 - **Tratamento de Dados:** Aplicamos `TRIM()` nos IDs para evitar erros de espaços em branco e `SAFE_CAST` para garantir que valores não numéricos fossem tratados como nulos em vez de interromper a query.
 
 ### Fase 2: Cálculo de Coeficientes de Consumo
@@ -62,8 +63,11 @@ Para replicar este processo, siga os passos abaixo no seu Console do Google Clou
 
 Atenção! Os scripts estão localizados na pasta [scripts](./scripts).
 
-## 4. Descrição da Tabela Final (`censo_2022_consumo_estimado`)
+## 4. Resumo e Função das Tabelas Geradas
 
-Esta tabela representa o "Ano Base" da sua pesquisa. Ela consolida quanto de energia cada estado brasileiro consumiu em 2022 sob a ótica residencial, dividindo esse consumo entre o bloco populacional idoso e o não idoso.
+O processo de ETL resulta em quatro tabelas principais disponibilizadas no banco, cada uma com um papel específico no sistema:
 
-**Utilidade para a IA:** Os dados desta tabela servirão como os "Tensores de Entrada" (Features). O modelo de IA aprenderá a relação entre o aumento da `proporcao_idosos_2022` e o desvio no `consumo_residencial_total_2022_kwh` para projetar os anos de 2026 a 2075.
+1. **`fato_consumo_domiciliar`:** Tabela base (nível microdado) gerada a partir da POF. Sua função é armazenar o perfil de cada domicílio amostrado (arranjo familiar, presença de idosos, consumos e o `peso_final`). É a matéria-prima para os cálculos estatísticos e para a expansão amostral.
+2. **`dim_coeficientes_consumo`:** Tabela de suporte. Sua função é consolidar as médias históricas (ex: média de consumo kWh) agrupadas por perfil e Unidade da Federação. Ela dita os "pesos" que serão aplicados sobre as populações.
+3. **`censo_2022_consumo_estimado`:** Tabela que representa o "Ano Base". Ela consolida as populações reais do Censo e estima quanto de energia cada estado consumiu em 2022 (separado por grupo etário). Seus dados servem como tensores de entrada (*Features*) para calibrar as projeções da IA para os próximos anos.
+4. **`projecoes_populacao_idade`:** Originada via processamento Python (planilha IBGE). Sua função é alimentar o motor de cálculo com as populações projetadas do Brasil até 2070. Ao cruzar essa projeção com a `dim_coeficientes_consumo`, o sistema consegue simular as tendências do consumo residencial nacional a longo prazo.
