@@ -37,10 +37,25 @@ Essas regras estão em `backend/etl/derivacao.py`.
    casal de idosos = dois moradores com chefe de 60 anos ou mais (premissa P1).
    Há 5.705 domicílios assim na amostra.
 
-## Pendências
+## Pendências Resolvidas
 
-- **Unidade da POF:** o banco tem kWh e R$; falta documentar como o kWh foi obtido.
-- **Origem da carga:** o código que gerou as tabelas não está no repositório (RNF08).
-- **Pesos amostrais:** a tabela não traz o peso da POF (premissa P3).
+### 1. Unidade da POF: Obtenção do kWh
+A variável de consumo em kWh foi obtida diretamente dos microdados da POF 2017-2018, especificamente da tabela de Despesa Coletiva.
+- **Fonte Original:** Tabela `basedosdados.br_ibge_pof.despesa_coletiva_2017`.
+- **Variável de Consumo:** Coluna `V9005`. Esta variável armazena a "Quantidade final consumida em kWh", mas sua coleta pelo IBGE ocorre apenas para o item de Energia Elétrica.
+- **Filtro de Item:** O dado de kWh só é válido e populado quando o código do item (`V9001`) corresponde a `600101` (conforme identificado no dicionário de produtos da POF).
+- **Metodologia de Extração:** A ETL realiza um `SAFE_CAST(V9005 AS FLOAT64)` para tratar os dados. Nos casos onde o domicílio reportou o gasto financeiro (`V8000_deflacionado`), mas o campo `V9005` estava nulo, a coluna de kWh foi mantida em branco para garantir a integridade dos dados reais, evitando imputações arbitrárias na camada de microdados.
+
+### 2. Origem da Carga (RNF08)
+Para atender ao requisito RNF08, o código SQL utilizado para gerar a tabela fato (`fato_consumo_domiciliar`) foi versionado no repositório através do script `CREATE-pof.sql` (localizado na pasta `scripts/`).
+
+### 3. Pesos Amostrais (Premissa P3)
+Para cumprir a Premissa P3, a tabela `fato_consumo_domiciliar` foi atualizada para incluir o peso do plano amostral da POF.
+- **Variável Utilizada:** `peso_final` da tabela `morador_2017`.
+- **Importância:** Este peso é fundamental para que as médias de consumo calculadas (kWh por tipo de arranjo) não sejam apenas aritméticas, mas representativas da população brasileira.
+- **Aplicação:** Ao realizar a projeção para 2075, as análises de "Consumo Médio" devem utilizar o peso para corrigir o viés da amostra, garantindo que o impacto do envelhecimento seja expandido corretamente para o universo total de domicílios do Brasil.
+
+## Pendências Restantes
+
 - **Protótipo:** `prototipo/proced.html` ainda mostra 7 arranjos e a fronteira de 2060;
   é só referência visual.

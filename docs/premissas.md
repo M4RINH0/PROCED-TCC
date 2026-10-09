@@ -13,5 +13,16 @@ Toda premissa adotada onde faltar dado entra aqui, com fonte citável.
 | P7 | Em uma região ou UF, a TEC vem só dos domicílios da POF daquela localidade e a taxa de chefia usa a projeção do IBGE da mesma localidade. As amostras ficam pequenas (o Amapá tem 3 domicílios na faixa de 80 anos ou mais), por isso as telas mostram o tamanho da amostra. | POF 2017 a 2018 e Projeções da População (IBGE) | Filtro de localidade em todas as páginas |
 
 Pendências de confirmação:
-- Como o `consumo_total_kwh` do banco foi obtido a partir da POF e se é mensal.
 - A formulação do cenário do modelo (`mod`), com a taxa de envelhecimento anual.
+
+### Pendências Resolvidas
+
+**1. Como o `consumo_total_kwh` do banco foi obtido e se é mensal:**
+
+*   **Origem do Dado (Extração):** O dado bruto provém da variável `V9005` da tabela `basedosdados.br_ibge_pof.despesa_coletiva_2017`.
+    *   **Filtro de Produto:** O BigQuery só popula esta coluna quando o código do item de despesa (`V9001`) é igual a `600101` (Energia Elétrica - kWh).
+    *   **Agregação:** Como um domicílio pode ter mais de uma Unidade de Consumo (UC) ou múltiplos registros de despesa no período, aplicamos um `SUM(V9005)` agrupado por `id_domicilio` para consolidar o consumo total daquela residência.
+*   **O consumo é mensal?** Sim, a métrica final na tabela é considerada mensal, mas com uma ressalva metodológica importante da POF:
+    *   A POF utiliza um período de referência para despesas coletivas (como luz, água e gás). No caso da energia elétrica, o informante geralmente apresenta a conta de luz mais recente.
+    *   Embora a coleta possa captar o consumo do mês anterior à entrevista, para fins de análise estatística e previsão (como o do TCC), esse valor é tratado como o gasto médio mensal típico daquele domicílio.
+    *   Na ETL, ao somar os registros e filtrar pela "Pessoa de Referência", garantimos que não houvesse sobreposição de meses, mantendo a escala mensal do dado original.
