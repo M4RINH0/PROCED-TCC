@@ -90,3 +90,27 @@ Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a parti
 5. Calibração (premissa P12): `consumo_total_calibrado_kwh_mes` = consumo por pessoa vezes a população do IBGE no ano. O consumo total bruto (`consumo_total_kwh_mes`) fica só como diagnóstico.
 6. Método de machine learning (`ml_rf` e `ml_gb`): validação cruzada, métricas (`metricas_modelos.json`) e importância das variáveis (`importancia_variaveis.csv`). A projeção por reponderação está pausada (`projetar_ml=False`).
 7. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.
+
+## 6. POFs anteriores: 2002 a 2003 e 2008 a 2009 (`fato_consumo_pof_historica`)
+
+Usadas só para estimar a tendência dos arranjos domiciliares por faixa etária do chefe (premissa P13). A `fato_consumo_domiciliar` (POF 2017 a 2018) não muda.
+
+**Origem.** Gerados a partir dos microdados oficiais do IBGE (`ftp.ibge.gov.br/Orcamentos_Familiares`), com as mesmas regras da POF 2017 a 2018:
+- consumo mensal em kWh, somado por domicílio;
+- quantidade final do IBGE, com a coluna `kwh_imputado` marcando as imputações;
+- chefe = pessoa de referência da unidade de consumo com maior idade (equivale à premissa P8);
+- arranjo pelo número de moradores (1, 2, 3 ou mais);
+- só domicílios com conta de luz; não há gasto em reais.
+
+| Edição | Item de energia elétrica | Peso | Domicílios |
+|---|---|---|---|
+| 2002 a 2003 | quadro 07, item 00202 | `fator` | 39.458 |
+| 2008 a 2009 | V9001 = 600201 | `PESO_FINAL` | 49.268 |
+| 2017 a 2018 | V9001 = 600101 | `peso_final` | 52.207 (52.102 depois da P8) |
+
+**Carga.** Os CSVs (`fato_consumo_domiciliar_pof2002.csv` e `fato_consumo_domiciliar_pof2008.csv`) ficam em `backend/etl/entrada/`, fora do git. A tabela é criada por `docs/scripts/CREATE-pof-historica.sql`, no editor SQL do Supabase, e carregada por `.venv/Scripts/python -m etl.historica` (na pasta `backend/`), que:
+1. confere colunas, contagens, chave única e as regras de derivação (arranjo, 60 anos ou mais, consumo per capita);
+2. grava todos os registros por upsert na chave (`ano_pof`, `id_domicilio`), em lotes de mil;
+3. confere o count no banco por edição.
+
+A carga leva todos os registros, inclusive os 240 (2002) e 88 (2008) domicílios fora da rede geral (`energia_rede_geral` falso). O filtro é aplicado no cálculo (P13).
