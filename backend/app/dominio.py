@@ -221,7 +221,10 @@ def populacao_total(populacao: dict[int, dict[int, int]]) -> dict[int, int]:
 
 # ---------- controles de simulação (RF02) e tendência dos arranjos (P13) ----------
 
-INTENSIDADE_PADRAO, INTENSIDADE_MINIMA, INTENSIDADE_MAXIMA = 1.0, 0.0, 1.5  # 0 = arranjos congelados
+# Intensidade padrão calibrada pela validação fora do tempo (P13): o mínimo do erro médio absoluto da
+# previsão de 2017 é 0,56, arredondado a 0,6; 0,5 e 1 ficam como faixa de sensibilidade.
+INTENSIDADE_PADRAO, INTENSIDADE_MINIMA, INTENSIDADE_MAXIMA = 0.6, 0.0, 1.5  # 0 congela os arranjos a partir de 2026
+INTENSIDADES_SENSIBILIDADE = (0.5, 1.0)
 K_PADRAO, K_MINIMO, K_MAXIMO = 1.0, 0.5, 1.5  # 1 = estrutura etária do IBGE
 GRUPO_0_11 = "0 a 11"  # quem não chefia domicílio; entra só no controle k, para a população fechar
 ANOS_MEDIOS_POF = {2002: 2002.5, 2008: 2008.5, 2017: 2017.5}
@@ -273,6 +276,7 @@ def montar_projecao(
     """Projeção do método das taxas a partir dos domicílios da POF (com peso) e da população por idade.
 
     `tendencia` são as inclinações nacionais (P13); sem ela, os arranjos ficam congelados.
+    De 2017,5 a 2026 vale sempre a intensidade padrão; `intensidade` só muda a evolução depois de 2026.
     `k` acelera ou freia o envelhecimento a partir de 2026, mantendo a população total do IBGE.
     Sem consumo total ou moradores informados (domicílios montados à mão nos testes),
     vale um morador e o consumo total igual ao per capita.
@@ -299,6 +303,7 @@ def montar_projecao(
         tendencia=tendencia,
         intensidade=intensidade,
         arranjos=ARRANJOS,
+        intensidade_ate_base=INTENSIDADE_PADRAO,  # de 2017,5 a 2026 vale sempre o padrão
     )
 
 

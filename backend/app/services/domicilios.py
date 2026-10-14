@@ -24,6 +24,9 @@ from app.dominio import (
     baixa_confiabilidade,
     celula_do_domicilio,
     da_localidade,
+    INTENSIDADE_PADRAO,
+    K_PADRAO,
+    em_simulacao,
     montar_projecao,
     tendencia_nacional,
 )
@@ -96,12 +99,14 @@ class EstruturaDomicilios:
         domicilios: Iterable[Domicilio],
         populacao: dict[int, dict[int, int]],
         tendencia: dict[str, tuple[float, float]] | None = None,
+        intensidade: float = INTENSIDADE_PADRAO,
+        k: float = K_PADRAO,
     ):
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
         lista = [d for d in domicilios if celula_do_domicilio(d) is not None]
         self.populacao = populacao
-        self.projecao = montar_projecao(lista, populacao, tendencia) if lista else None
+        self.projecao = montar_projecao(lista, populacao, tendencia, intensidade, k) if lista else None
         self.amostra = {c: p.amostra for c, p in self.projecao.celulas.items()} if self.projecao else {}
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
@@ -184,8 +189,13 @@ def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
     return ComposicaoResposta(anos=anos, categorias=categorias)
 
 
-def obter_composicao(dados, localidade: str = BRASIL) -> ComposicaoResposta:
+def obter_composicao(
+    dados, localidade: str = BRASIL, intensidade: float = INTENSIDADE_PADRAO, k: float = K_PADRAO
+) -> ComposicaoResposta:
     domicilios = da_localidade(dados.domicilios(), localidade)
     tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
-    resposta = montar_composicao(EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade), tendencia))
-    return resposta.model_copy(update={"localidade": localidade})
+    estrutura = EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade), tendencia, intensidade, k)
+    resposta = montar_composicao(estrutura)
+    return resposta.model_copy(
+        update={"localidade": localidade, "intensidade": intensidade, "k": k, "simulacao": em_simulacao(intensidade, k)}
+    )

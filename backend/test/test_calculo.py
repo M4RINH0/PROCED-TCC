@@ -7,6 +7,8 @@ import math
 from app.calculo import (
     TAXAS_ARRANJOS_FIXOS,
     ajustar_envelhecimento,
+    calibrar_intensidade,
+    erro_medio_absoluto,
     estimar_tendencia,
     inclinacao,
     logs_razoes,
@@ -560,3 +562,57 @@ def test_projecao_rejeita_intensidade_negativa_e_tendencia_sem_rotulos():
         _projecao_tendencia(-0.1)
     with pytest.raises(ValueError, match="rótulos"):
         Projecao(_celulas_tendencia(), POP_T, 2018, 2026, None, {"F": (0.1, 0.1)})
+
+
+# ---------- intensidade padrão até 2026 e controle só depois (P13) ----------
+
+
+def _projecao_calibrada(intensidade):
+    return Projecao(_celulas_tendencia(), POP_T, 2018, 2026, None, {"F": (0.02, 0.01)}, intensidade, A, intensidade_ate_base=0.6)
+
+
+@pytest.mark.parametrize("intensidade", [i / 10 for i in range(0, 16)])
+def test_todas_as_intensidades_e_cenarios_partem_do_mesmo_valor_em_2026(intensidade):
+    referencia = _projecao_calibrada(0.6).domicilios(2026)
+    p = _projecao_calibrada(intensidade)
+    for cenario in (TAXAS, TAXAS_ARRANJOS_FIXOS, CONTRAFACTUAL):
+        assert p.domicilios(2026, cenario) == pytest.approx(referencia)
+    assert p.resumo(2026, TAXAS).tbc_padronizada == pytest.approx(_projecao_calibrada(0.6).resumo(2026).tbc_padronizada)
+
+
+def test_intensidade_so_age_depois_de_2026():
+    # 2050: anos de tendência = 0,6 * (2026 - 2017,5) + intensidade * (2050 - 2026)
+    for intensidade in (0.0, 0.5, 1.5):
+        p = _projecao_calibrada(intensidade)
+        assert p.anos_de_tendencia(2050) == pytest.approx(0.6 * 8.5 + intensidade * 24)
+        assert p.anos_de_tendencia(2020) == pytest.approx(0.6 * 2.5)
+    esperado = projetar_proporcoes({"u": 0.2, "c": 0.3, "m": 0.5}, (0.02, 0.01), 0.6 * 8.5 + 1.5 * 24, 1.0, A)
+    assert _projecao_calibrada(1.5).domicilios(2050)[("F", "u")] == pytest.approx(20 * esperado["u"])
+
+
+def test_intensidade_zero_congela_os_arranjos_de_2026_em_diante():
+    p = _projecao_calibrada(0.0)
+    assert p.proporcoes(2050)["F"] == pytest.approx(p.proporcoes(2026)["F"])
+    assert p.domicilios(2050, TAXAS) == pytest.approx(p.domicilios(2050, TAXAS_ARRANJOS_FIXOS))
+
+
+def test_erro_medio_absoluto_ponderado_pela_faixa():
+    # F (peso 3): erros 1, -2, 1 -> média 4/3; G (peso 1): erros 3, -3, 0 -> média 2
+    # (3 * 4 + 1 * 6) / (3 * 3 + 1 * 3) = 18 / 12 = 1,5
+    erros = {"F": {"u": 1, "c": -2, "m": 1}, "G": {"u": 3, "c": -3, "m": 0}}
+    assert erro_medio_absoluto(erros, {"F": 3, "G": 1}) == pytest.approx(1.5)
+    with pytest.raises(ValueError):
+        erro_medio_absoluto(erros, {})
+
+
+def test_calibracao_acha_a_intensidade_que_reproduz_a_tendencia():
+    # 2017,5 observado exatamente na reta com metade da inclinação de 2002 a 2008: o ótimo é 0,5
+    def ponto(t, fator=1.0):
+        return proporcoes_dos_logs(-2 + 0.1 * fator * (t - 2002.5), -1 + 0.05 * fator * (t - 2002.5), A)
+
+    ancora = ponto(2008.5)
+    alvo = projetar_proporcoes(ancora, (0.1, 0.05), 9, 0.5, A)
+    props = {2002.5: {"F": ponto(2002.5)}, 2008.5: {"F": ancora}, 2017.5: {"F": alvo}}
+    melhor, curva = calibrar_intensidade(props, A, (2002.5, 2008.5), 2017.5, {"F": 1}, [i / 10 for i in range(16)])
+    assert melhor == 0.5 and curva[0.5] == pytest.approx(0, abs=1e-9)
+    assert curva[0.0] > curva[0.3] > curva[0.5] < curva[0.7] < curva[1.0]

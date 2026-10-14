@@ -72,3 +72,15 @@ def test_composicao_usa_o_peso_amostral():
     cat = {c.id: c for c in r.categorias}
     assert cat["uni_60"].participacao_pct == [75.0] and cat["uni_59"].participacao_pct == [25.0]
     assert cat["uni_60"].consumo_per_capita_kwh == 125.0 and cat["uni_60"].domicilios_amostra == 2
+
+
+def test_endpoint_composicao_aceita_os_controles_e_marca_simulacao():
+    app = criar_app()
+    app.dependency_overrides[obter_dados] = RepositorioFalso
+    cliente = TestClient(app)
+    padrao = cliente.get("/arranjos/composicao").json()
+    assert (padrao["intensidade"], padrao["k"], padrao["simulacao"]) == (0.6, 1.0, False)
+    r = cliente.get("/arranjos/composicao", params={"intensidade": 1.2, "k": 0.8}).json()
+    assert (r["intensidade"], r["k"], r["simulacao"]) == (1.2, 0.8, True)
+    assert cliente.get("/arranjos/composicao", params={"intensidade": -1}).status_code == 422
+    assert cliente.get("/arranjos/composicao", params={"k": 1.6}).status_code == 422

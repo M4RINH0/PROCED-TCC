@@ -37,6 +37,7 @@ from app.calculo import (
     Projecao,
     consumo_por_pessoa,
     consumo_total,
+    calibrar_intensidade,
     estimar_tendencia,
     fator_calibracao,
     media_ponderada,
@@ -55,6 +56,8 @@ from app.dominio import (
     FAIXAS_CHEFE,
     ANOS_MEDIOS_POF,
     ARRANJOS,
+    INTENSIDADE_PADRAO,
+    INTENSIDADES_SENSIBILIDADE,
     IDADE_IDOSO,
     MINIMO_AMOSTRA,
     MULTIPESSOAL,
@@ -235,7 +238,7 @@ class Ponte:
         pop_faixa: Mapping[int, Mapping[str, int]],
         fator: float = 1.0,
         tendencia: Mapping[str, tuple[float, float]] | None = None,
-        intensidade: float = 1.0,
+        intensidade: float = INTENSIDADE_PADRAO,
     ):
         if ANO_REFERENCIA_POF not in pop_faixa:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}")
@@ -250,7 +253,10 @@ class Ponte:
                 fato["qtd_moradores"],
             )
         )
-        self.projecao = Projecao(celulas, pop_faixa, ANO_REFERENCIA_POF, ANO_INICIAL, None, tendencia, intensidade, ARRANJOS)
+        self.projecao = Projecao(
+            celulas, pop_faixa, ANO_REFERENCIA_POF, ANO_INICIAL, None, tendencia, intensidade, ARRANJOS,
+            intensidade_ate_base=INTENSIDADE_PADRAO,
+        )
         self.celulas = list(celulas)
         self.chefia = self.projecao.chefia
         self.tec = {c: p.tec for c, p in celulas.items()}
@@ -348,24 +354,59 @@ def tendencia_arranjos(historica: pd.DataFrame, fato: pd.DataFrame, anos_projeta
     props = proporcoes_por_edicao(historicos_da_tabela(historica), atuais_da_fato(fato))
     tendencia = estimar_tendencia(props, ARRANJOS)
     t02, t08, t17 = (ANOS_MEDIOS_POF[a] for a in (2002, 2008, 2017))
-    validacao = validar_tendencia(props, ARRANJOS, (t02, t08), t17) if {t02, t08, t17} <= set(props) else {}
+    validacao, calibracao = {}, {}
+    if {t02, t08, t17} <= set(props):
+        validacao = validar_tendencia(props, ARRANJOS, (t02, t08), t17)
+        pesos = fato.groupby("faixa")["peso_final"].sum().to_dict()
+        if any(f in pesos for f in props[t17]) and estimar_tendencia({t: props[t] for t in (t02, t08)}, ARRANJOS):
+            melhor, curva = calibrar_intensidade(props, ARRANJOS, (t02, t08), t17, pesos, [i / 100 for i in range(151)])
+            calibracao = {
+                "intensidade_otima": melhor,
+                "intensidade_padrao": INTENSIDADE_PADRAO,
+                "erro_medio_absoluto_pp": {str(i): curva[i] for i in (0.0, 0.5, 0.56, 0.6, 1.0, 1.5) if i in curva},
+                "regra": "erro médio absoluto da previsão de 2017 (inclinação de 2002 e 2008, ancorada em 2008), "
+                "cada faixa pesando pelos seus domicílios ponderados de 2017",
+            }
+
+    def anos_de_tendencia(ano: int, intensidade: float) -> float:
+        # de 2017,5 a 2026 vale o padrão; a intensidade só age depois de 2026
+        return INTENSIDADE_PADRAO * (min(ano, ANO_INICIAL) - t17) + intensidade * max(0, ano - ANO_INICIAL)
+
     projetadas = {
         str(intensidade): {
             str(ano): {
-                f: projetar_proporcoes(props[t17][f], tendencia.get(f), ano - t17, intensidade, ARRANJOS) for f in props.get(t17, {})
+                f: projetar_proporcoes(props[t17][f], tendencia.get(f), anos_de_tendencia(ano, intensidade), 1.0, ARRANJOS)
+                for f in props.get(t17, {})
             }
             for ano in anos_projetados
         }
-        for intensidade in (1.0, 0.5)
+        for intensidade in (INTENSIDADE_PADRAO, *INTENSIDADES_SENSIBILIDADE)
     }
     return {
         "proporcoes_por_edicao": {str(t): p for t, p in props.items()},
         "inclinacoes_por_ano": {f: {"unipessoal_sobre_multipessoal": b[0], "casal_sobre_multipessoal": b[1]} for f, b in tendencia.items()},
         "validacao_fora_do_tempo_pp": validacao,
+        "calibracao_da_intensidade": calibracao,
         "proporcoes_projetadas": projetadas,
         "regras": "domicílios fora da rede geral excluídos (P13); inclinação nacional por mínimos quadrados nas edições "
-        "de 2002,5, 2008,5 e 2017,5; projeção ancorada no observado de 2017,5",
+        "de 2002,5, 2008,5 e 2017,5; projeção ancorada no observado de 2017,5; de 2017,5 a 2026 vale a intensidade "
+        "padrão, e a intensidade escolhida só age depois de 2026",
     }
+
+
+def sensibilidade_intensidade(fato: pd.DataFrame, pop_faixa, tendencia, pop) -> pd.DataFrame:
+    """Faixa de sensibilidade da tendência dos arranjos: o cenário taxas com as intensidades 0,5 e 1.
+
+    Só `taxas` muda com a intensidade: arranjos fixos e contrafactual usam as proporções de 2026.
+    """
+    partes = []
+    for intensidade in INTENSIDADES_SENSIBILIDADE:
+        ponte = Ponte(fato, pop_faixa, tendencia=tendencia, intensidade=intensidade)
+        tabela = calibrar(projetar_taxas(ponte), pop)
+        tabela.insert(0, "analise", f"sensibilidade: intensidade da tendência {intensidade}".replace(".", ","))
+        tabela.insert(1, "intensidade", intensidade)
+        partes.append(tabela)
+    return pd.concat(partes, ignore_index=True)
 
 
 def fator_cobertura(fato: pd.DataFrame, total: float = TOTAL_DOMICILIOS_POF) -> float:

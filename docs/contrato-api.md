@@ -25,14 +25,14 @@ Toda resposta que usa os domicílios da POF informa o tamanho da amostra e marca
 célula do recorte, e o campo `baixa_confiabilidade` da resposta fica verdadeiro se
 alguma delas tiver menos de 30.
 
-## Controles de simulação (RF02): `/projecoes`, `/projecoes/serie` e `/simulador`
+## Controles de simulação (RF02): `/projecoes`, `/projecoes/serie`, `/arranjos/composicao`, `/estrutura-etaria/piramide(s)` e `/simulador`
 
 | Parâmetro | Regra | Padrão |
 |---|---|---|
-| `intensidade` | 0 a 1,5: multiplica a variação dos logs das razões entre os arranjos (P13); 0 congela os arranjos | 1 (tendência observada) |
+| `intensidade` | 0 a 1,5: multiplica a variação dos logs das razões entre os arranjos depois de 2026 (P13); 0 congela os arranjos a partir de 2026 | 0,6 (calibrada pela validação fora do tempo) |
 | `k` | 0,5 a 1,5: velocidade do envelhecimento (P14) | 1 (projeção do IBGE) |
 
-Fora do intervalo, a API responde 422. Toda resposta devolve `intensidade`, `k` e
+De 2017,5 a 2026 vale sempre a intensidade padrão, então todos os valores de 2026 são iguais em qualquer simulação. A pirâmide aceita só `k`: a intensidade não muda a população. O consumo por faixa do chefe (`/estrutura-etaria/consumo-chefe`) e o consumo por arranjo (`/arranjos`) não dependem de nenhum dos dois. Fora do intervalo, a API responde 422. Toda resposta devolve `intensidade`, `k` e
 `simulacao`, que fica `true` quando algum controle está fora do padrão: a interface
 rotula o resultado como simulação. Os padrões reproduzem o cenário principal.
 

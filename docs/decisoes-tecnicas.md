@@ -47,3 +47,36 @@ porque o dado real é outro:
 - Horizonte de 2026 a 2070, sem a área hachurada depois da projeção oficial; o selo do topo diz "Cenário do modelo pendente".
 - Controle da taxa de envelhecimento desativado até o cenário do modelo existir.
 - Exportar avisa que o RF08 está pendente.
+
+## Desempenho da API (RNF02)
+
+**Meta proposta:** menos de 1 segundo por resposta depois da primeira carga de cada
+localidade, com os parâmetros padrão e com valores de simulação.
+
+**Medição de 14/10/2026** (API local, `uvicorn` sem `--reload`, banco no Supabase; mediana
+de 5 chamadas depois da primeira; intensidade 1,2 e k 1,3 na simulação):
+
+| Endpoint | Localidade | Primeira carga | Depois, padrão | Depois, simulação |
+|---|---|---|---|---|
+| `/projecoes/serie` (todos os domicílios) | Brasil | 4,44 s | 0,28 s | 0,25 s |
+| | Nordeste | 7,31 s | 0,22 s | 0,20 s |
+| | SP | 1,00 s | 0,18 s | 0,17 s |
+| `/arranjos/composicao` | Brasil | 0,29 s | 0,24 s | 0,22 s |
+| | Nordeste | 0,23 s | 0,16 s | 0,19 s |
+| | SP | 0,12 s | 0,17 s | 0,14 s |
+| `/estrutura-etaria/piramides` | Brasil | 0,01 s | 0,00 s | 0,00 s |
+| | Nordeste | 1,58 s | 0,00 s | 0,00 s |
+| | SP | 1,63 s | 0,00 s | 0,00 s |
+
+A meta já é cumprida depois da primeira carga. Na data da medição, a composição e a
+pirâmide ainda não aplicavam os controles de simulação.
+
+**Onde o tempo é gasto**
+- Primeira carga: leitura do Supabase em páginas sequenciais de mil linhas. A tabela fato
+  leva 6,7 s, a das POFs anteriores 7,8 s, a população de uma região cerca de 7 s e a
+  população por sexo de uma localidade cerca de 1,5 s. A pré-carga em segundo plano cobre
+  só o Brasil.
+- Depois da primeira carga, numa série: cerca de 70% do tempo recalcula a tendência
+  nacional dos arranjos a cada requisição, embora ela só dependa dos dados; cerca de 20%
+  remonta os parâmetros das células da localidade, que não dependem dos controles; só
+  cerca de 5% é a projeção, a única parte que depende de `intensidade` e `k`.

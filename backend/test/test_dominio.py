@@ -148,7 +148,7 @@ def test_recortes_novos_usam_os_tres_arranjos():
     assert ("80+", MULTIPESSOAL) not in CELULAS_DO_RECORTE[Recorte.chefe_60_mais]
 
 
-@pytest.mark.parametrize("intensidade, k, simulacao", [(1.0, 1.0, False), (0.5, 1.0, True), (1.0, 1.2, True), (0.0, 0.5, True)])
+@pytest.mark.parametrize("intensidade, k, simulacao", [(0.6, 1.0, False), (1.0, 1.0, True), (0.5, 1.0, True), (0.6, 1.2, True), (0.0, 0.5, True)])
 def test_em_simulacao_quando_algum_controle_sai_do_padrao(intensidade, k, simulacao):
     from app.dominio import em_simulacao
 

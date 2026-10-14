@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.panorama import Simulacao
+
 FONTE = "POF 2017 a 2018 (IBGE), médias ponderadas pelo peso amostral"
 
 
@@ -49,7 +51,7 @@ class CategoriaComposicao(BaseModel):
     casas: list[int]  # de cada 100 domicílios, por ano (soma 100)
 
 
-class ComposicaoResposta(BaseModel):
+class ComposicaoResposta(Simulacao):
     anos: list[int]
     categorias: list[CategoriaComposicao]
     fonte: str = FONTE_COMPOSICAO

@@ -156,3 +156,60 @@ def test_lista_regioes_e_estados(cliente):
     assert list(regioes) == ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"]
     assert {"sigla": "DF", "nome": "Distrito Federal"} in regioes["Centro-Oeste"]
     assert sum(len(e) for e in regioes.values()) == 27
+
+
+# ---------- o mesmo endpoint devolve valores diferentes para Brasil, região e UF ----------
+
+
+class DadosPorLocalidade(DadosFalsos):
+    """População e pirâmide que dependem da localidade (o resto vem de DadosFalsos)."""
+
+    POP = {"Brasil": 3, "Centro-Oeste": 2, "SP": 1}
+
+    def populacao_por_idade(self, localidade="Brasil"):
+        f = self.POP[localidade]
+        return {ano: {i: p * f for i, p in idades.items()} for ano, idades in POP.items()}
+
+    def populacao_por_sexo(self, ano, localidade="Brasil"):
+        idosos = {"Brasil": 30, "Centro-Oeste": 20, "SP": 10}[localidade]
+        return {"Homem": {5: 50}, "Mulher": {65: idosos}}
+
+    def anos_piramide(self, localidade="Brasil"):
+        return [2026, 2030]
+
+
+@pytest.fixture
+def cliente_por_localidade():
+    app = criar_app()
+    app.dependency_overrides[obter_dados] = DadosPorLocalidade
+    return TestClient(app)
+
+
+@pytest.mark.parametrize(
+    "caminho, extrair",
+    [
+        ("/projecoes/serie?recorte=chefe_60_mais", lambda r: (r["domicilios_amostra"], r["pontos"][4]["cenarios"][0]["valor"])),
+        ("/estrutura-etaria/consumo-chefe", lambda r: next(f for f in r["faixas"] if f["faixa"] == "60 a 69")["consumo_per_capita_kwh"]),
+        ("/arranjos?grupo=chefe_60_mais", lambda r: r["arranjos"][0]["consumo_per_capita_kwh"]),
+        ("/estrutura-etaria/piramides", lambda r: r["piramides"][0]["participacao_60_mais_pct"]),
+        ("/simulador?ano=2030&faixa=60_69&arranjo=unipessoal&base=taxas", lambda r: (r["valor"], r["domicilios_amostra"])),
+    ],
+)
+def test_mesmo_endpoint_com_valores_diferentes_para_brasil_regiao_e_uf(cliente_por_localidade, caminho, extrair):
+    sep = "&" if "?" in caminho else "?"
+    valores = {}
+    for loc in ("Brasil", "Centro-Oeste", "SP"):
+        r = cliente_por_localidade.get(f"{caminho}{sep}localidade={loc}")
+        assert r.status_code == 200 and r.json()["localidade"] == loc
+        valores[loc] = extrair(r.json())
+    assert len(set(map(str, valores.values()))) == 3, valores
+
+
+def test_composicao_muda_com_a_localidade(cliente_por_localidade):
+    # Centro-Oeste só tem os domicílios do DF; SP só um unipessoal de 60 a 69
+    casas = {
+        loc: cliente_por_localidade.get("/arranjos/composicao", params={"localidade": loc}).json()["categorias"]
+        for loc in ("Brasil", "Centro-Oeste", "SP")
+    }
+    amostras = {loc: sum(c["domicilios_amostra"] for c in cats) for loc, cats in casas.items()}
+    assert amostras == {"Brasil": 4, "Centro-Oeste": 3, "SP": 1}

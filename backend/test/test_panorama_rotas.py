@@ -36,7 +36,7 @@ def test_entrada_valida_segue_o_contrato():
     assert corpo["efeito_envelhecimento_kwh"] == 10.8 and corpo["efeito_envelhecimento_total_kwh_mes"] == 117670
     assert corpo["dados_ilustrativos"] is False
     assert corpo["fonte"].startswith("POF 2002 a 2003, 2008 a 2009 e 2017 a 2018")
-    assert (corpo["intensidade"], corpo["k"], corpo["simulacao"]) == (1.0, 1.0, False)
+    assert (corpo["intensidade"], corpo["k"], corpo["simulacao"]) == (0.6, 1.0, False)
     assert corpo["localidade"] == "Brasil" and corpo["domicilios_amostra"] == 4
     assert corpo["baixa_confiabilidade"] is True
     assert {"faixa": "60 a 69", "arranjo": "Unipessoal (Mononuclear)", "domicilios_amostra": 1,

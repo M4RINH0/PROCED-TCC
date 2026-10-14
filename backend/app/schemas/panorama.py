@@ -47,7 +47,7 @@ class Amostra(BaseModel):
 
 
 class Simulacao(BaseModel):
-    intensidade: float = Field(default=1.0, description="intensidade da tendência dos arranjos (0 = congelados, 1 = observada)")
+    intensidade: float = Field(default=0.6, description="intensidade da tendência dos arranjos depois de 2026 (0 = congelados; padrão calibrado 0,6)")
     k: float = Field(default=1.0, description="velocidade do envelhecimento (1 = projeção do IBGE)")
     simulacao: bool = Field(default=False, description="algum controle fora do padrão: o resultado é uma simulação")
 

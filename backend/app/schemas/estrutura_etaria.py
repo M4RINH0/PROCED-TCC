@@ -43,3 +43,5 @@ class PiramidesResposta(BaseModel):
     piramides: list[PiramideResposta]
     fonte: str = FONTE_PIRAMIDE
     localidade: str = "Brasil"
+    k: float = Field(default=1.0, description="velocidade do envelhecimento (1 = projeção do IBGE)")
+    simulacao: bool = Field(default=False, description="k fora do padrão: a pirâmide é uma simulação")

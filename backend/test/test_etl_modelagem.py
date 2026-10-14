@@ -357,6 +357,9 @@ def test_pipeline_gera_as_saidas_sem_ml(tmp_path):
     projecoes = pd.read_csv(tmp_path / "projecoes_2026_2070.csv")
     assert set(projecoes["cenario"]) == {"taxas", "taxas_arranjos_fixos", "contrafactual"}
     assert (tmp_path / "tendencia_arranjos.json").exists()
+    sens = pd.read_csv(tmp_path / "sensibilidade_intensidade.csv")
+    assert sorted(sens["intensidade"].unique()) == [0.5, 1.0] and sens["analise"].str.startswith("sensibilidade").all()
+    assert set(sens["cenario"]) == {"taxas"}
     assert "consumo_total_calibrado_kwh_mes" in projecoes and "fator_calibracao" in projecoes
     assert projecoes["ano"].min() == 2026 and projecoes["ano"].max() == 2070
     sensibilidade = pd.read_csv(tmp_path / "sensibilidade_cobertura.csv")
@@ -379,7 +382,7 @@ def test_tendencia_arranjos_resume_edicoes_inclinacoes_e_projecoes():
     # o casal de 2008 está fora da rede geral e sai
     assert t["proporcoes_por_edicao"]["2008.5"]["60 a 69"] == pytest.approx({UNIPESSOAL: 0.5, MULTIPESSOAL: 0.5})
     assert t["inclinacoes_por_ano"] == {}
-    assert set(t["proporcoes_projetadas"]) == {"1.0", "0.5"}
+    assert set(t["proporcoes_projetadas"]) == {"0.6", "0.5", "1.0"}  # padrão e faixa de sensibilidade
 
 
 def test_ponte_com_tendencia_e_arranjos_fixos():
@@ -408,3 +411,27 @@ def test_ponte_com_tendencia_e_arranjos_fixos():
     # chefia total constante: 4 / 400 * 800 = 8 domicílios nos três cenários
     assert t.loc[2050, "domicilios"] == pytest.approx(8) and f.loc[2050, "domicilios"] == pytest.approx(8)
     assert (f["cenario"] == "taxas_arranjos_fixos").all()
+
+
+
+def test_sensibilidade_da_intensidade_parte_do_mesmo_2026_e_so_muda_taxas():
+    fato, _ = modelagem.preparar(
+        pd.DataFrame(
+            {
+                "id_domicilio": [1, 2, 3],
+                "sigla_uf": ["DF"] * 3,
+                "idade_chefe": [65, 66, 67],
+                "arranjo_familiar": [UNIPESSOAL, CASAL_OU_DUPLA, MULTIPESSOAL],
+                "qtd_moradores": [1, 2, 3],
+                "consumo_total_kwh": [120.0, 160.0, 150.0],
+                "peso_final": [1.0, 1.0, 2.0],
+            }
+        )
+    )
+    pop = {2018: {65: 400}, **{a: {65: 400 if a < 2050 else 800} for a in range(2026, 2071)}}
+    sens = modelagem.sensibilidade_intensidade(fato, modelagem.populacao_por_faixa(pop), {"60 a 69": (0.02, 0.01)}, pop)
+    s = sens.set_index(["intensidade", "ano"])
+    padrao = modelagem.projetar_taxas(modelagem.Ponte(fato, modelagem.populacao_por_faixa(pop), tendencia={"60 a 69": (0.02, 0.01)}))
+    assert s.loc[(0.5, 2026), "tbc_padronizada_kwh"] == pytest.approx(s.loc[(1.0, 2026), "tbc_padronizada_kwh"])
+    assert s.loc[(0.5, 2026), "tbc_padronizada_kwh"] == pytest.approx(padrao.set_index("ano").loc[2026, "tbc_padronizada_kwh"])
+    assert s.loc[(1.0, 2050), "domicilios_uni_60"] > s.loc[(0.5, 2050), "domicilios_uni_60"]

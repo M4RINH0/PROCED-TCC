@@ -76,7 +76,8 @@ def projetar(
     tendencia = modelagem.tendencia_arranjos(historica, fato)
     _json(pasta / "tendencia_arranjos.json", tendencia)
     inclinacoes = {f: (b["unipessoal_sobre_multipessoal"], b["casal_sobre_multipessoal"]) for f, b in tendencia["inclinacoes_por_ano"].items()}
-    ponte = modelagem.Ponte(fato, pop_faixa, tendencia=inclinacoes)
+    ponte = modelagem.Ponte(fato, pop_faixa, tendencia=inclinacoes)  # intensidade padrão (P13)
+    modelagem.sensibilidade_intensidade(fato, pop_faixa, inclinacoes, pop).to_csv(pasta / "sensibilidade_intensidade.csv", index=False)
     auditoria = modelagem.auditar(fato_bruto, fato, registro, pop, pop_brasil, leitura)
     auditoria["ponte"] = modelagem.validar_ponte(ponte, pop)
     rastro.append(

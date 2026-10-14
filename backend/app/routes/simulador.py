@@ -26,7 +26,7 @@ ParamIntensidade = Annotated[
     Query(
         ge=INTENSIDADE_MINIMA,
         le=INTENSIDADE_MAXIMA,
-        description="Intensidade da tendência dos arranjos: 0 congela os arranjos, 1 é a tendência observada (padrão)",
+        description="Intensidade da tendência dos arranjos depois de 2026: 0 congela os arranjos (padrão calibrado 0,6)",
     ),
 ]
 ParamK = Annotated[

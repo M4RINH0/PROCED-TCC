@@ -118,3 +118,42 @@ def test_endpoint_piramides_para_em_2070(cliente):
     r = cliente.get("/estrutura-etaria/piramides")
     assert r.status_code == 200
     assert [p["ano"] for p in r.json()["piramides"]] == [2026, 2070]
+
+
+# ---------- velocidade do envelhecimento k na pirâmide (P14) ----------
+# 2026: homens de 5 anos 60, mulheres de 65 anos 40 (total 100); 2070: 40 e 60
+# k = 0,5: 0,6 + 0,5 * (0,4 - 0,6) = 0,5 e 0,5; k = 1,5: 0,3 e 0,7
+POR_ANO = {2026: {"Homem": {5: 60}, "Mulher": {65: 40}}, 2070: {"Homem": {5: 40}, "Mulher": {65: 60}}}
+
+
+def test_k_igual_a_1_nao_muda_a_piramide():
+    from app.services.estrutura_etaria import com_envelhecimento
+
+    assert com_envelhecimento(POR_ANO, 1.0) is POR_ANO
+
+
+@pytest.mark.parametrize("k, homens, mulheres", [(0.5, 50, 50), (1.5, 30, 70)])
+def test_k_freia_ou_acelera_o_envelhecimento_da_piramide(k, homens, mulheres):
+    from app.services.estrutura_etaria import com_envelhecimento
+
+    ajustada = com_envelhecimento(POR_ANO, k)
+    assert ajustada[2070]["Homem"][5] == pytest.approx(homens) and ajustada[2070]["Mulher"][65] == pytest.approx(mulheres)
+    assert ajustada[2026]["Homem"][5] == pytest.approx(60)  # 2026 não muda
+    assert montar_piramide(2070, ajustada[2070]).participacao_60_mais_pct == mulheres
+
+
+class RepositorioPorAno(DadosFalsos):
+    def populacao_por_sexo(self, ano, localidade="Brasil"):
+        return POR_ANO.get(ano, {"Homem": {}, "Mulher": {}})
+
+
+def test_endpoint_piramides_aplica_k_e_marca_simulacao():
+    app = criar_app()
+    app.dependency_overrides[obter_dados] = RepositorioPorAno
+    cliente = TestClient(app)
+    padrao = cliente.get("/estrutura-etaria/piramides").json()
+    simulada = cliente.get("/estrutura-etaria/piramides", params={"k": 1.5}).json()
+    assert padrao["simulacao"] is False and simulada["simulacao"] is True and simulada["k"] == 1.5
+    assert [p["participacao_60_mais_pct"] for p in simulada["piramides"]] == [40.0, 70.0]
+    assert cliente.get("/estrutura-etaria/piramide", params={"ano": 2070, "k": 0.5}).json()["participacao_60_mais_pct"] == 50.0
+    assert cliente.get("/estrutura-etaria/piramides", params={"k": 2}).status_code == 422

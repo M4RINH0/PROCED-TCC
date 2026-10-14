@@ -214,8 +214,11 @@ class Projecao:
     contrafactual:          o total de domicílios do ano segue a projeção, e a distribuição
                             entre as células fica congelada na de taxas no ano-base (P10)
 
-    Sem tendência, ou com intensidade 0, as proporções ficam nas de 2017,5 e os três
-    cenários coincidem no ano-base: é o modelo anterior, com os arranjos congelados.
+    A intensidade multiplica a tendência. `intensidade_ate_base` vale de 2017,5 até o
+    ano-base e `intensidade` só depois dele, para que todas as simulações e os três
+    cenários partam do mesmo valor no ano-base (sem `intensidade_ate_base`, vale a
+    mesma intensidade nos dois trechos). Sem tendência, ou com as duas intensidades 0,
+    as proporções ficam nas de 2017,5: é o modelo anterior, com os arranjos congelados.
     `arranjos` diz quais rótulos são (unipessoal, casal ou dupla, multipessoal).
     """
 
@@ -230,12 +233,14 @@ class Projecao:
         intensidade: float = 1.0,
         arranjos: tuple[str, str, str] | None = None,
         ano_tendencia: float = ANO_MEDIO_POF,
+        intensidade_ate_base: float | None = None,
     ):
         if ano_referencia not in populacao_por_faixa:
             raise ValueError(f"falta a população de {ano_referencia}, ano de referência")
         if not celulas:
             raise ValueError("informe ao menos uma célula")
-        if intensidade < 0:
+        intensidade_ate_base = intensidade if intensidade_ate_base is None else intensidade_ate_base
+        if intensidade < 0 or intensidade_ate_base < 0:
             raise ValueError("a intensidade da tendência não pode ser negativa")
         if tendencia and arranjos is None:
             raise ValueError("informe os rótulos dos arranjos para aplicar a tendência")
@@ -245,6 +250,7 @@ class Projecao:
         self.ano_base = ano_base
         self.tendencia = dict(tendencia or {})
         self.intensidade = intensidade
+        self.intensidade_ate_base = intensidade_ate_base
         self.arranjos = arranjos
         self.ano_tendencia = ano_tendencia
         self.chefia = taxas_chefia({c: p.peso for c, p in self.celulas.items()}, populacao_por_faixa[ano_referencia])
@@ -259,14 +265,22 @@ class Projecao:
 
     @property
     def com_tendencia(self) -> bool:
-        return bool(self.tendencia) and self.intensidade > 0
+        return bool(self.tendencia) and (self.intensidade > 0 or self.intensidade_ate_base > 0)
+
+    def anos_de_tendencia(self, ano: float) -> float:
+        """Anos de tendência já ponderados pela intensidade de cada trecho:
+        intensidade_ate_base * (até o ano-base) + intensidade * (depois dele)."""
+        ate_base = min(ano, self.ano_base) - self.ano_tendencia
+        depois = max(0.0, ano - self.ano_base)
+        return self.intensidade_ate_base * ate_base + self.intensidade * depois
 
     def proporcoes(self, ano: float) -> dict[str, dict[str, float]]:
         """Proporção de cada arranjo em cada faixa no ano (P13)."""
         if not self.com_tendencia:
             return {f: dict(p) for f, p in self.proporcoes_base.items()}
+        anos = self.anos_de_tendencia(ano)
         return {
-            f: projetar_proporcoes(p, self.tendencia.get(f), ano - self.ano_tendencia, self.intensidade, self.arranjos)
+            f: projetar_proporcoes(p, self.tendencia.get(f), anos, 1.0, self.arranjos)
             for f, p in self.proporcoes_base.items()
         }
 
@@ -428,6 +442,46 @@ def validar_tendencia(
         observado = proporcoes_por_ano[alvo][faixa]
         erros[faixa] = {a: (previsto[a] - observado.get(a, 0.0)) * 100 for a in arranjos}
     return erros
+
+
+def erro_medio_absoluto(erros: Mapping[Hashable, Mapping[str, float]], pesos: Mapping[Hashable, float]) -> float:
+    """Média dos erros absolutos de todas as faixas e arranjos, cada faixa pesando `pesos[faixa]`."""
+    soma = total = 0.0
+    for faixa, por_arranjo in erros.items():
+        peso = pesos.get(faixa, 0.0)
+        for erro in por_arranjo.values():
+            soma += peso * abs(erro)
+            total += peso
+    if total <= 0:
+        raise ValueError("os pesos das faixas precisam somar mais que zero")
+    return soma / total
+
+
+def calibrar_intensidade(
+    proporcoes_por_ano: Mapping[float, Mapping[Hashable, Mapping[str, float]]],
+    arranjos: tuple[str, str, str],
+    treino: tuple[float, float],
+    alvo: float,
+    pesos: Mapping[Hashable, float],
+    grade: Iterable[float],
+) -> tuple[float, dict[float, float]]:
+    """Intensidade que minimiza o erro médio absoluto ponderado da previsão de `alvo`, com a inclinação
+    estimada em `treino` e ancorada no último ano de treino. Devolve (melhor, erro de cada intensidade)."""
+    tendencia = estimar_tendencia({t: proporcoes_por_ano[t] for t in treino}, arranjos)
+    ancora = max(treino)
+    curva = {}
+    for intensidade in grade:
+        erros = {}
+        for faixa, inclinacoes in tendencia.items():
+            if faixa not in proporcoes_por_ano[alvo]:
+                continue
+            previsto = projetar_proporcoes(proporcoes_por_ano[ancora][faixa], inclinacoes, alvo - ancora, intensidade, arranjos)
+            observado = proporcoes_por_ano[alvo][faixa]
+            erros[faixa] = {a: (previsto[a] - observado.get(a, 0.0)) * 100 for a in arranjos}
+        curva[intensidade] = erro_medio_absoluto(erros, pesos)
+    if not curva:
+        raise ValueError("informe ao menos uma intensidade")
+    return min(curva, key=curva.get), curva
 
 
 # ---------- velocidade do envelhecimento (RF02) ----------

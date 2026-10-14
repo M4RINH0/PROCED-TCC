@@ -145,7 +145,7 @@ def test_obter_projecao_segue_o_contrato():
     assert r.efeito_envelhecimento_kwh == 10.8 and r.efeito_envelhecimento_total_kwh_mes == 117670
     # sem tendência, todo o efeito é da idade
     assert (r.efeito_idade_kwh, r.efeito_arranjos_kwh) == (10.8, 0.0)
-    assert r.simulacao is False and (r.intensidade, r.k) == (1.0, 1.0)
+    assert r.simulacao is False and (r.intensidade, r.k) == (0.6, 1.0)  # padrões (P13 e P14)
     assert r.dados_ilustrativos is False and r.baixa_confiabilidade is True
     assert "POF" in r.fonte and "oficial" not in r.fonte
 
