@@ -1,8 +1,8 @@
 """Regras de derivação.
 
 As regras de arranjo, de 60 anos ou mais e de consumo per capita foram
-conferidas contra a tabela fato_consumo_domiciliar do Supabase em 02/10/2026:
-nenhuma das 52.208 linhas as viola.
+conferidas contra a tabela fato_consumo_domiciliar do Supabase em 02/10/2026
+e de novo em 14/10/2026: nenhuma das 52.207 linhas as viola.
 """
 
 import pandas as pd

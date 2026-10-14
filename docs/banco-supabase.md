@@ -12,7 +12,7 @@ Nada foi criado nem alterado.
 
 | Tabela | Linhas | Conteúdo |
 |---|---|---|
-| `fato_consumo_domiciliar` | 52.208 | Um domicílio por linha (POF): UF, moradores, arranjo, idade do chefe, `is_60_mais`, consumo total em kWh, gasto em R$, consumo per capita em kWh |
+| `fato_consumo_domiciliar` | 52.207 | Um domicílio por linha (POF): UF, moradores, arranjo, idade do chefe, `is_60_mais`, consumo total em kWh, gasto em R$, consumo per capita em kWh |
 | `dim_coeficiente_consumo` | 162 | Médias por UF, arranjo e `is_60_mais`: tamanho da amostra, consumo total, consumo per capita e gasto |
 | `consumo_estimado` | 27 | Por UF, Censo 2022: população total e idosa, proporção de idosos, idade mediana, índice de envelhecimento, consumo estimado de idosos e não idosos |
 | `projecoes_populacao_idade` | 639.639 | Projeção populacional por localidade, sexo (`Homem`, `Mulher`, `Ambos`), idade (0 a 90) e ano (**2000 a 2070**) |
@@ -22,7 +22,7 @@ Enumerações: `arranjo_familiar` = `Unipessoal (Mononuclear)`, `Casal ou Dupla`
 
 ## Regras conferidas nos dados
 
-Nenhuma das 52.208 linhas de `fato_consumo_domiciliar` viola:
+Nenhuma das 52.207 linhas de `fato_consumo_domiciliar` viola:
 
 - arranjo pelo número de moradores: 1 é unipessoal, 2 é casal ou dupla, 3 ou mais é multipessoal;
 - `is_60_mais` verdadeiro se e somente se `idade_chefe` for 60 ou mais;

@@ -1,10 +1,12 @@
 """Regras do Panorama (RF01, RF11).
 
-Cenário oficial (ibge): TBC padronizada (eq:tbc-pd) com a TEC de cada faixa do
-chefe medida na POF e a estrutura de domicílios do ano s estimada pela
-projeção populacional do IBGE com taxa de chefia constante (docs/premissas.md):
+Cenário ibge (método das taxas, que será renomeado para taxas): TBC padronizada
+(eq:tbc-pd) com a TEC ponderada de cada faixa do chefe medida na POF e a
+estrutura de domicílios do ano s estimada pela projeção populacional do IBGE com
+taxa de chefia constante (docs/premissas.md):
 
-    nDom_x,s = (domicílios da amostra na faixa x / Pop_x,2018) * Pop_x,s
+    TEC_x    = soma(peso * consumo per capita) / soma(peso)
+    nDom_x,s = (soma dos pesos da faixa x / Pop_x,2018) * Pop_x,s
 
 Os cenários do modelo (mod) e alternativo (alt) ainda não têm formulação
 definida no TCC e saem como null.
@@ -32,7 +34,7 @@ from app.schemas.panorama import Cenario, CenarioId, PontoSerie, ProjecaoRespost
 
 
 class ParametrosRecorte:
-    """TEC e taxa de chefia por faixa, fixadas no ano de referência da POF."""
+    """TEC e taxa de chefia por faixa, ponderadas por peso_final e fixadas no ano de referência da POF."""
 
     def __init__(self, recorte: Recorte, domicilios: Iterable[Domicilio], populacao: dict[int, dict[int, int]]):
         if ANO_REFERENCIA_POF not in populacao:
@@ -50,8 +52,9 @@ class ParametrosRecorte:
             if not grupo:
                 self.completo = False
                 continue
-            self.tec[faixa.rotulo] = tec(sum(d.consumo_per_capita_kwh for d in grupo), len(grupo))
-            self.chefia[faixa.rotulo] = len(grupo) / populacao_da_faixa(populacao[ANO_REFERENCIA_POF], faixa)
+            peso = sum(d.peso for d in grupo)
+            self.tec[faixa.rotulo] = tec(sum(d.peso * d.consumo_per_capita_kwh for d in grupo), peso)
+            self.chefia[faixa.rotulo] = peso / populacao_da_faixa(populacao[ANO_REFERENCIA_POF], faixa)
 
     def tbc_ibge(self, ano: int) -> float | None:
         if not self.completo or ano not in self.populacao:

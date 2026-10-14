@@ -121,3 +121,56 @@ def da_localidade(domicilios: Iterable, localidade: str) -> list:
     """Domicílios da POF que pertencem à localidade."""
     ufs = ufs_da_localidade(localidade)
     return list(domicilios) if ufs is None else [d for d in domicilios if d.uf in ufs]
+
+
+UFS = tuple(sorted(NOMES_UF))  # as 27 siglas: a lista explícita que evita somar regiões e Brasil
+SEXO_AMBOS = "Ambos"
+
+
+def ufs_explicitas(localidade: str) -> tuple[str, ...]:
+    """UFs da localidade, sempre por extenso (o Brasil são as 27 siglas)."""
+    ufs = ufs_da_localidade(localidade)
+    return UFS if ufs is None else tuple(sorted(ufs))
+
+
+def somar_populacao(linhas: Iterable[dict], ufs: Iterable[str], sexo: str = SEXO_AMBOS) -> dict[int, dict[int, int]]:
+    """Soma a projeção por ano e idade só nas UFs pedidas e num único sexo.
+
+    Descarta as linhas de total (regiões, Brasil) e as do outro sexo, que
+    duplicariam a contagem. Cada linha precisa de localidade, sexo, ano, idade e populacao.
+    """
+    ufs = set(ufs)
+    desconhecidas = ufs - set(UFS)
+    if desconhecidas:
+        raise ValueError(f"siglas de UF desconhecidas: {sorted(desconhecidas)}")
+    populacao: dict[int, dict[int, int]] = {}
+    for l in linhas:
+        if l["localidade"] not in ufs or l["sexo"] != sexo:
+            continue
+        ano = populacao.setdefault(int(l["ano"]), {})
+        idade = int(l["idade"])
+        ano[idade] = ano.get(idade, 0) + int(l["populacao"])
+    return populacao
+
+
+def faixa_do_chefe(idade: int) -> Faixa | None:
+    return next((f for f in FAIXAS_CHEFE if f.contem(idade)), None)
+
+
+def sem_repeticao(domicilios: Iterable) -> list:
+    """Premissa P8: um id_domicilio repetido fica só com a linha do chefe de maior idade.
+
+    As repetições vêm de domicílios com mais de uma unidade de consumo na POF.
+    Linhas sem id_domicilio passam todas. A ordem de entrada é preservada.
+    """
+    escolhido: dict[object, int] = {}
+    lista = list(domicilios)
+    for i, d in enumerate(lista):
+        chave = getattr(d, "id_domicilio", None)
+        if chave is None:
+            continue
+        atual = escolhido.get(chave)
+        if atual is None or d.idade_chefe > lista[atual].idade_chefe:
+            escolhido[chave] = i
+    manter = set(escolhido.values())
+    return [d for i, d in enumerate(lista) if getattr(d, "id_domicilio", None) is None or i in manter]

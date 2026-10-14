@@ -19,6 +19,8 @@ O processo foi executado inteiramente no Google BigQuery, utilizando a técnica 
   - Realizamos o `JOIN` entre as tabelas usando a chave composta `id_domicilio`.
 - **Inclusão de Pesos Amostrais:** Extraímos a variável `peso_final` (da tabela `morador_2017`) e a incorporamos à tabela. O peso amostral é fundamental para corrigir os vieses da amostra e garantir que as médias reflitam o cenário real da população brasileira.
 - **Tratamento de Dados:** Aplicamos `TRIM()` nos IDs para evitar erros de espaços em branco e `SAFE_CAST` para garantir que valores não numéricos fossem tratados como nulos em vez de interromper a query.
+- **Critério de exclusão aplicado na extração:** ficaram de fora os domicílios sem declaração válida de consumo de energia (sem kWh na `V9005`), conforme o critério de exclusão da Metodologia do TCC. Segundo a equipe, saíram cerca de 6 mil registros. Por isso a tabela carregada no Supabase não tem nenhum domicílio com kWh nulo ou zero (o menor valor é 13 kWh), e a soma de `peso_final` (63,68 milhões de domicílios, depois da premissa P8) cobre 92,4% dos 68,9 milhões de domicílios estimados pela POF 2017 a 2018 (premissa P9).
+- **Domicílios com mais de uma unidade de consumo:** cada unidade de consumo da POF tem a sua pessoa de referência, então o filtro de chefe não garante uma linha por domicílio. Há 99 `id_domicilio` repetidos em 204 linhas, com o mesmo consumo, o mesmo peso e os mesmos moradores. A projeção mantém só a linha do chefe de maior idade (premissa P8).
 
 ### Fase 2: Cálculo de Coeficientes de Consumo
 
@@ -71,3 +73,19 @@ O processo de ETL resulta em quatro tabelas principais disponibilizadas no banco
 2. **`dim_coeficientes_consumo`:** Tabela de suporte. Sua função é consolidar as médias históricas (ex: média de consumo kWh) agrupadas por perfil e Unidade da Federação. Ela dita os "pesos" que serão aplicados sobre as populações.
 3. **`censo_2022_consumo_estimado`:** Tabela que representa o "Ano Base". Ela consolida as populações reais do Censo e estima quanto de energia cada estado consumiu em 2022 (separado por grupo etário). Seus dados servem como tensores de entrada (*Features*) para calibrar as projeções da IA para os próximos anos.
 4. **`projecoes_populacao_idade`:** Originada via processamento Python (planilha IBGE). Sua função é alimentar o motor de cálculo com as populações projetadas do Brasil até 2070. Ao cruzar essa projeção com a `dim_coeficientes_consumo`, o sistema consegue simular as tendências do consumo residencial nacional a longo prazo.
+
+## 5. Projeções de 2026 a 2070 (`backend/etl`)
+
+Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a partir das tabelas do Supabase. O código está em `backend/etl/modelagem.py`; as fórmulas, em `backend/app/calculo.py`.
+
+**Leitura e conferência**
+- A REST do Supabase devolve no máximo mil linhas por requisição. O cliente pagina e confere o total pelo cabeçalho `Content-Range` (contagem exata): se faltar linha, a leitura falha em vez de seguir pela metade. A auditoria registra as linhas lidas de cada tabela contra o count do banco.
+- A população vem das 27 UFs pela lista explícita de siglas, com sexo "Ambos". As linhas de total (regiões e Brasil) nunca entram no cálculo. A linha "Brasil" é lida só para conferência: a soma das 27 UFs confere com ela em todos os anos e idades (de 2018 a 2070, diferença máxima zero; conferido em 14/10/2026).
+
+**Etapas**
+1. Preparação: premissa P8 (domicílio repetido fica com o chefe de maior idade), faixa etária do chefe e célula (faixa e arranjo).
+2. Auditoria (`saida/auditoria.json`): peso ausente, repetidos, chefes com menos de 18 anos, domicílios acima de 1.000 kWh (mantidos), cobertura da POF e tabela por célula, com aviso nas células com menos de 30 domicílios.
+3. Ponte comum (premissa P2): taxa de chefia por faixa e arranjo com os pesos de 2018; domicílios projetados por ano.
+4. Método das taxas (`taxas`), contrafactual com a composição de 2026 congelada (`contrafactual`) e, para comparação, a validação da ponte contra o Censo 2022.
+5. Método de machine learning (`ml_rf` e `ml_gb`): validação cruzada, métricas e importância das variáveis; projeção por reponderação da amostra.
+6. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.

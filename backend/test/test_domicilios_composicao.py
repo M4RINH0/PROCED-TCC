@@ -11,10 +11,10 @@ from app.services.domicilios import EstruturaDomicilios, maior_resto, montar_com
 
 # chefia de 2018: cada combinação tem 1 domicílio para 100 pessoas da faixa
 DOMICILIOS = [
-    SimpleNamespace(arranjo=U, idade_chefe=65, consumo_per_capita_kwh=100.0),
-    SimpleNamespace(arranjo=C, idade_chefe=65, consumo_per_capita_kwh=200.0),
-    SimpleNamespace(arranjo=M, idade_chefe=65, consumo_per_capita_kwh=50.0),
-    SimpleNamespace(arranjo=U, idade_chefe=30, consumo_per_capita_kwh=80.0),
+    SimpleNamespace(arranjo=U, idade_chefe=65, consumo_per_capita_kwh=100.0, peso=1.0),
+    SimpleNamespace(arranjo=C, idade_chefe=65, consumo_per_capita_kwh=200.0, peso=1.0),
+    SimpleNamespace(arranjo=M, idade_chefe=65, consumo_per_capita_kwh=50.0, peso=1.0),
+    SimpleNamespace(arranjo=U, idade_chefe=30, consumo_per_capita_kwh=80.0, peso=1.0),
 ]
 POPULACAO = {2018: {30: 100, 65: 100}, 2030: {30: 100, 65: 300}}
 
@@ -53,3 +53,19 @@ def test_endpoint_composicao():
     r = TestClient(app).get("/arranjos/composicao")
     assert r.status_code == 200
     assert r.json()["anos"] == [2030] and "chefia" in r.json()["fonte"]
+
+
+def test_composicao_usa_o_peso_amostral():
+    # 60 a 69: uni com peso 3 (100 kWh) e com peso 1 (200 kWh); 30 a 39: uni com peso 4
+    # 2018: pop 100 nas duas faixas -> chefia uni 60 a 69 = 4/100, uni 30 a 39 = 4/100
+    # 2030: 60 a 69 tem 300 -> 12 domicílios; 30 a 39 tem 100 -> 4; uni_60 = 12/16 = 75%
+    # TEC uni 60+ = (3*100 + 1*200) / 4 = 125
+    domicilios = [
+        SimpleNamespace(arranjo=U, idade_chefe=65, consumo_per_capita_kwh=100.0, peso=3.0),
+        SimpleNamespace(arranjo=U, idade_chefe=66, consumo_per_capita_kwh=200.0, peso=1.0),
+        SimpleNamespace(arranjo=U, idade_chefe=30, consumo_per_capita_kwh=80.0, peso=4.0),
+    ]
+    r = montar_composicao(EstruturaDomicilios(domicilios, POPULACAO))
+    cat = {c.id: c for c in r.categorias}
+    assert cat["uni_60"].participacao_pct == [75.0] and cat["uni_59"].participacao_pct == [25.0]
+    assert cat["uni_60"].consumo_per_capita_kwh == 125.0 and cat["uni_60"].domicilios_amostra == 2

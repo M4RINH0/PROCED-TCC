@@ -83,12 +83,20 @@ def test_projecao_e_lida_por_localidade_e_guardada_em_cache():
     class Cliente:
         def selecionar(self, tabela, colunas, filtros=None):
             chamadas.append(filtros)
-            return [{"ano": 2030, "idade": 60, "populacao": 7}]
+            return [
+                {"localidade": "PR", "sexo": "Ambos", "ano": 2030, "idade": 60, "populacao": 7},
+                {"localidade": "RS", "sexo": "Ambos", "ano": 2030, "idade": 60, "populacao": 3},
+                {"localidade": "Sul", "sexo": "Ambos", "ano": 2030, "idade": 60, "populacao": 10},
+            ]
 
     dados = Dados(Cliente())
-    dados.populacao_por_idade("Sul"), dados.populacao_por_idade("Sul"), dados.populacao_por_idade("RS")
-    assert [c["localidade"] for c in chamadas] == ["eq.Sul", "eq.RS"]
-    assert chamadas[0]["ano"] == "gte.2018"
+    sul = dados.populacao_por_idade("Sul")
+    dados.populacao_por_idade("Sul"), dados.populacao_por_idade("RS")
+    # a região é a soma das suas UFs pela lista explícita; a linha de total "Sul" não entra
+    assert [c["localidade"] for c in chamadas] == ["in.(PR,RS,SC)", "in.(RS)"]
+    assert sul == {2030: {60: 10}}
+    assert dados.populacao_por_idade("RS") == {2030: {60: 3}}
+    assert chamadas[0]["ano"] == "gte.2018" and chamadas[0]["sexo"] == "eq.Ambos"
 
 
 # ---------- serviços ----------

@@ -25,6 +25,26 @@ def test_parametros_do_recorte_60_mais():
     assert p.chefia == pytest.approx({"60 a 69": 0.002, "70 a 79": 0.002, "80+": 0.004})
 
 
+def test_parametros_usam_o_peso_amostral():
+    # 60 a 69: peso 3 com 100 kWh e peso 1 com 200 kWh -> TEC (300 + 200) / 4 = 125; chefia 4 / 1000
+    # 70 a 79: peso 2 com 150 kWh -> chefia 2 / 500; 80+: peso 1 com 200 kWh -> chefia 1 / 250
+    from app.dados import Domicilio
+
+    domicilios = [
+        Domicilio(UNIPESSOAL, 62, 100.0, peso=3.0),
+        Domicilio(CASAL_OU_DUPLA, 68, 200.0, peso=1.0),
+        Domicilio(UNIPESSOAL, 75, 150.0, peso=2.0),
+        Domicilio(UNIPESSOAL, 85, 200.0, peso=1.0),
+        Domicilio(MULTIPESSOAL, 65, 999.0, peso=50.0),  # fora do recorte mononuclear
+    ]
+    p = ParametrosRecorte(Recorte.chefe_60_mais, domicilios, POPULACAO)
+    assert p.tec == pytest.approx({"60 a 69": 125.0, "70 a 79": 150.0, "80+": 200.0})
+    assert p.chefia == pytest.approx({"60 a 69": 0.004, "70 a 79": 0.004, "80+": 0.004})
+    assert p.amostra == 4
+    # 2030: ndom = 0,004 * (1000, 1000, 500) = 4, 4, 2 -> (125*4 + 150*4 + 200*2) / 10 = 150
+    assert p.tbc_ibge(2030) == pytest.approx(150.0)
+
+
 def test_tbc_ibge_no_ano_de_referencia():
     # ndom = 2, 1, 1 -> (110*2 + 150*1 + 200*1) / 4 = 570 / 4 = 142,5
     p = ParametrosRecorte(Recorte.chefe_60_mais, DOMICILIOS, POPULACAO)

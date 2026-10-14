@@ -9,9 +9,13 @@ import threading
 from dataclasses import dataclass
 from functools import lru_cache
 
-from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL
+from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL, SEXO_AMBOS, sem_repeticao, somar_populacao, ufs_explicitas
 from app.supabase import ClienteSupabase, obter_cliente
 
+COLUNAS_DOMICILIOS = (
+    "id_domicilio,sigla_uf,arranjo_familiar,idade_chefe,qtd_moradores,"
+    "consumo_total_kwh,consumo_per_capita_kwh,peso_final"
+)
 COLUNAS_COEFICIENTES = (
     "sigla_uf,arranjo_familiar,is_60_mais,total_domicilios_amostra,"
     "media_consumo_total_kwh,media_consumo_per_capita_kwh,media_gasto_rs"
@@ -24,6 +28,10 @@ class Domicilio:
     idade_chefe: int
     consumo_per_capita_kwh: float
     uf: str = ""
+    peso: float = 1.0  # peso_final da POF; 1 nos testes que contam domicílios da amostra
+    consumo_total_kwh: float | None = None
+    moradores: int | None = None
+    id_domicilio: int | None = None
 
 
 class Dados:
@@ -42,39 +50,49 @@ class Dados:
             return self._cache[chave]
 
     def domicilios(self) -> list[Domicilio]:
-        """fato_consumo_domiciliar: um domicílio da POF por linha, com a UF."""
+        """fato_consumo_domiciliar: um domicílio da POF por linha, com a UF e o peso,
+        já sem as linhas repetidas (premissa P8)."""
 
         def carregar():
             linhas = self._cliente.selecionar(
-                "fato_consumo_domiciliar",
-                "sigla_uf,arranjo_familiar,idade_chefe,consumo_per_capita_kwh",
-                {"order": "id_domicilio.asc"},
+                "fato_consumo_domiciliar", COLUNAS_DOMICILIOS, {"order": "id_domicilio.asc"}
             )
-            return [
-                Domicilio(l["arranjo_familiar"], int(l["idade_chefe"]), float(l["consumo_per_capita_kwh"]), l["sigla_uf"])
+            return sem_repeticao(
+                Domicilio(
+                    l["arranjo_familiar"],
+                    int(l["idade_chefe"]),
+                    float(l["consumo_per_capita_kwh"]),
+                    l["sigla_uf"],
+                    float(l["peso_final"]),
+                    float(l["consumo_total_kwh"]),
+                    int(l["qtd_moradores"]),
+                    int(l["id_domicilio"]),
+                )
                 for l in linhas
-            ]
+            )
 
         return self._uma_vez("domicilios", carregar)
 
     def populacao_por_idade(self, localidade: str = BRASIL) -> dict[int, dict[int, int]]:
-        """Ambos os sexos na localidade: ano -> idade -> população (2018 e o horizonte)."""
+        """Ambos os sexos na localidade: ano -> idade -> população (2018 e o horizonte).
+
+        Lê só as UFs da localidade pela lista explícita de siglas (o Brasil são as 27)
+        e soma; as linhas de total da tabela (regiões e Brasil) nunca entram.
+        """
 
         def carregar():
+            ufs = ufs_explicitas(localidade)
             linhas = self._cliente.selecionar(
                 "projecoes_populacao_idade",
-                "ano,idade,populacao",
+                "localidade,sexo,ano,idade,populacao",
                 {
-                    "localidade": f"eq.{localidade}",
-                    "sexo": "eq.Ambos",
+                    "localidade": f"in.({','.join(ufs)})",
+                    "sexo": f"eq.{SEXO_AMBOS}",
                     "ano": f"gte.{ANO_REFERENCIA_POF}",
                     "order": "id.asc",
                 },
             )
-            populacao: dict[int, dict[int, int]] = {}
-            for l in linhas:
-                populacao.setdefault(int(l["ano"]), {})[int(l["idade"])] = int(l["populacao"])
-            return populacao
+            return somar_populacao(linhas, ufs)
 
         return self._uma_vez(f"populacao:{localidade}", carregar)
 

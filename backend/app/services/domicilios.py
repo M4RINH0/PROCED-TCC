@@ -3,7 +3,7 @@
 import math
 from collections.abc import Iterable
 
-from app.calculo import tec
+from app.calculo import domicilios_projetados, taxas_chefia, tec
 from app.dados import Domicilio
 from app.dominio import (
     ANO_FINAL,
@@ -15,6 +15,7 @@ from app.dominio import (
     MULTIPESSOAL,
     UNIPESSOAL,
     da_localidade,
+    faixa_do_chefe,
     populacao_da_faixa,
     ufs_da_localidade,
 )
@@ -80,39 +81,42 @@ def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosRes
 class EstruturaDomicilios:
     """Domicílios por faixa do chefe e arranjo no ano s, com a taxa de chefia de 2018
     constante em cada combinação (premissa P2 aplicada também ao arranjo).
+    Taxa de chefia e TEC usam o peso amostral da POF (peso_final).
     """
 
     def __init__(self, domicilios: Iterable[Domicilio], populacao: dict[int, dict[int, int]]):
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
         self.populacao = populacao
-        grupos: dict[tuple[str, str], list[float]] = {}
+        self.amostra: dict[tuple[str, str], int] = {}
+        self.peso: dict[tuple[str, str], float] = {}
+        self.soma: dict[tuple[str, str], float] = {}  # soma de peso * consumo per capita
         for d in domicilios:
-            faixa = next((f for f in FAIXAS_CHEFE if f.contem(d.idade_chefe)), None)
-            if faixa is not None:
-                grupos.setdefault((faixa.rotulo, d.arranjo), []).append(d.consumo_per_capita_kwh)
-        self.amostra = {chave: len(v) for chave, v in grupos.items()}
-        self.soma = {chave: sum(v) for chave, v in grupos.items()}
-        ref = populacao[ANO_REFERENCIA_POF]
+            faixa = faixa_do_chefe(d.idade_chefe)
+            if faixa is None:
+                continue
+            chave = (faixa.rotulo, d.arranjo)
+            self.amostra[chave] = self.amostra.get(chave, 0) + 1
+            self.peso[chave] = self.peso.get(chave, 0.0) + d.peso
+            self.soma[chave] = self.soma.get(chave, 0.0) + d.peso * d.consumo_per_capita_kwh
         self._faixas = {f.rotulo: f for f in FAIXAS_CHEFE}
-        self.chefia = {
-            chave: n / populacao_da_faixa(ref, self._faixas[chave[0]]) for chave, n in self.amostra.items()
-        }
+        self.chefia = taxas_chefia(self.peso, self._populacao_por_faixa(ANO_REFERENCIA_POF))
+
+    def _populacao_por_faixa(self, ano: int) -> dict[str, int]:
+        return {r: populacao_da_faixa(self.populacao[ano], f) for r, f in self._faixas.items()}
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
         """(faixa, arranjo) -> domicílios estimados; None sem projeção para o ano."""
         if ano not in self.populacao:
             return None
-        return {
-            chave: c * populacao_da_faixa(self.populacao[ano], self._faixas[chave[0]])
-            for chave, c in self.chefia.items()
-        }
+        return domicilios_projetados(self.chefia, self._populacao_por_faixa(ano))
 
     def tec_do_grupo(self, faixas: Iterable[str], arranjo: str) -> tuple[int, float | None]:
-        """Domicílios da amostra e TEC de um arranjo num conjunto de faixas."""
+        """Domicílios da amostra e TEC ponderada de um arranjo num conjunto de faixas."""
         chaves = [(f, arranjo) for f in faixas if (f, arranjo) in self.amostra]
         n = sum(self.amostra[c] for c in chaves)
-        return n, (tec(sum(self.soma[c] for c in chaves), n) if n else None)
+        peso = sum(self.peso[c] for c in chaves)
+        return n, (tec(sum(self.soma[c] for c in chaves), peso) if peso > 0 else None)
 
 
 FAIXAS_60 = [f.rotulo for f in FAIXAS_CHEFE if f.minima >= 60]
