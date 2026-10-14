@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import Atualizando from '../components/Atualizando.jsx'
 import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import GradeCasas from '../components/GradeCasas.jsx'
+import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import Segmentado from '../components/Segmentado.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarComposicao } from '../services/api.js'
 import { ANOS_HISTORICO, APARENCIA, FILTROS, noFiltro } from '../utils/categorias.js'
 import { umaCasa } from '../utils/formato.js'
+import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 
 function Historico({ categoria, anos, ano, maximo }) {
@@ -40,10 +43,16 @@ function Historico({ categoria, anos, ano, maximo }) {
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 
-export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao, local = LOCAL_PADRAO }) {
+export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao, local = LOCAL_PADRAO, simulacao = SIMULACAO_PADRAO }) {
   const [filtro, setFiltro] = useState('todos')
   const [destaque, setDestaque] = useState(null)
-  const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ localidade: local.valor }, o), [local.valor, versao])
+  const { intensidade, k } = simulacao.aplicados
+  const { status, dados, erro, recarregar } = useConsulta(
+    (o) => buscar({ localidade: local.valor, intensidade, k }, o),
+    [local.valor, intensidade, k, versao],
+  )
+  const nomeDosDados = dados ? (local.nomeDe?.(dados.localidade) ?? dados.localidade) : local.nome
+  const atualizando = status === 'carregando' && Boolean(dados)
   const anoInteiro = Math.round(ano)
   const indice = dados ? dados.anos.indexOf(anoInteiro) : -1
   const semDado = dados && indice < 0
@@ -60,7 +69,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
     const inicio = recorte.reduce((s, c) => s + c.casas[0], 0)
     frase = (
       <>
-        Em <b>{anoInteiro}</b>, <b>{agora} de cada 100 domicílios</b> são mononucleares com chefe de 60 anos ou mais ({local.nome}). Em{' '}
+        Em <b>{anoInteiro}</b>, <b>{agora} de cada 100 domicílios</b> são mononucleares com chefe de 60 anos ou mais ({nomeDosDados}). Em{' '}
         {dados.anos[0]} eram {inicio}.
       </>
     )
@@ -71,15 +80,17 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
       <div className="vh">
         <div>
           <h1>Domicílios por arranjo</h1>
-          <p>{frase}</p>
+          <p className={atualizando ? 'esmaecido' : undefined}>{frase}</p>
+          <Atualizando ativo={atualizando} destino={local.nome} />
         </div>
         <div className="vh-lado">
           <FiltroLocal local={local} />
+          <PainelSimulacao simulacao={simulacao} />
           <Segmentado rotulo="Filtrar arranjos" opcoes={FILTROS} valor={filtro} aoMudar={setFiltro} />
         </div>
       </div>
       <div className="body g-dom">
-        <section className="pan" aria-labelledby="h-iso">
+        <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-iso">
           <div className="ph">
             <h2 id="h-iso">
               Cem domicílios brasileiros <small>cada casa representa 1%</small>
@@ -108,10 +119,12 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
             ))}
           </div>
           <div className="pf">
-            <span>Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {local.nome}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
+            <span>
+              {dados?.simulacao && <b>Simulação. </b>}
+              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {nomeDosDados}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
           </div>
         </section>
-        <section className="pan" aria-labelledby="h-rows">
+        <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-rows">
           <div className="ph">
             <h2 id="h-rows">Consumo por arranjo</h2>
             <small style={{ color: 'var(--muted)', fontSize: 12 }}>Passe o cursor numa linha para destacar as casas</small>

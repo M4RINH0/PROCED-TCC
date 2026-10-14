@@ -100,3 +100,16 @@ describe('EstruturaEtaria', () => {
     expect(await screen.findByText('1.814')).toBeInTheDocument()
   })
 })
+
+describe('EstruturaEtaria: controles de simulação', () => {
+  it('a pirâmide recebe só k; a intensidade fica desabilitada com a explicação', async () => {
+    const p = props()
+    const valores = { k: 1.5, intensidade: 1.2 }
+    render(<EstruturaEtaria ano={2070} {...p} simulacao={{ valores, aplicados: valores, ativa: true, aoMudar: vi.fn(), restaurar: vi.fn() }} />)
+    await screen.findByText('37,8%')
+    expect(p.buscarPir).toHaveBeenCalledWith({ localidade: 'Brasil', k: 1.5 }, expect.anything())
+    expect(p.buscarConsumo).toHaveBeenCalledWith({ arranjo: 'mononucleares', localidade: 'Brasil' }, expect.anything())
+    expect(screen.getByLabelText('Intensidade da mudança de arranjos')).toBeDisabled()
+    expect(screen.getByText(/a mudança de arranjos não altera esta página/)).toBeInTheDocument()
+  })
+})

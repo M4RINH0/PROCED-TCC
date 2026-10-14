@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import Atualizando from '../components/Atualizando.jsx'
 import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import BarrasFaixa from '../components/BarrasFaixa.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import Icone from '../components/Icone.jsx'
+import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import Piramide from '../components/Piramide.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarConsumoChefe, buscarPiramides } from '../services/api.js'
 import { inteiro, umaCasa } from '../utils/formato.js'
+import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 
 export const ARRANJOS = [
@@ -22,9 +25,22 @@ const FAIXAS_60 = new Set(['60 a 69', '70 a 79', '80+'])
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 
-export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPiramides, buscarConsumo = buscarConsumoChefe, local = LOCAL_PADRAO }) {
+/* A intensidade da tendência dos arranjos não muda nada nesta página */
+export const SEM_EFEITO_ETARIA = {
+  intensidade: 'A pirâmide é de pessoas e o consumo por faixa vem da POF 2017 a 2018: a mudança de arranjos não altera esta página.',
+}
+
+export default function EstruturaEtaria({
+  ano,
+  versao = 0,
+  buscarPir = buscarPiramides,
+  buscarConsumo = buscarConsumoChefe,
+  local = LOCAL_PADRAO,
+  simulacao = SIMULACAO_PADRAO,
+}) {
   const [arranjo, setArranjo] = useState('mononucleares')
-  const pir = useConsulta((o) => buscarPir({ localidade: local.valor }, o), [local.valor, versao])
+  const { k } = simulacao.aplicados
+  const pir = useConsulta((o) => buscarPir({ localidade: local.valor, k }, o), [local.valor, k, versao])
   const consumo = useConsulta((o) => buscarConsumo({ arranjo, localidade: local.valor }, o), [arranjo, local.valor, versao])
   const anoInteiro = Math.round(ano)
   const piramides = pir.dados?.piramides ?? []
@@ -32,6 +48,10 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
   const inicial = piramides[0]
   const faixas = consumo.dados?.faixas ?? []
   const rotuloArranjo = ARRANJOS.find((a) => a.id === arranjo).rotulo
+  const nomeDosDados = pir.dados ? (local.nomeDe?.(pir.dados.localidade) ?? pir.dados.localidade) : local.nome
+  const atualizandoPir = pir.status === 'carregando' && Boolean(pir.dados)
+  const atualizandoConsumo = consumo.status === 'carregando' && Boolean(consumo.dados)
+  const nomeDoConsumo = consumo.dados ? (local.nomeDe?.(consumo.dados.localidade) ?? consumo.dados.localidade) : local.nome
 
   let frase = 'Carregando dados…'
   if (pir.status === 'erro') frase = 'Dados indisponíveis no momento. Os controles continuam ativos e serão aplicados quando a conexão voltar.'
@@ -39,7 +59,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
   else if (doAno && inicial) {
     frase = (
       <>
-        {local.nome}: a população de <b>60 anos ou mais</b> passa de <b>{umaCasa(inicial.participacao_60_mais_pct)}%</b> em {inicial.ano} para{' '}
+        {nomeDosDados}: a população de <b>60 anos ou mais</b> passa de <b>{umaCasa(inicial.participacao_60_mais_pct)}%</b> em {inicial.ano} para{' '}
         <b>{umaCasa(doAno.participacao_60_mais_pct)}%</b> em {anoInteiro}. Onde o contorno de {inicial.ano} fica dentro da barra, a faixa cresceu.
       </>
     )
@@ -50,10 +70,12 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
       <div className="vh">
         <div>
           <h1>Estrutura etária</h1>
-          <p>{frase}</p>
+          <p className={atualizandoPir ? 'esmaecido' : undefined}>{frase}</p>
+          <Atualizando ativo={atualizandoPir || atualizandoConsumo} destino={local.nome} />
         </div>
         <div className="vh-lado">
           <FiltroLocal local={local} />
+          <PainelSimulacao simulacao={simulacao} semEfeito={SEM_EFEITO_ETARIA} />
           <span className="rec">
             <Icone nome="target" />
             Recorte: chefe com 60 anos ou mais
@@ -61,7 +83,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
         </div>
       </div>
       <div className="body g-eta">
-        <section className="pan" aria-labelledby="h-pyr">
+        <section className={atualizandoPir ? 'pan esmaecido' : 'pan'} aria-labelledby="h-pyr">
           <div className="ph">
             <h2 id="h-pyr">
               Pirâmide etária <small>% da população</small>
@@ -96,10 +118,12 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {pir.dados?.fonte ?? 'Projeções da População (IBGE)'}, {local.nome}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
+            <span>
+              {pir.dados?.simulacao && <b>Simulação. </b>}
+              Fonte: {pir.dados?.fonte ?? 'Projeções da População (IBGE)'}, {nomeDosDados}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
           </div>
         </section>
-        <section className="pan split-v" aria-labelledby="h-ch">
+        <section className={atualizandoConsumo ? 'pan split-v esmaecido' : 'pan split-v'} aria-labelledby="h-ch">
           <div className="ph">
             <h2 id="h-ch">
               Consumo por faixa etária do chefe <small>kWh/mês por pessoa</small>
@@ -155,7 +179,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {consumo.dados?.fonte ?? 'POF'}, {local.nome}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
+            <span>Fonte: {consumo.dados?.fonte ?? 'POF'}, {nomeDoConsumo}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
           </div>
         </section>
       </div>

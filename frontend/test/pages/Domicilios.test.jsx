@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { buscarArranjos, buscarComposicao } from '../../src/services/api.js'
 import { noFiltro } from '../../src/utils/categorias.js'
@@ -102,5 +102,35 @@ describe('Domicilios', () => {
   it('mostra o erro com o ano preservado', async () => {
     render(<Domicilios ano={2050} buscar={vi.fn().mockRejectedValue(new Error('A API respondeu com o código 503'))} />)
     expect(await screen.findByRole('alert')).toHaveTextContent('ano 2050')
+  })
+})
+
+describe('Domicilios: controles de simulação e localidade', () => {
+  it('envia intensidade e k aplicados e deixa os dois controles ativos', async () => {
+    const buscarC = vi.fn(() => Promise.resolve(composicao))
+    const valores = { k: 1.4, intensidade: 0 }
+    render(<Domicilios ano={2026} buscar={buscarC} simulacao={{ valores, aplicados: valores, ativa: true, aoMudar: vi.fn(), restaurar: vi.fn() }} />)
+    await screen.findByTestId('linha-uni_60')
+    expect(buscarC).toHaveBeenCalledWith({ localidade: 'Brasil', intensidade: 0, k: 1.4 }, expect.anything())
+    expect(screen.getByLabelText('Intensidade da mudança de arranjos')).toBeEnabled()
+    expect(screen.getByLabelText('Velocidade do envelhecimento (k)')).toBeEnabled()
+  })
+
+  it('avisa "Atualizando para" e usa o nome da localidade que veio na resposta', async () => {
+    let resolver
+    const buscarC = vi.fn(({ localidade }) =>
+      localidade === 'Brasil'
+        ? Promise.resolve({ ...composicao, localidade: 'Brasil' })
+        : new Promise((r) => (resolver = () => r({ ...composicao, localidade })))
+    )
+    const local = { valor: 'Brasil', nome: 'Brasil', nomeDe: (v) => ({ SP: 'São Paulo' })[v] ?? v, regioes: [], aoMudar: () => {} }
+    const { rerender } = render(<Domicilios ano={2026} buscar={buscarC} local={local} />)
+    expect(await screen.findByText(/\(Brasil\)/)).toBeInTheDocument()
+    rerender(<Domicilios ano={2026} buscar={buscarC} local={{ ...local, valor: 'SP', nome: 'São Paulo' }} />)
+    expect(await screen.findByTestId('atualizando')).toHaveTextContent('Atualizando para São Paulo…')
+    expect(screen.getByText(/\(Brasil\)/)).toBeInTheDocument()
+    await act(async () => resolver())
+    expect(screen.queryByTestId('atualizando')).not.toBeInTheDocument()
+    expect(screen.getByText(/\(São Paulo\)/)).toBeInTheDocument()
   })
 })

@@ -144,9 +144,9 @@ main.nodock{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .band{fill:var(--teal-soft);opacity:.75}
 .ln{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .ln.fade{opacity:.28}
-.s-taxas{stroke:var(--teal)} .s-contrafactual{stroke:var(--orange);stroke-dasharray:7 5}
+.s-taxas{stroke:var(--teal)} .s-taxas_arranjos_fixos{stroke:var(--teal);stroke-dasharray:7 5} .s-contrafactual{stroke:var(--orange);stroke-dasharray:7 5}
 .s-ml_rf{stroke:var(--cobalt);stroke-dasharray:7 5} .s-ml_gb{stroke:var(--cobalt);stroke-dasharray:1.5 6;stroke-width:2.8}
-.t-taxas{fill:var(--teal)} .t-contrafactual{fill:var(--orange)} .t-ml_rf,.t-ml_gb{fill:var(--cobalt)}
+.t-taxas,.t-taxas_arranjos_fixos{fill:var(--teal)} .t-contrafactual{fill:var(--orange)} .t-ml_rf,.t-ml_gb{fill:var(--cobalt)}
 .aviso-amostra{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--ink-2);
   background:var(--energy-soft);border-radius:8px;padding:8px 10px;margin:8px 0}
 .aviso-amostra svg{width:15px;height:15px;flex:none;margin-top:1px}
@@ -551,3 +551,19 @@ circle.dot{transition:cy .12s linear}
 .filtro-local select:focus{outline:0;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
 .filtro-local select:disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:760px){.vh-lado{align-items:stretch}.filtro-local select{min-width:0;flex:1 1 0}.filtro-local .fl{flex:1 1 0}}
+
+/* Parâmetros de simulação (RF02), atualização em andamento e recorte do Panorama */
+.sim-painel{display:flex;flex-direction:column;gap:6px;min-width:min(100%,440px)}
+.sim-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sim-h .flab{margin:0}
+.sim-ctrls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.sim-ctrls .fl label{margin-bottom:2px}
+.sim-ctrls .rangeh output small{font-size:11px;font-weight:500;color:var(--muted)}
+.sim-ctrls input[type=range].tx:disabled{opacity:.4;cursor:not-allowed}
+.chip-sim{font-size:11.5px;font-weight:650;color:var(--ink);background:var(--energy-soft);border-radius:999px;padding:2px 9px}
+.atualizando{margin:4px 0 0;font-size:12.5px;font-weight:550;color:var(--ink-2)}
+.esmaecido{opacity:.45;transition:opacity .2s var(--ease)}
+.recorte-sel{height:34px;width:100%;padding:0 10px;font:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+  border:1px solid var(--rule);border-radius:8px}
+.recorte-explica{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--ink-2)}
+@media (max-width:760px){.sim-ctrls{grid-template-columns:minmax(0,1fr)}}

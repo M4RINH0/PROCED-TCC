@@ -40,7 +40,7 @@ describe('Simulador', () => {
     render(<Simulador buscar={buscar} />)
     expect(await screen.findByText('120,5 kWh por mês por pessoa')).toBeInTheDocument()
     expect(buscar).toHaveBeenCalledWith(
-      { ano: 2070, faixa: '70_79', arranjo: 'unipessoal', base: 'taxas', localidade: 'Brasil' },
+      { ano: 2070, faixa: '70_79', arranjo: 'unipessoal', base: 'taxas', localidade: 'Brasil', intensidade: 0.6, k: 1 },
       expect.anything(),
     )
     expect(screen.getByText(/média ponderada de 1.218/)).toBeInTheDocument()
@@ -49,10 +49,22 @@ describe('Simulador', () => {
     expect(screen.getByText('415,4 milhões de kWh/mês')).toBeInTheDocument()
   })
 
-  it('oferece só o método das taxas e o contrafactual como cenário', () => {
+  it('oferece o método das taxas, só o envelhecimento e o contrafactual como cenário', () => {
     render(<Simulador buscar={buscarOk()} />)
     const opcoes = [...screen.getByLabelText('Cenário').querySelectorAll('option')].map((o) => o.value)
-    expect(opcoes).toEqual(['taxas', 'contrafactual'])
+    expect(opcoes).toEqual(['taxas', 'taxas_arranjos_fixos', 'contrafactual'])
+  })
+
+  it('envia os controles de simulação aplicados e mostra o painel com os dois ativos', async () => {
+    const buscar = buscarOk()
+    const valores = { k: 0.8, intensidade: 1.5 }
+    const simulacao = { valores, aplicados: valores, ativa: true, aoMudar: vi.fn(), restaurar: vi.fn() }
+    render(<Simulador buscar={buscar} simulacao={simulacao} />)
+    await screen.findByText('120,5 kWh por mês por pessoa')
+    expect(buscar).toHaveBeenCalledWith(expect.objectContaining({ intensidade: 1.5, k: 0.8 }), expect.anything())
+    expect(screen.getByLabelText('Velocidade do envelhecimento (k)')).toBeEnabled()
+    expect(screen.getByLabelText('Intensidade da mudança de arranjos')).toBeEnabled()
+    expect(screen.getByTestId('rotulo-simulacao')).toBeInTheDocument()
   })
 
   it('não tem campo de taxa de envelhecimento', () => {

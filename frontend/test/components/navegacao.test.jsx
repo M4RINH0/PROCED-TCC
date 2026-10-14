@@ -67,7 +67,7 @@ describe('Gaveta', () => {
     vi.stubGlobal('fetch', fetch)
     render(<Gaveta tipo="api" ano={2050.3} aoFechar={() => {}} avisar={() => {}} />)
     expect(await screen.findByText(/"ano": 2050/)).toBeInTheDocument()
-    expect(fetch.mock.calls[0][0]).toContain('/projecoes?ano=2050&recorte=chefe_60_mais')
+    expect(fetch.mock.calls[0][0]).toContain('/projecoes?ano=2050&recorte=todos_domicilios&localidade=Brasil&intensidade=0.6&k=1')
   })
 
   it('fecha com Esc e avisa que a exportação está pendente', () => {

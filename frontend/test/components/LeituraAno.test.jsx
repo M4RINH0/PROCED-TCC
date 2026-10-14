@@ -27,7 +27,7 @@ describe('LeituraAno', () => {
     expect(within(reg).getByText('98,0 kWh/mês')).toBeInTheDocument()
     expect(within(reg).getByText('+0,1 kWh desde 2026 (+0,1%)')).toBeInTheDocument()
     expect(screen.getByText('25,4%')).toBeInTheDocument()
-    expect(screen.getByText('3.527,9 milhões')).toBeInTheDocument()
+    expect(screen.getByText('3.527,9 milhões')).toBeInTheDocument()  // consumo total do recorte
   })
 
   it('só mostra as séries recebidas, sem as que não têm dado', () => {
@@ -40,20 +40,30 @@ describe('LeituraAno', () => {
   it('avisa a falta do valor do ano em vez de mostrar um traço', () => {
     render(<LeituraAno ponto={ponto(null, { participacao_60_mais_pct: null })} ano={2050} series={comDado} visiveis={todas} />)
     expect(within(screen.getByTestId('reg-taxas')).getByText('Sem dado neste ano')).toBeInTheDocument()
-    expect(screen.getAllByText('sem dado', { selector: 'b' })).toHaveLength(4)
+    expect(screen.getAllByText('sem dado', { selector: 'b' })).toHaveLength(5)
   })
 
-  it('mostra o efeito do envelhecimento quando a API o envia', () => {
+  it('mostra a decomposição do efeito do envelhecimento em idade e arranjos', () => {
+    // valores reais da API, todos os domicílios, Brasil, 2050 (intensidade 1)
     render(
       <LeituraAno
-        ponto={ponto(98.0, { efeito_envelhecimento_kwh: 0.1, efeito_envelhecimento_total_kwh_mes: 1199978649 })}
+        ponto={ponto(81.3, {
+          efeito_envelhecimento_kwh: 8.9,
+          efeito_idade_kwh: 3.4,
+          efeito_arranjos_kwh: 5.5,
+          efeito_envelhecimento_total_kwh_mes: 1913958206,
+          efeito_idade_total_kwh_mes: 579458142,
+          efeito_arranjos_total_kwh_mes: 1334500064,
+        })}
         ano={2050}
         series={comDado}
         visiveis={todas}
       />,
     )
-    expect(screen.getByText('+0,1 kWh')).toBeInTheDocument()
-    expect(screen.getByText('+1.200,0 milhões')).toBeInTheDocument()
+    const d = screen.getByTestId('decomposicao')
+    expect(d).toHaveTextContent('Efeito da idade (arranjos fixos menos contrafactual)+3,4 kWh (+579,5 milhões de kWh/mês)')
+    expect(d).toHaveTextContent('Efeito dos arranjos (taxas menos arranjos fixos)+5,5 kWh (+1.334,5 milhões de kWh/mês)')
+    expect(d).toHaveTextContent('Efeito do envelhecimento (taxas menos contrafactual)+8,9 kWh (+1.914,0 milhões de kWh/mês)')
   })
 
   it('usa o sinal de menos quando o efeito é negativo', () => {
@@ -65,8 +75,7 @@ describe('LeituraAno', () => {
         visiveis={todas}
       />,
     )
-    expect(screen.getByText('−1,5 kWh')).toBeInTheDocument()
-    expect(screen.getByText('−2,5 milhões')).toBeInTheDocument()
+    expect(screen.getByTestId('decomposicao')).toHaveTextContent('−1,5 kWh (−2,5 milhões de kWh/mês)')
   })
 
   it('esmaece a série escondida na legenda', () => {

@@ -3,11 +3,14 @@ import { useTamanho } from '../hooks/useTamanho.js'
 import { umaCasa } from '../utils/formato.js'
 import { ANO_FINAL, ANO_INICIAL, SERIES } from '../utils/series.js'
 
-/* Faixa do eixo como no protótipo: folga de 6 kWh e múltiplos de 20 */
+/* Faixa do eixo do gráfico de linhas: folga de 1 kWh e múltiplos de 10, para a curva ocupar a altura
+   (de 71,5 a 82,7 kWh, o eixo vai de 70 a 90). Só vale para linhas; gráfico de barras começa no zero. */
 export function dominioY(series) {
   const valores = series.flatMap((s) => s.pontos.map((p) => p.valor)).filter((v) => v !== null)
   if (!valores.length) return [120, 280]
-  return [Math.floor((Math.min(...valores) - 6) / 20) * 20, Math.ceil((Math.max(...valores) + 6) / 20) * 20]
+  const lo = Math.floor((Math.min(...valores) - 1) / 10) * 10
+  const hi = Math.ceil((Math.max(...valores) + 1) / 10) * 10
+  return [lo, Math.max(hi, lo + 10)]
 }
 
 export function marcasY([lo, hi], quantidade = 5) {

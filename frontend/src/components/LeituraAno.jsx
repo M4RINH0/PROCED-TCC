@@ -2,6 +2,7 @@ import { comSinal, milhoes, umaCasa } from '../utils/formato.js'
 import Odometro from './Odometro.jsx'
 
 const semDado = (v) => v === null || v === undefined
+const sinal = (v) => (v >= 0 ? '+' : '−')
 
 /* Painel "Leitura do ano". ponto: item da série no ano; series: só as que têm valor em algum ano */
 export default function LeituraAno({ ponto, ano, series, visiveis }) {
@@ -33,19 +34,26 @@ export default function LeituraAno({ ponto, ano, series, visiveis }) {
           </div>
         )
       })}
-      <div className="cmp">
-        <div>
-          <span>Efeito do envelhecimento (taxas menos contrafactual)</span>
-          <b className="num">{semDado(ponto?.efeito_envelhecimento_kwh) ? 'sem dado' : `${comSinal(ponto.efeito_envelhecimento_kwh)} kWh`}</b>
-        </div>
-        <div>
-          <span>Efeito no consumo total (kWh/mês)</span>
-          <b className="num">
-            {semDado(ponto?.efeito_envelhecimento_total_kwh_mes)
-              ? 'sem dado'
-              : `${ponto.efeito_envelhecimento_total_kwh_mes >= 0 ? '+' : '−'}${milhoes(Math.abs(ponto.efeito_envelhecimento_total_kwh_mes))}`}
-          </b>
-        </div>
+      <div className="cmp" data-testid="decomposicao">
+        {[
+          ['Efeito do envelhecimento (taxas menos contrafactual)', 'efeito_envelhecimento'],
+          ['Efeito da idade (arranjos fixos menos contrafactual)', 'efeito_idade'],
+          ['Efeito dos arranjos (taxas menos arranjos fixos)', 'efeito_arranjos'],
+        ].map(([rotulo, campo]) => (
+          <div key={campo}>
+            <span>{rotulo}</span>
+            <b className="num">
+              {semDado(ponto?.[`${campo}_kwh`]) ? 'sem dado' : `${comSinal(ponto[`${campo}_kwh`])} kWh`}
+              {!semDado(ponto?.[`${campo}_total_kwh_mes`]) && (
+                <small>
+                  {' '}
+                  ({sinal(ponto[`${campo}_total_kwh_mes`])}
+                  {milhoes(Math.abs(ponto[`${campo}_total_kwh_mes`]))} de kWh/mês)
+                </small>
+              )}
+            </b>
+          </div>
+        ))}
         <div>
           <span>Consumo total do recorte, método das taxas (kWh/mês)</span>
           <b className="num">{semDado(taxas?.consumo_total_calibrado_kwh_mes) ? 'sem dado' : milhoes(taxas.consumo_total_calibrado_kwh_mes)}</b>

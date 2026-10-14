@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SERIES, seriesComDado, valoresDoCenario } from '../../src/utils/series.js'
+import { RECORTES, SERIES, seriesComDado, valoresDoCenario } from '../../src/utils/series.js'
 
 const ponto = (ano, valores) => ({ ano, cenarios: Object.entries(valores).map(([id, valor]) => ({ id, valor })) })
 const pontos = [
@@ -8,13 +8,29 @@ const pontos = [
 ]
 
 describe('SERIES', () => {
-  it('tem os quatro cenários da API na ordem do contrato', () => {
-    expect(SERIES.map((s) => s.id)).toEqual(['taxas', 'ml_rf', 'ml_gb', 'contrafactual'])
+  it('tem os cinco cenários da API na ordem do contrato', () => {
+    expect(SERIES.map((s) => s.id)).toEqual(['taxas', 'taxas_arranjos_fixos', 'ml_rf', 'ml_gb', 'contrafactual'])
   })
 
   it('usa verde-petróleo para as taxas, laranja para o contrafactual e cobalto para o ML', () => {
     const cor = Object.fromEntries(SERIES.map((s) => [s.id, s.cor]))
-    expect(cor).toEqual({ taxas: 'teal', ml_rf: 'cobalt', ml_gb: 'cobalt', contrafactual: 'orange' })
+    expect(cor).toEqual({ taxas: 'teal', taxas_arranjos_fixos: 'teal', ml_rf: 'cobalt', ml_gb: 'cobalt', contrafactual: 'orange' })
+  })
+
+  it('taxas em traço cheio e arranjos fixos em verde-petróleo tracejado', () => {
+    const traco = Object.fromEntries(SERIES.map((s) => [s.id, s.traco]))
+    expect([traco.taxas, traco.taxas_arranjos_fixos]).toEqual(['solid', 'dashed'])
+  })
+})
+
+describe('RECORTES', () => {
+  it('abre em todos os domicílios e explica o efeito de cada recorte', () => {
+    expect(RECORTES[0].id).toBe('todos_domicilios')
+    expect(RECORTES.map((r) => r.id)).toEqual(['todos_domicilios', 'chefe_60_mais_todos', 'chefe_60_mais', 'mononuclear_abaixo_60'])
+    expect(RECORTES[0].explica).toMatch(/idade/)
+    expect(RECORTES[0].explica).toMatch(/arranjos/)
+    expect(RECORTES[1].explica).toMatch(/principalmente o efeito dos arranjos/)
+    expect(RECORTES[2].explica).toMatch(/Esconde os dois efeitos/)
   })
 
   it('diferencia cada série também pelo traço e pelo rótulo, não só pela cor', () => {

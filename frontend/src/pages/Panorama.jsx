@@ -1,17 +1,20 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import Atualizando from '../components/Atualizando.jsx'
 import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import GraficoSerie from '../components/GraficoSerie.jsx'
 import Icone from '../components/Icone.jsx'
 import LeituraAno from '../components/LeituraAno.jsx'
+import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarSerie } from '../services/api.js'
 import { comSinal, milhoes, umaCasa } from '../utils/formato.js'
 import { RECORTES, seriesComDado, valoresDoCenario } from '../utils/series.js'
-
+import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+const definido = (v) => v !== null && v !== undefined
 
 function frase(ponto, ano, nome) {
   const taxas = ponto?.cenarios.find((c) => c.id === 'taxas')
@@ -22,20 +25,25 @@ function frase(ponto, ano, nome) {
       </>
     )
   }
-  const efeito = ponto.efeito_envelhecimento_kwh
-  const efeitoTotal = ponto.efeito_envelhecimento_total_kwh_mes
+  const { efeito_envelhecimento_kwh: total, efeito_idade_kwh: idade, efeito_arranjos_kwh: arranjos } = ponto
+  const totalMes = ponto.efeito_envelhecimento_total_kwh_mes
   return (
     <>
       Em <b>{ano}</b>, pelo método das taxas, os domicílios do recorte ({nome}) consomem <b>{umaCasa(taxas.valor)} kWh/mês por pessoa</b>
-      {taxas.variacao_pct !== null && taxas.variacao_pct !== undefined && <>, {comSinal(taxas.variacao_pct)}% em relação a 2026</>}.
-      {efeito !== null && efeito !== undefined && (
+      {definido(taxas.variacao_pct) && <>, {comSinal(taxas.variacao_pct)}% em relação a 2026</>}.
+      {definido(total) && (
         <>
           {' '}
-          O efeito do envelhecimento, a diferença para o contrafactual com a composição de 2026, é de <b>{comSinal(efeito)} kWh por pessoa</b>
-          {efeitoTotal !== null && efeitoTotal !== undefined && (
+          O efeito do envelhecimento, a diferença para o contrafactual com a composição de 2026, é de <b>{comSinal(total)} kWh por pessoa</b>
+          {definido(idade) && definido(arranjos) && (
+            <>
+              : {comSinal(idade)} da idade e {comSinal(arranjos)} da mudança de arranjos
+            </>
+          )}
+          {definido(totalMes) && (
             <>
               {' '}
-              e de <b>{efeitoTotal >= 0 ? '+' : '−'}{milhoes(Math.abs(efeitoTotal))} de kWh/mês</b> no consumo total
+              (<b>{totalMes >= 0 ? '+' : '−'}{milhoes(Math.abs(totalMes))} de kWh/mês</b> no consumo total)
             </>
           )}
           .
@@ -45,12 +53,28 @@ function frase(ponto, ano, nome) {
   )
 }
 
-export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = () => {}, avisar = () => {}, buscar = buscarSerie, local = LOCAL_PADRAO }) {
+export default function Panorama({
+  ano,
+  aoMudarAno,
+  versao = 0,
+  abrirGaveta = () => {},
+  avisar = () => {},
+  buscar = buscarSerie,
+  local = LOCAL_PADRAO,
+  simulacao = SIMULACAO_PADRAO,
+}) {
+  const idRecorte = useId()
   const [recorte, setRecorte] = useState(RECORTES[0].id)
-  const [visiveis, setVisiveis] = useState({ taxas: true, ml_rf: true, ml_gb: true, contrafactual: true })
-  const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ recorte, localidade: local.valor }, o), [recorte, local.valor, versao])
+  const [visiveis, setVisiveis] = useState({ taxas: true, taxas_arranjos_fixos: true, ml_rf: true, ml_gb: true, contrafactual: true })
+  const { intensidade, k } = simulacao.aplicados
+  const { status, dados, erro, recarregar } = useConsulta(
+    (o) => buscar({ recorte, localidade: local.valor, intensidade, k }, o),
+    [recorte, local.valor, intensidade, k, versao],
+  )
   const anoInteiro = Math.round(ano)
-  const rotuloRecorte = RECORTES.find((r) => r.id === recorte).rotulo
+  const opcao = RECORTES.find((r) => r.id === recorte)
+  const nomeDosDados = dados ? (local.nomeDe?.(dados.localidade) ?? dados.localidade) : local.nome
+  const atualizando = status === 'carregando' && Boolean(dados)
 
   const comDado = dados ? seriesComDado(dados.pontos) : []
   const series = comDado.map((s) => ({ id: s.id, pontos: valoresDoCenario(dados.pontos, s.id) }))
@@ -70,24 +94,22 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
       <div className="vh">
         <div>
           <h1>Panorama da projeção</h1>
-          <p>
+          <p className={atualizando ? 'esmaecido' : undefined}>
             {status === 'erro'
               ? 'Dados indisponíveis no momento. Os controles continuam ativos e serão aplicados quando a conexão voltar.'
               : carregando
                 ? 'Carregando dados…'
-                : frase(ponto, anoInteiro, local.nome)}
+                : frase(ponto, anoInteiro, nomeDosDados)}
           </p>
+          <Atualizando ativo={atualizando} destino={local.nome} />
         </div>
         <div className="vh-lado">
           <FiltroLocal local={local} />
-          <span className="rec">
-            <Icone nome="target" />
-            Recorte: domicílio mononuclear (unipessoal e casal), chefe {recorte === 'chefe_60_mais' ? 'com 60 anos ou mais' : 'abaixo de 60 anos'}
-          </span>
+          <PainelSimulacao simulacao={simulacao} />
         </div>
       </div>
       <div className="body g-pan">
-        <section className="pan" aria-labelledby="h-pan">
+        <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-pan">
           <div className="ph">
             <h2 id="h-pan">
               Consumo residencial per capita <small>kWh/mês</small>
@@ -122,7 +144,7 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
                 status={status}
                 erro={erro}
                 temDados={Boolean(dados)}
-                parametros={`ano ${anoInteiro}, grupo ${rotuloRecorte}, ${local.nome}`}
+                parametros={`ano ${anoInteiro}, grupo ${opcao.rotulo}, ${local.nome}`}
                 aoTentarDeNovo={recarregar}
               />
             </div>
@@ -130,7 +152,8 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
           {dados && status !== 'erro' && <AvisoAmostra ativo={dados.baixa_confiabilidade} celulas={dados.celulas} />}
           <div className="pf">
             <span>
-              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {local.nome}.
+              {dados?.simulacao && <b>Simulação. </b>}
+              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {nomeDosDados}.
               {typeof dados?.domicilios_amostra === 'number' &&
                 ` Amostra da POF: ${dados.domicilios_amostra.toLocaleString('pt-BR')} domicílios no recorte.`} Linha cheia até o ano
               selecionado; esmaecida depois dele. O gráfico mostra a TBC padronizada: a média por domicílio do consumo per capita.
@@ -140,20 +163,23 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
             </button>
           </div>
         </section>
-        <aside className="pan" aria-labelledby="h-ro">
+        <aside className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-ro">
           <LeituraAno ponto={status === 'erro' ? null : ponto} ano={anoInteiro} series={comDado} visiveis={visiveis} />
           <div className="ctrls">
             <div className="fl">
-              <span className="flab" id="recLab">
-                Grupo exibido
-              </span>
-              <div className="seg" role="group" aria-labelledby="recLab">
+              <label htmlFor={idRecorte}>
+                <Icone nome="target" /> Grupo exibido
+              </label>
+              <select id={idRecorte} className="recorte-sel" value={recorte} onChange={(e) => setRecorte(e.target.value)}>
                 {RECORTES.map((r) => (
-                  <button key={r.id} type="button" aria-pressed={recorte === r.id} onClick={() => setRecorte(r.id)}>
+                  <option key={r.id} value={r.id}>
                     {r.rotulo}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
+              <p className="recorte-explica" data-testid="recorte-explica">
+                {opcao.explica}
+              </p>
             </div>
           </div>
         </aside>

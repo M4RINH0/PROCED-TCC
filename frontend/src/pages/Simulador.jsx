@@ -1,12 +1,15 @@
 import { useState } from 'react'
+import Atualizando from '../components/Atualizando.jsx'
 import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import Icone from '../components/Icone.jsx'
 import Odometro from '../components/Odometro.jsx'
+import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { useTamanho } from '../hooks/useTamanho.js'
 import { buscarSimulacao } from '../services/api.js'
 import { inteiro, milhoes, umaCasa } from '../utils/formato.js'
+import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 export const ANOS = [2026, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070]
 export const FAIXAS = [
@@ -25,6 +28,7 @@ export const ARRANJOS = [
 ]
 export const BASES = [
   { id: 'taxas', rotulo: 'Método das taxas' },
+  { id: 'taxas_arranjos_fixos', rotulo: 'Só o envelhecimento (arranjos de 2026)' },
   { id: 'contrafactual', rotulo: 'Contrafactual (composição de 2026)' },
 ]
 const PADRAO = { ano: '2070', faixa: '70_79', arranjo: 'unipessoal', base: 'taxas' }
@@ -68,13 +72,16 @@ function HistoricoFaixas({ porFaixa, faixa }) {
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 
-export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao, local = LOCAL_PADRAO }) {
+export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao, local = LOCAL_PADRAO, simulacao = SIMULACAO_PADRAO }) {
   const [form, setForm] = useState(PADRAO)
-  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, localidade: local.valor }
+  const { intensidade, k } = simulacao.aplicados
+  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, localidade: local.valor, intensidade, k }
   const { status, dados, erro, recarregar } = useConsulta(
     (o) => buscar(params, o),
-    [form.ano, form.faixa, form.arranjo, form.base, local.valor, versao],
+    [form.ano, form.faixa, form.arranjo, form.base, local.valor, intensidade, k, versao],
   )
+  const nomeDosDados = dados ? (local.nomeDe?.(dados.localidade) ?? dados.localidade) : local.nome
+  const atualizando = status === 'carregando' && Boolean(dados)
   const mudar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
 
   let corpo
@@ -159,9 +166,11 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
         <div>
           <h1>Simulador de cenário</h1>
           <p>Combine os parâmetros para obter o consumo projetado de um tipo de domicílio num ano específico.</p>
+          <Atualizando ativo={atualizando} destino={local.nome} />
         </div>
         <div className="vh-lado">
           <FiltroLocal local={local} />
+          <PainelSimulacao simulacao={simulacao} />
         </div>
       </div>
       <div className="body g-sim">
@@ -228,11 +237,14 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
             </p>
           </form>
         </section>
-        <section className="pan" aria-labelledby="h-bill">
+        <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-bill">
           <div className="bill">
             <div className="bill-h">
               <b id="h-bill">Demonstrativo de consumo projetado</b>
-              <span>POF 2017 a 2018 e Projeções da População (IBGE), {local.nome}</span>
+              <span>
+                {dados?.simulacao && <b>Simulação. </b>}
+                POF e Projeções da População (IBGE), {nomeDosDados}
+              </span>
             </div>
             <dl className="bill-kv">
               {[

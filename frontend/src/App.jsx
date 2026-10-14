@@ -3,12 +3,14 @@ import Gaveta from './components/Gaveta.jsx'
 import Icone from './components/Icone.jsx'
 import LinhaDoTempo, { ANO_FINAL, ANO_INICIAL } from './components/LinhaDoTempo.jsx'
 import MenuDemonstracao from './components/MenuDemonstracao.jsx'
+import { useAdiado } from './hooks/useAdiado.js'
 import { useConsulta } from './hooks/useConsulta.js'
 import { useRotaHash } from './hooks/useRotaHash.js'
 import { ROTAS } from './rotas.js'
 import { buscarLocalidades } from './services/api.js'
 import { definirFalhaSimulada } from './services/http.js'
 import { BRASIL, nomeDaLocalidade } from './utils/localidades.js'
+import { ESPERA_MS, PADRAO_SIMULACAO, emSimulacao } from './utils/simulacao.js'
 import { lerTema, salvarTema, temaEfetivo } from './utils/tema.js'
 
 const prefereEscuro = () => globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
@@ -23,6 +25,9 @@ export default function App() {
   const [recarga, setRecarga] = useState(0)
   const [aviso, setAviso] = useState('')
   const [localidade, setLocalidade] = useState(BRASIL)
+  /* parâmetros de simulação (RF02): globais, preservados ao trocar de aba; as consultas usam os adiados */
+  const [parametros, setParametros] = useState(PADRAO_SIMULACAO)
+  const aplicados = useAdiado(parametros, ESPERA_MS)
   const listaLocalidades = useConsulta((o) => buscarLocalidades(o), [])
   const temporizador = useRef(0)
   const atual = ROTAS.find((r) => r.id === rota)
@@ -67,7 +72,20 @@ export default function App() {
   }
 
   const regioes = listaLocalidades.dados?.regioes ?? []
-  const local = { valor: localidade, nome: nomeDaLocalidade(regioes, localidade), regioes, aoMudar: setLocalidade }
+  const local = {
+    valor: localidade,
+    nome: nomeDaLocalidade(regioes, localidade),
+    nomeDe: (valor) => nomeDaLocalidade(regioes, valor),
+    regioes,
+    aoMudar: setLocalidade,
+  }
+  const simulacao = {
+    valores: parametros,
+    aplicados,
+    ativa: emSimulacao(parametros),
+    aoMudar: (campo, valor) => setParametros((p) => ({ ...p, [campo]: valor })),
+    restaurar: () => setParametros(PADRAO_SIMULACAO),
+  }
 
   const escuro = tema === 'dark'
   return (
@@ -122,10 +140,13 @@ export default function App() {
           abrirGaveta={setGaveta}
           avisar={avisar}
           local={local}
+          simulacao={simulacao}
         />
       </main>
       <LinhaDoTempo ano={ano} aoMudarAno={setAno} oculta={!atual.linhaDoTempo} />
-      {gaveta && <Gaveta tipo={gaveta} ano={ano} localidade={localidade} aoFechar={() => setGaveta(null)} avisar={avisar} />}
+      {gaveta && (
+        <Gaveta tipo={gaveta} ano={ano} localidade={localidade} simulacao={aplicados} aoFechar={() => setGaveta(null)} avisar={avisar} />
+      )}
       <div className={aviso ? 'toast on' : 'toast'} role="status" aria-live="polite">
         {aviso}
       </div>

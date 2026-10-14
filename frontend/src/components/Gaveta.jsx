@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarFontes, buscarProjecao } from '../services/api.js'
 import { umaCasa } from '../utils/formato.js'
+import { PADRAO_SIMULACAO } from '../utils/simulacao.js'
 import Icone from './Icone.jsx'
 
 function Cabecalho({ icone, titulo, aoFechar }) {
@@ -63,9 +64,9 @@ function Fontes() {
   )
 }
 
-function Api({ ano, localidade, avisar }) {
-  const params = { ano: Math.round(ano), recorte: 'chefe_60_mais', localidade }
-  const { status, dados } = useConsulta((o) => buscarProjecao(params, o), [params.ano, localidade])
+function Api({ ano, localidade, simulacao, avisar }) {
+  const params = { ano: Math.round(ano), recorte: 'todos_domicilios', localidade, ...simulacao }
+  const { status, dados } = useConsulta((o) => buscarProjecao(params, o), [params.ano, localidade, simulacao.intensidade, simulacao.k])
   const texto = dados ? JSON.stringify(dados, null, 2) : status === 'erro' ? 'Não foi possível consultar a API.' : 'Consultando…'
   return (
     <>
@@ -77,7 +78,7 @@ function Api({ ano, localidade, avisar }) {
         <div className="method">
           <em>GET</em>
           <span>
-            /projecoes?ano={params.ano}&amp;recorte={params.recorte}&amp;localidade={params.localidade}
+            /projecoes?ano={params.ano}&amp;recorte={params.recorte}&amp;localidade={params.localidade}&amp;intensidade={params.intensidade}&amp;k={params.k}
           </span>
         </div>
         <pre className="code">{texto}</pre>
@@ -153,7 +154,7 @@ function Exportar({ ano, aoFechar, avisar }) {
 
 const TITULOS = { fontes: ['db', 'Fonte dos dados'], api: ['api', 'Contrato da API'], exportar: ['down', 'Exportar dados'] }
 
-export default function Gaveta({ tipo, ano, localidade = 'Brasil', aoFechar, avisar }) {
+export default function Gaveta({ tipo, ano, localidade = 'Brasil', simulacao = PADRAO_SIMULACAO, aoFechar, avisar }) {
   const ref = useRef(null)
   const anterior = useRef(null)
   const fechar = useRef(aoFechar)
@@ -191,7 +192,7 @@ export default function Gaveta({ tipo, ano, localidade = 'Brasil', aoFechar, avi
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drT" tabIndex={-1} ref={ref}>
         <Cabecalho icone={icone} titulo={titulo} aoFechar={aoFechar} />
         {tipo === 'fontes' && <Fontes />}
-        {tipo === 'api' && <Api ano={ano} localidade={localidade} avisar={avisar} />}
+        {tipo === 'api' && <Api ano={ano} localidade={localidade} simulacao={simulacao} avisar={avisar} />}
         {tipo === 'exportar' && <Exportar ano={ano} aoFechar={aoFechar} avisar={avisar} />}
       </aside>
     </>

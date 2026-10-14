@@ -21,9 +21,21 @@ const vazio = { id: 'ml_rf', pontos: [{ ano: 2026, valor: null }] }
 const todas = { taxas: true, ml_rf: true, ml_gb: true, contrafactual: true }
 
 describe('dominioY', () => {
-  it('dá folga de 6 kWh e arredonda para múltiplos de 20, como o protótipo', () => {
-    // mínimo 97,9 - 6 = 91,9 -> 80; máximo 98,1 + 6 = 104,1 -> 120
-    expect(dominioY([taxas])).toEqual([80, 120])
+  it('dá folga de 1 kWh e arredonda para múltiplos de 10', () => {
+    // mínimo 97,9 - 1 = 96,9 -> 90; máximo 98,1 + 1 = 99,1 -> 100
+    expect(dominioY([taxas])).toEqual([90, 100])
+  })
+
+  it('a curva de todos os domicílios (71,5 a 82,7 kWh) fica entre 70 e 90', () => {
+    const todos = { id: 'taxas', pontos: [{ ano: 2026, valor: 71.5 }, { ano: 2070, valor: 82.7 }] }
+    expect(dominioY([todos])).toEqual([70, 90])
+    // marcas a cada 5 kWh: (90 - 70) / 5 = 4 -> passo 5
+    expect(marcasY([70, 90])).toEqual([70, 75, 80, 85, 90])
+  })
+
+  it('mantém ao menos 10 kWh de altura com uma série reta', () => {
+    expect(dominioY([{ id: 'contrafactual', pontos: [{ ano: 2026, valor: 80 }, { ano: 2070, valor: 80 }] }])).toEqual([70, 90])
+    expect(dominioY([{ id: 'x', pontos: [{ ano: 2026, valor: 75 }] }])).toEqual([70, 80])
   })
   it('usa um padrão quando não há valores', () => expect(dominioY([vazio])).toEqual([120, 280]))
 })
