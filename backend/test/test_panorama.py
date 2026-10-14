@@ -22,7 +22,7 @@ from app.services.estrutura_etaria import consumo_por_faixa
 from app.services.panorama import (
     ParametrosRecorte,
     com_variacao,
-    efeito_envelhecimento,
+    efeitos,
     obter_projecao,
     obter_serie,
     participacao_60_mais,
@@ -131,11 +131,21 @@ def test_populacao_da_faixa_inclui_90_ou_mais_no_80_mais():
 
 def test_obter_projecao_segue_o_contrato():
     r = obter_projecao(2030, Recorte.chefe_60_mais, RepositorioFalso())
-    assert _valores(r) == {CenarioId.taxas: 153.3, CenarioId.contrafactual: 142.5, CenarioId.ml_rf: None, CenarioId.ml_gb: None}
+    # sem as POFs anteriores não há tendência: taxas e taxas_arranjos_fixos coincidem
+    assert _valores(r) == {
+        CenarioId.taxas: 153.3,
+        CenarioId.taxas_arranjos_fixos: 153.3,
+        CenarioId.ml_rf: None,
+        CenarioId.ml_gb: None,
+        CenarioId.contrafactual: 142.5,
+    }
     taxas = r.cenarios[0]
     assert taxas.consumo_por_pessoa_kwh == 153.3 and taxas.consumo_total_calibrado_kwh_mes == 794545
-    assert r.cenarios[3].consumo_total_calibrado_kwh_mes == 676875
+    assert {c.id: c for c in r.cenarios}[CenarioId.contrafactual].consumo_total_calibrado_kwh_mes == 676875
     assert r.efeito_envelhecimento_kwh == 10.8 and r.efeito_envelhecimento_total_kwh_mes == 117670
+    # sem tendência, todo o efeito é da idade
+    assert (r.efeito_idade_kwh, r.efeito_arranjos_kwh) == (10.8, 0.0)
+    assert r.simulacao is False and (r.intensidade, r.k) == (1.0, 1.0)
     assert r.dados_ilustrativos is False and r.baixa_confiabilidade is True
     assert "POF" in r.fonte and "oficial" not in r.fonte
 
@@ -165,10 +175,24 @@ def test_serie_traz_variacao_e_efeito_do_envelhecimento():
     assert s[2040].efeito_envelhecimento_kwh is None
 
 
-def test_efeito_do_envelhecimento_sem_um_dos_cenarios():
+def test_decomposicao_em_idade_e_arranjos():
+    # taxas 110, arranjos fixos 104, contrafactual 100: idade 4, arranjos 6, envelhecimento 10
+    cenarios = [
+        Cenario(id=CenarioId.taxas, valor=110.0, consumo_total_calibrado_kwh_mes=1500),
+        Cenario(id=CenarioId.taxas_arranjos_fixos, valor=104.0, consumo_total_calibrado_kwh_mes=1200),
+        Cenario(id=CenarioId.contrafactual, valor=100.0, consumo_total_calibrado_kwh_mes=1000),
+    ]
+    e = efeitos(cenarios)
+    assert (e.efeito_envelhecimento_kwh, e.efeito_idade_kwh, e.efeito_arranjos_kwh) == (10.0, 4.0, 6.0)
+    assert (e.efeito_envelhecimento_total_kwh_mes, e.efeito_idade_total_kwh_mes, e.efeito_arranjos_total_kwh_mes) == (500, 200, 300)
+    assert e.efeito_idade_kwh + e.efeito_arranjos_kwh == e.efeito_envelhecimento_kwh
+
+
+def test_decomposicao_sem_um_dos_cenarios():
     so_taxas = [Cenario(id=CenarioId.taxas, valor=100.0), Cenario(id=CenarioId.contrafactual, valor=None)]
-    assert efeito_envelhecimento(so_taxas) == (None, None)
-    assert efeito_envelhecimento([]) == (None, None)
+    e = efeitos(so_taxas)
+    assert e.efeito_envelhecimento_kwh is None and e.efeito_idade_kwh is None and e.efeito_arranjos_kwh is None
+    assert efeitos([]).efeito_envelhecimento_total_kwh_mes is None
 
 
 def test_com_variacao_em_relacao_a_2026():
@@ -211,7 +235,7 @@ def _serie_por_faixa(recorte, domicilios, populacao, anos):
     return resultado
 
 
-@pytest.mark.parametrize("recorte", list(Recorte))
+@pytest.mark.parametrize("recorte", [Recorte.chefe_60_mais, Recorte.mononuclear_abaixo_60])  # os recortes que existiam antes
 @pytest.mark.parametrize("semente", [1, 2, 3])
 def test_serie_por_celulas_igual_a_serie_por_faixas(recorte, semente):
     rng = random.Random(semente)

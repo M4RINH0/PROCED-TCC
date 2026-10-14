@@ -31,6 +31,9 @@ class DadosFalsos:
     def domicilios(self):
         return DOMICILIOS
 
+    def domicilios_historicos(self):
+        return []  # sem as POFs anteriores não há tendência: os arranjos ficam congelados
+
     def populacao_por_idade(self, localidade="Brasil"):
         self.localidades_pedidas.append(localidade)
         return POP

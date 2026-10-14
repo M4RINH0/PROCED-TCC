@@ -29,6 +29,9 @@ class RepositorioProjecoesFalso:
             SimpleNamespace(arranjo="Multipessoal (3+)", idade_chefe=65, consumo_per_capita_kwh=999.0, peso=1.0),
         ]
 
+    def domicilios_historicos(self):
+        return []  # sem as POFs anteriores não há tendência: os arranjos ficam congelados
+
     def populacao_por_idade(self, localidade="Brasil"):
         return {}
 

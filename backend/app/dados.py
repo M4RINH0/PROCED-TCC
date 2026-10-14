@@ -31,6 +31,17 @@ class Domicilio:
     gasto_rs: float | None = None
 
 
+@dataclass(frozen=True)
+class DomicilioHistorico:
+    """POF 2002 a 2003 ou 2008 a 2009: só o que a tendência dos arranjos usa (P13)."""
+
+    ano_pof: int
+    arranjo: str
+    idade_chefe: int
+    peso: float
+    rede_geral: bool = True
+
+
 class Dados:
     """Acesso às tabelas usadas pela API. Nos testes, qualquer objeto com os mesmos
     métodos serve no lugar desta classe."""
@@ -70,6 +81,27 @@ class Dados:
             )
 
         return self._uma_vez("domicilios", carregar)
+
+    def domicilios_historicos(self) -> list[DomicilioHistorico]:
+        """fato_consumo_pof_historica: POFs 2002 a 2003 e 2008 a 2009, todos os registros.
+
+        O filtro da rede geral fica no cálculo (P13).
+        """
+
+        def carregar():
+            linhas = self._cliente.selecionar(
+                "fato_consumo_pof_historica",
+                "ano_pof,arranjo_familiar,idade_chefe,peso_final,energia_rede_geral",
+                {"order": "ano_pof.asc,id_domicilio.asc"},
+            )
+            return [
+                DomicilioHistorico(
+                    int(l["ano_pof"]), l["arranjo_familiar"], int(l["idade_chefe"]), float(l["peso_final"]), bool(l["energia_rede_geral"])
+                )
+                for l in linhas
+            ]
+
+        return self._uma_vez("domicilios_historicos", carregar)
 
     def populacao_por_idade(self, localidade: str = BRASIL) -> dict[int, dict[int, int]]:
         """Ambos os sexos na localidade: ano -> idade -> população (2018 e o horizonte).

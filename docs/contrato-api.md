@@ -25,54 +25,78 @@ Toda resposta que usa os domicílios da POF informa o tamanho da amostra e marca
 célula do recorte, e o campo `baixa_confiabilidade` da resposta fica verdadeiro se
 alguma delas tiver menos de 30.
 
-## `GET /projecoes` (RF01, RF11)
+## Controles de simulação (RF02): `/projecoes`, `/projecoes/serie` e `/simulador`
+
+| Parâmetro | Regra | Padrão |
+|---|---|---|
+| `intensidade` | 0 a 1,5: multiplica a variação dos logs das razões entre os arranjos (P13); 0 congela os arranjos | 1 (tendência observada) |
+| `k` | 0,5 a 1,5: velocidade do envelhecimento (P14) | 1 (projeção do IBGE) |
+
+Fora do intervalo, a API responde 422. Toda resposta devolve `intensidade`, `k` e
+`simulacao`, que fica `true` quando algum controle está fora do padrão: a interface
+rotula o resultado como simulação. Os padrões reproduzem o cenário principal.
+
+## `GET /projecoes` (RF01, RF02, RF11)
 
 | Parâmetro | Regra |
 |---|---|
 | `ano` | 2026 a 2070 |
-| `recorte` | `chefe_60_mais` ou `mononuclear_abaixo_60` |
+| `recorte` | `todos_domicilios`, `chefe_60_mais_todos`, `chefe_60_mais` ou `mononuclear_abaixo_60` |
+| `intensidade`, `k` | controles de simulação (opcionais) |
 
-Exemplo real (Brasil, consulta de 14/10/2026):
+Recortes:
+- `todos_domicilios`: todos os arranjos e faixas; o único em que o efeito da idade aparece.
+- `chefe_60_mais_todos`: chefe de 60 anos ou mais, todos os arranjos; mostra principalmente o efeito dos arranjos.
+- `chefe_60_mais` e `mononuclear_abaixo_60`: só mononucleares; escondem os dois efeitos, porque já são definidos pela idade e pelo arranjo.
+
+Exemplo real (Brasil, todos os domicílios, consulta de 14/10/2026):
 
 ```json
-{ "ano": 2050, "recorte": "chefe_60_mais", "unidade": "kWh/mes/pessoa",
+{ "ano": 2050, "recorte": "todos_domicilios", "unidade": "kWh/mes/pessoa",
   "cenarios": [
-    {"id": "taxas", "valor": 98.0, "consumo_por_pessoa_kwh": 93.0,
-     "consumo_total_calibrado_kwh_mes": 3527888853},
+    {"id": "taxas", "valor": 81.3, "consumo_por_pessoa_kwh": 70.1, "consumo_total_calibrado_kwh_mes": 15300389004},
+    {"id": "taxas_arranjos_fixos", "valor": 75.8, "consumo_por_pessoa_kwh": 64.0, "consumo_total_calibrado_kwh_mes": 13965888940},
     {"id": "ml_rf", "valor": null, "consumo_por_pessoa_kwh": null, "consumo_total_calibrado_kwh_mes": null},
     {"id": "ml_gb", "valor": null, "consumo_por_pessoa_kwh": null, "consumo_total_calibrado_kwh_mes": null},
-    {"id": "contrafactual", "valor": 97.9, "consumo_por_pessoa_kwh": 93.0,
-     "consumo_total_calibrado_kwh_mes": 2327910204} ],
-  "efeito_envelhecimento_kwh": 0.1,
-  "efeito_envelhecimento_total_kwh_mes": 1199978649,
+    {"id": "contrafactual", "valor": 72.4, "consumo_por_pessoa_kwh": 61.3, "consumo_total_calibrado_kwh_mes": 13386430798} ],
+  "efeito_envelhecimento_kwh": 8.9, "efeito_idade_kwh": 3.4, "efeito_arranjos_kwh": 5.5,
+  "efeito_envelhecimento_total_kwh_mes": 1913958206,
+  "efeito_idade_total_kwh_mes": 579458142, "efeito_arranjos_total_kwh_mes": 1334500064,
+  "intensidade": 1.0, "k": 1.0, "simulacao": false,
   "dados_ilustrativos": false,
-  "fonte": "POF 2017 a 2018 e Projeções da População (IBGE)",
-  "localidade": "Brasil", "domicilios_amostra": 9120,
-  "celulas": [ {"faixa": "60 a 69", "arranjo": "Unipessoal (Mononuclear)",
-                "domicilios_amostra": 1605, "baixa_confiabilidade": false} ],
+  "fonte": "POF 2002 a 2003, 2008 a 2009 e 2017 a 2018 e Projeções da População (IBGE)",
+  "localidade": "Brasil", "domicilios_amostra": 52102,
+  "celulas": [ {"faixa": "até 29", "arranjo": "Unipessoal (Mononuclear)",
+                "domicilios_amostra": 503, "baixa_confiabilidade": false} ],
   "baixa_confiabilidade": false }
 ```
 
-- `taxas`: método das taxas, padronização direta com a TEC ponderada da POF e as taxas de chefia de 2018 (premissas P2 e P6).
-- `contrafactual`: o mesmo cálculo com a distribuição dos domicílios entre as células congelada na de 2026; o total de domicílios segue a projeção (P10).
+- `taxas`: método das taxas com a taxa de chefia total da faixa constante (P2) e a tendência dos arranjos (P13).
+- `taxas_arranjos_fixos`: só o envelhecimento, com as proporções de arranjo congeladas nas de 2026.
+- `contrafactual`: a distribuição dos domicílios entre as células congelada na de `taxas` em 2026; o total de domicílios segue a projeção (P10).
 - `ml_rf` e `ml_gb`: machine learning, pausado; sempre `null`.
+- Os três cenários do método das taxas coincidem em 2026.
 - `valor`: TBC padronizada, a média por domicílio do consumo per capita (kWh/mês por pessoa).
 - `consumo_por_pessoa_kwh`: consumo total do recorte dividido pelos moradores projetados (P11).
 - `consumo_total_calibrado_kwh_mes`: consumo total do recorte calibrado pela população do IBGE (P12). O consumo total bruto não sai na API.
-- `efeito_envelhecimento_kwh` e `efeito_envelhecimento_total_kwh_mes`: `taxas` menos `contrafactual`.
+- Decomposição, na TBC (`_kwh`) e no consumo total (`_total_kwh_mes`):
+  - `efeito_idade`: `taxas_arranjos_fixos` menos `contrafactual`;
+  - `efeito_arranjos`: `taxas` menos `taxas_arranjos_fixos`;
+  - `efeito_envelhecimento`: a soma dos dois, `taxas` menos `contrafactual`.
 - Um cenário fica `null` se alguma faixa do recorte não tiver domicílio na amostra da localidade.
 - O IBGE projeta só a população; nenhum cenário é uma projeção oficial de consumo.
 
-## `GET /projecoes/serie` (RF01, RF11)
+## `GET /projecoes/serie` (RF01, RF02, RF11)
 
-Parâmetro `recorte`. Resposta com `pontos`: um item por ano de 2026 a 2070, cada um
-com os quatro cenários e, para a tela do Panorama:
+Parâmetros `recorte`, `intensidade` e `k`. Resposta com `pontos`: um item por ano de
+2026 a 2070, cada um com os cinco cenários e, para a tela do Panorama:
 
 - em cada cenário, `variacao_kwh` e `variacao_pct` do `valor` em relação a 2026;
-- `participacao_60_mais_pct`: pessoas de 60 anos ou mais na população;
-- `efeito_envelhecimento_kwh` e `efeito_envelhecimento_total_kwh_mes`.
+- `participacao_60_mais_pct`: pessoas de 60 anos ou mais na população, já com o controle `k`;
+- os seis campos da decomposição.
 
-A resposta também traz `domicilios_amostra`, `celulas` e `baixa_confiabilidade`.
+A resposta também traz `domicilios_amostra`, `celulas`, `baixa_confiabilidade`,
+`intensidade`, `k` e `simulacao`.
 
 ## `GET /arranjos` (RF03, RF04)
 
@@ -92,7 +116,7 @@ Seis categorias (unipessoal, casal ou dupla e multipessoal, com chefe de 60+ ou
 abaixo de 60). Para cada uma: TEC ponderada da POF, amostra, `baixa_confiabilidade`
 (alguma célula da categoria com menos de 30 domicílios) e, por ano de 2026 a 2070,
 `participacao_pct` e `casas` (de cada 100 domicílios; a soma do ano é 100). Usa a
-premissa P2 por faixa e arranjo, com a mesma projeção do Panorama.
+mesma projeção do cenário `taxas` do Panorama, com os padrões dos controles (P2 e P13).
 
 ## `GET /estrutura-etaria/piramides` (RF05)
 
@@ -110,16 +134,17 @@ Parâmetro opcional `arranjo`: `mononucleares` (padrão), `unipessoal`,
 `domicilios_amostra`, `baixa_confiabilidade` e `consumo_per_capita_kwh` (TEC ponderada;
 `null` sem amostra).
 
-## `GET /simulador` (RF07)
+## `GET /simulador` (RF02, RF07)
 
 | Parâmetro | Regra |
 |---|---|
 | `ano` | 2026 a 2070 |
 | `faixa` | `ate_29`, `30_39`, `40_49`, `50_59`, `60_69`, `70_79`, `80_mais` |
 | `arranjo` | `unipessoal`, `casal_ou_dupla`, `multipessoal` |
-| `base` | `taxas` ou `contrafactual` |
+| `base` | `taxas`, `taxas_arranjos_fixos` ou `contrafactual` |
+| `intensidade`, `k` | controles de simulação (opcionais) |
 
-O parâmetro `taxa` saiu até o RF02 ser definido.
+O antigo parâmetro `taxa` saiu; o RF02 é atendido por `intensidade` e `k`.
 
 Resposta:
 - `valor`: TEC ponderada da célula (kWh/mês por pessoa), igual nos dois cenários (P6);
@@ -139,5 +164,4 @@ P9), `premissas` (P2, P8, P9, P11 e P12, com `id` e `texto`) e `premissas_url`.
 ## A definir em conjunto
 
 - Exportação (RF08) e persistência de cenários do simulador (RF09).
-- RF02: parâmetro ajustável do cenário, ainda sem formulação.
 - Cenários de machine learning (`ml_rf` e `ml_gb`): pausados.

@@ -33,15 +33,19 @@ from sklearn.preprocessing import OneHotEncoder
 from app.calculo import (
     CONTRAFACTUAL,
     TAXAS,
+    TAXAS_ARRANJOS_FIXOS,
     Projecao,
     consumo_por_pessoa,
     consumo_total,
+    estimar_tendencia,
     fator_calibracao,
     media_ponderada,
     moradores_projetados,
     parametros_celulas,
+    projetar_proporcoes,
     reponderar,
     tbc_pd,
+    validar_tendencia,
 )
 from app.dominio import (
     ANO_FINAL,
@@ -49,6 +53,8 @@ from app.dominio import (
     ANO_REFERENCIA_POF,
     CASAL_OU_DUPLA,
     FAIXAS_CHEFE,
+    ANOS_MEDIOS_POF,
+    ARRANJOS,
     IDADE_IDOSO,
     MINIMO_AMOSTRA,
     MULTIPESSOAL,
@@ -58,8 +64,10 @@ from app.dominio import (
     UNIPESSOAL,
     faixa_do_chefe,
     populacao_por_faixa,
+    proporcoes_por_edicao,
     somar_populacao,
 )
+from app.dados import Domicilio, DomicilioHistorico
 
 ANOS = tuple(range(ANO_INICIAL, ANO_FINAL + 1))
 
@@ -85,17 +93,23 @@ COLUNAS_FATO = (
 # ---------- leitura (única parte que acessa o banco) ----------
 
 
-def carregar(cliente) -> tuple[pd.DataFrame, dict, dict, dict]:
-    """Lê a tabela fato e a projeção das 27 UFs (e a linha Brasil, só para conferência).
+COLUNAS_HISTORICA = "ano_pof,id_domicilio,arranjo_familiar,idade_chefe,peso_final,energia_rede_geral"
 
-    Devolve (fato, população das UFs, população da linha Brasil, linhas lidas contra o count do banco).
+
+def carregar(cliente) -> tuple[pd.DataFrame, dict, dict, dict, pd.DataFrame]:
+    """Lê a tabela fato, as POFs anteriores e a projeção das 27 UFs (e a linha Brasil, só para conferência).
+
+    Devolve (fato, população das UFs, população da linha Brasil, linhas lidas contra o count do banco,
+    POFs 2002 a 2003 e 2008 a 2009).
     """
     filtros_ufs = {"localidade": f"in.({','.join(UFS)})", "sexo": f"eq.{SEXO_AMBOS}", "ano": f"gte.{ANO_REFERENCIA_POF}"}
     filtros_brasil = {"localidade": "eq.Brasil", "sexo": f"eq.{SEXO_AMBOS}", "ano": f"gte.{ANO_REFERENCIA_POF}"}
     fato = cliente.selecionar("fato_consumo_domiciliar", COLUNAS_FATO, {"order": "id_domicilio.asc"})
     ufs = cliente.selecionar("projecoes_populacao_idade", "localidade,sexo,ano,idade,populacao", {**filtros_ufs, "order": "id.asc"})
     brasil = cliente.selecionar("projecoes_populacao_idade", "localidade,sexo,ano,idade,populacao", {**filtros_brasil, "order": "id.asc"})
+    historica = cliente.selecionar("fato_consumo_pof_historica", COLUNAS_HISTORICA, {"order": "ano_pof.asc,id_domicilio.asc"})
     leitura = {
+        "fato_consumo_pof_historica": {"lidas": len(historica), "no_banco": cliente.contar("fato_consumo_pof_historica")},
         "fato_consumo_domiciliar": {"lidas": len(fato), "no_banco": cliente.contar("fato_consumo_domiciliar")},
         "projecoes_populacao_idade (27 UFs, Ambos, 2018 a 2070)": {
             "lidas": len(ufs),
@@ -109,7 +123,7 @@ def carregar(cliente) -> tuple[pd.DataFrame, dict, dict, dict]:
     for tabela, n in leitura.items():
         if n["lidas"] != n["no_banco"]:
             raise ValueError(f"{tabela}: foram lidas {n['lidas']} de {n['no_banco']} linhas")
-    return pd.DataFrame(fato), somar_populacao(ufs, UFS), _linha_brasil(brasil), leitura
+    return pd.DataFrame(fato), somar_populacao(ufs, UFS), _linha_brasil(brasil), leitura, pd.DataFrame(historica)
 
 
 def _linha_brasil(linhas: Iterable[dict]) -> dict[int, dict[int, int]]:
@@ -215,7 +229,14 @@ def auditar(bruto: pd.DataFrame, limpo: pd.DataFrame, registro_p8: dict, pop_ufs
 class Ponte:
     """Parâmetros das células fixados em 2018 (taxa de chefia, TEC, consumo e moradores médios) e a projeção."""
 
-    def __init__(self, fato: pd.DataFrame, pop_faixa: Mapping[int, Mapping[str, int]], fator: float = 1.0):
+    def __init__(
+        self,
+        fato: pd.DataFrame,
+        pop_faixa: Mapping[int, Mapping[str, int]],
+        fator: float = 1.0,
+        tendencia: Mapping[str, tuple[float, float]] | None = None,
+        intensidade: float = 1.0,
+    ):
         if ANO_REFERENCIA_POF not in pop_faixa:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}")
         if fator <= 0:
@@ -229,7 +250,7 @@ class Ponte:
                 fato["qtd_moradores"],
             )
         )
-        self.projecao = Projecao(celulas, pop_faixa, ANO_REFERENCIA_POF, ANO_INICIAL)
+        self.projecao = Projecao(celulas, pop_faixa, ANO_REFERENCIA_POF, ANO_INICIAL, None, tendencia, intensidade, ARRANJOS)
         self.celulas = list(celulas)
         self.chefia = self.projecao.chefia
         self.tec = {c: p.tec for c, p in celulas.items()}
@@ -269,6 +290,11 @@ def projetar_taxas(ponte: Ponte, anos: Iterable[int] = ANOS) -> pd.DataFrame:
     return pd.DataFrame([_linha_taxas(a, TAXAS, ponte, ponte.domicilios(a)) for a in anos])
 
 
+def projetar_arranjos_fixos(ponte: Ponte, anos: Iterable[int] = ANOS) -> pd.DataFrame:
+    """Só o envelhecimento: as proporções de arranjo ficam nas de 2026."""
+    return pd.DataFrame([_linha_taxas(a, TAXAS_ARRANJOS_FIXOS, ponte, ponte.domicilios(a, TAXAS_ARRANJOS_FIXOS)) for a in anos])
+
+
 def projetar_contrafactual(ponte: Ponte, anos: Iterable[int] = ANOS) -> pd.DataFrame:
     """P10: o total de domicílios do ano segue a projeção; a distribuição entre as células fica na de 2026."""
     return pd.DataFrame([_linha_taxas(a, CONTRAFACTUAL, ponte, ponte.domicilios(a, CONTRAFACTUAL)) for a in anos])
@@ -293,6 +319,53 @@ def validar_ponte(ponte: Ponte, pop: Mapping[int, Mapping[int, int]], anos: Iter
             resultado["2022"]["domicilios_projetados"] / DOMICILIOS_OCUPADOS_CENSO_2022 - 1
         ) * 100
     return resultado
+
+
+# ---------- tendência dos arranjos (P13) ----------
+
+
+def historicos_da_tabela(historica: pd.DataFrame) -> list[DomicilioHistorico]:
+    return [
+        DomicilioHistorico(int(a), arr, int(i), float(p), bool(r))
+        for a, arr, i, p, r in zip(
+            historica["ano_pof"], historica["arranjo_familiar"], historica["idade_chefe"], historica["peso_final"], historica["energia_rede_geral"]
+        )
+    ]
+
+
+def atuais_da_fato(fato: pd.DataFrame) -> list[Domicilio]:
+    return [
+        Domicilio(arr, int(i), float(pc), peso=float(p))
+        for arr, i, pc, p in zip(fato["arranjo_familiar"], fato["idade_chefe"], fato["consumo_per_capita_kwh"], fato["peso_final"])
+    ]
+
+
+def tendencia_arranjos(historica: pd.DataFrame, fato: pd.DataFrame, anos_projetados: Iterable[int] = (2026, 2050, 2070)) -> dict:
+    """Proporções por edição, inclinações, validação fora do tempo e proporções projetadas (P13).
+
+    Validação: inclinação estimada com 2002 e 2008, ancorada no observado de 2008, prevendo 2017.
+    """
+    props = proporcoes_por_edicao(historicos_da_tabela(historica), atuais_da_fato(fato))
+    tendencia = estimar_tendencia(props, ARRANJOS)
+    t02, t08, t17 = (ANOS_MEDIOS_POF[a] for a in (2002, 2008, 2017))
+    validacao = validar_tendencia(props, ARRANJOS, (t02, t08), t17) if {t02, t08, t17} <= set(props) else {}
+    projetadas = {
+        str(intensidade): {
+            str(ano): {
+                f: projetar_proporcoes(props[t17][f], tendencia.get(f), ano - t17, intensidade, ARRANJOS) for f in props.get(t17, {})
+            }
+            for ano in anos_projetados
+        }
+        for intensidade in (1.0, 0.5)
+    }
+    return {
+        "proporcoes_por_edicao": {str(t): p for t, p in props.items()},
+        "inclinacoes_por_ano": {f: {"unipessoal_sobre_multipessoal": b[0], "casal_sobre_multipessoal": b[1]} for f, b in tendencia.items()},
+        "validacao_fora_do_tempo_pp": validacao,
+        "proporcoes_projetadas": projetadas,
+        "regras": "domicílios fora da rede geral excluídos (P13); inclinação nacional por mínimos quadrados nas edições "
+        "de 2002,5, 2008,5 e 2017,5; projeção ancorada no observado de 2017,5",
+    }
 
 
 def fator_cobertura(fato: pd.DataFrame, total: float = TOTAL_DOMICILIOS_POF) -> float:

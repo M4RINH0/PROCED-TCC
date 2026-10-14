@@ -11,8 +11,13 @@ Funções puras, sem banco nem rede. Toda média usa o peso amostral da POF
     nDom_c,s       = chefia_c * Pop_x,s
     consumo total  = soma_c nDom_c,s * consumo médio por domicílio_c
     calibrado      = consumo por pessoa * população do IBGE no ano (P12)
+
+Tendência dos arranjos (P13): em cada faixa x, log(unipessoal / multipessoal) e
+log(casal / multipessoal) variam linearmente no tempo; a taxa de chefia total da
+faixa fica constante e só a divisão entre os arranjos muda.
 """
 
+import math
 from collections.abc import Hashable, Iterable, Mapping
 from dataclasses import dataclass
 
@@ -193,15 +198,25 @@ class Resumo:
 
 
 TAXAS = "taxas"
+TAXAS_ARRANJOS_FIXOS = "taxas_arranjos_fixos"
 CONTRAFACTUAL = "contrafactual"
+CENARIOS = (TAXAS, TAXAS_ARRANJOS_FIXOS, CONTRAFACTUAL)
+ANO_MEDIO_POF = 2017.5  # ponto médio da POF 2017 a 2018, âncora da tendência (P13)
 
 
 class Projecao:
-    """Ponte comum (P2) e cenários do método das taxas.
+    """Ponte comum (P2 e P13) e cenários do método das taxas.
 
-    taxas:          nDom_c,s = chefia_c * Pop_x,s
-    contrafactual:  o total de domicílios do ano segue a projeção, e a distribuição
-                    entre as células fica congelada na do ano-base (P10)
+    chefia_x                = soma dos pesos da faixa x / Pop_x,2018         (constante)
+    proporção_x,a(s)        = proporção observada em 2017,5 movida pela tendência (P13)
+    taxas:                  nDom_x,a,s = chefia_x * Pop_x,s * proporção_x,a(s)
+    taxas_arranjos_fixos:   o mesmo, com as proporções de arranjo do ano-base (2026)
+    contrafactual:          o total de domicílios do ano segue a projeção, e a distribuição
+                            entre as células fica congelada na de taxas no ano-base (P10)
+
+    Sem tendência, ou com intensidade 0, as proporções ficam nas de 2017,5 e os três
+    cenários coincidem no ano-base: é o modelo anterior, com os arranjos congelados.
+    `arranjos` diz quais rótulos são (unipessoal, casal ou dupla, multipessoal).
     """
 
     def __init__(
@@ -211,25 +226,70 @@ class Projecao:
         ano_referencia: int,
         ano_base: int,
         populacao_total: Mapping[int, float] | None = None,
+        tendencia: Mapping[str, tuple[float, float]] | None = None,
+        intensidade: float = 1.0,
+        arranjos: tuple[str, str, str] | None = None,
+        ano_tendencia: float = ANO_MEDIO_POF,
     ):
         if ano_referencia not in populacao_por_faixa:
             raise ValueError(f"falta a população de {ano_referencia}, ano de referência")
         if not celulas:
             raise ValueError("informe ao menos uma célula")
+        if intensidade < 0:
+            raise ValueError("a intensidade da tendência não pode ser negativa")
+        if tendencia and arranjos is None:
+            raise ValueError("informe os rótulos dos arranjos para aplicar a tendência")
         self.celulas = dict(celulas)
         self.populacao_por_faixa = populacao_por_faixa
         self.populacao_total = populacao_total or {}
         self.ano_base = ano_base
+        self.tendencia = dict(tendencia or {})
+        self.intensidade = intensidade
+        self.arranjos = arranjos
+        self.ano_tendencia = ano_tendencia
         self.chefia = taxas_chefia({c: p.peso for c, p in self.celulas.items()}, populacao_por_faixa[ano_referencia])
+        pesos_faixa: dict[str, float] = {}
+        for (faixa, _), p in self.celulas.items():
+            pesos_faixa[faixa] = pesos_faixa.get(faixa, 0.0) + p.peso
+        # a taxa de chefia total da faixa fica constante; só a divisão entre os arranjos muda (P13)
+        self.chefia_faixa = {f: c for (f, _), c in taxas_chefia({(f, ""): w for f, w in pesos_faixa.items()}, populacao_por_faixa[ano_referencia]).items()}
+        self.proporcoes_base = {
+            f: {a: p.peso / pesos_faixa[f] for (g, a), p in self.celulas.items() if g == f} for f in pesos_faixa
+        }
+
+    @property
+    def com_tendencia(self) -> bool:
+        return bool(self.tendencia) and self.intensidade > 0
+
+    def proporcoes(self, ano: float) -> dict[str, dict[str, float]]:
+        """Proporção de cada arranjo em cada faixa no ano (P13)."""
+        if not self.com_tendencia:
+            return {f: dict(p) for f, p in self.proporcoes_base.items()}
+        return {
+            f: projetar_proporcoes(p, self.tendencia.get(f), ano - self.ano_tendencia, self.intensidade, self.arranjos)
+            for f, p in self.proporcoes_base.items()
+        }
+
+    def _com_proporcoes(self, ano: int, proporcoes: Mapping[str, Mapping[str, float]]) -> dict[tuple[str, str], float]:
+        populacao = self.populacao_por_faixa[ano]
+        return {
+            (f, a): self.chefia_faixa[f] * populacao.get(f, 0) * proporcoes[f].get(a, 0.0) for (f, a) in self.celulas
+        }
 
     def domicilios(self, ano: int, cenario: str = TAXAS) -> dict[tuple[str, str], float]:
         if ano not in self.populacao_por_faixa:
             raise KeyError(ano)
-        projetados = domicilios_projetados(self.chefia, self.populacao_por_faixa[ano])
         if cenario == TAXAS:
-            return projetados
+            if not self.com_tendencia:
+                return domicilios_projetados(self.chefia, self.populacao_por_faixa[ano])
+            return self._com_proporcoes(ano, self.proporcoes(ano))
+        if cenario == TAXAS_ARRANJOS_FIXOS:
+            if not self.com_tendencia:
+                return self.domicilios(ano, TAXAS)
+            return self._com_proporcoes(ano, self.proporcoes(self.ano_base))
         if cenario == CONTRAFACTUAL:
-            return congelar_composicao(self.domicilios(self.ano_base), sum(projetados.values()))
+            total = sum(self.domicilios(ano, TAXAS).values())
+            return congelar_composicao(self.domicilios(self.ano_base, TAXAS), total)
         raise ValueError(f"cenário desconhecido: {cenario}")
 
     def resumo(self, ano: int, cenario: str = TAXAS, chaves: Iterable[tuple[str, str]] | None = None) -> Resumo | None:
@@ -267,3 +327,136 @@ def congelar_composicao(base: Mapping[Hashable, float], total: float) -> dict[Ha
     if total < 0:
         raise ValueError("o total de domicílios não pode ser negativo")
     return {c: n / soma * total for c, n in base.items()}
+
+
+# ---------- tendência dos arranjos (P13) ----------
+
+
+def proporcoes_arranjos(registros: Iterable[tuple[Hashable, str, float, bool]]) -> dict[Hashable, dict[str, float]]:
+    """Proporção ponderada de cada arranjo em cada faixa, a partir de (faixa, arranjo, peso, rede geral).
+
+    Domicílios fora da rede geral de energia ficam de fora (P13).
+    """
+    somas: dict[Hashable, dict[str, float]] = {}
+    for faixa, arranjo, peso, rede_geral in registros:
+        if peso <= 0:
+            raise ValueError("o peso de cada domicílio precisa ser maior que zero")
+        if not rede_geral:
+            continue
+        acc = somas.setdefault(faixa, {})
+        acc[arranjo] = acc.get(arranjo, 0.0) + peso
+    return {f: {a: w / sum(acc.values()) for a, w in acc.items()} for f, acc in somas.items()}
+
+
+def logs_razoes(proporcoes: Mapping[str, float], arranjos: tuple[str, str, str]) -> tuple[float, float] | None:
+    """(log(unipessoal / multipessoal), log(casal / multipessoal)); None se algum arranjo tiver proporção zero."""
+    uni, casal, multi = (proporcoes.get(a, 0.0) for a in arranjos)
+    if min(uni, casal, multi) <= 0:
+        return None
+    return math.log(uni / multi), math.log(casal / multi)
+
+
+def proporcoes_dos_logs(log_uni: float, log_casal: float, arranjos: tuple[str, str, str]) -> dict[str, float]:
+    """Inverte os logs das razões: as proporções ficam entre 0 e 1 e somam 1."""
+    u, c = math.exp(log_uni), math.exp(log_casal)
+    total = 1 + u + c
+    return {arranjos[0]: u / total, arranjos[1]: c / total, arranjos[2]: 1 / total}
+
+
+def inclinacao(pontos: Iterable[tuple[float, float]]) -> float:
+    """Inclinação da reta de mínimos quadrados nos pontos (tempo, valor)."""
+    pontos = list(pontos)
+    if len({t for t, _ in pontos}) < 2:
+        raise ValueError("a reta precisa de ao menos dois anos diferentes")
+    mt = sum(t for t, _ in pontos) / len(pontos)
+    my = sum(y for _, y in pontos) / len(pontos)
+    return sum((t - mt) * (y - my) for t, y in pontos) / sum((t - mt) ** 2 for t, _ in pontos)
+
+
+def estimar_tendencia(
+    proporcoes_por_ano: Mapping[float, Mapping[Hashable, Mapping[str, float]]], arranjos: tuple[str, str, str]
+) -> dict[Hashable, tuple[float, float]]:
+    """Inclinações (por ano) dos dois logs das razões em cada faixa, ajustadas nas edições disponíveis.
+
+    Faixa sem os três arranjos em ao menos duas edições fica sem tendência.
+    """
+    faixas = {f for props in proporcoes_por_ano.values() for f in props}
+    tendencia = {}
+    for faixa in faixas:
+        pontos = [(t, logs_razoes(props[faixa], arranjos)) for t, props in proporcoes_por_ano.items() if faixa in props]
+        pontos = [(t, l) for t, l in pontos if l is not None]
+        if len({t for t, _ in pontos}) < 2:
+            continue
+        tendencia[faixa] = (inclinacao((t, l[0]) for t, l in pontos), inclinacao((t, l[1]) for t, l in pontos))
+    return tendencia
+
+
+def projetar_proporcoes(
+    base: Mapping[str, float],
+    inclinacoes: tuple[float, float] | None,
+    anos: float,
+    intensidade: float,
+    arranjos: tuple[str, str, str],
+) -> dict[str, float]:
+    """Proporções `anos` depois da base: log razão = log razão da base + intensidade * inclinação * anos.
+
+    Sem inclinação, ou com algum arranjo zerado na base, as proporções ficam as da base.
+    """
+    logs = logs_razoes(base, arranjos)
+    if inclinacoes is None or logs is None:
+        return dict(base)
+    return proporcoes_dos_logs(
+        logs[0] + intensidade * inclinacoes[0] * anos, logs[1] + intensidade * inclinacoes[1] * anos, arranjos
+    )
+
+
+def validar_tendencia(
+    proporcoes_por_ano: Mapping[float, Mapping[Hashable, Mapping[str, float]]],
+    arranjos: tuple[str, str, str],
+    treino: tuple[float, float],
+    alvo: float,
+) -> dict[Hashable, dict[str, float]]:
+    """Validação fora do tempo: inclinação estimada só nos anos de `treino`, ancorada no último deles,
+    prevendo `alvo`. Devolve o erro (previsto menos observado) em pontos percentuais por faixa e arranjo."""
+    tendencia = estimar_tendencia({t: proporcoes_por_ano[t] for t in treino}, arranjos)
+    ancora = max(treino)
+    erros = {}
+    for faixa, inclinacoes in tendencia.items():
+        if faixa not in proporcoes_por_ano[alvo]:
+            continue
+        previsto = projetar_proporcoes(proporcoes_por_ano[ancora][faixa], inclinacoes, alvo - ancora, 1.0, arranjos)
+        observado = proporcoes_por_ano[alvo][faixa]
+        erros[faixa] = {a: (previsto[a] - observado.get(a, 0.0)) * 100 for a in arranjos}
+    return erros
+
+
+# ---------- velocidade do envelhecimento (RF02) ----------
+
+
+def ajustar_envelhecimento(
+    populacao_por_grupo: Mapping[int, Mapping[str, float]], k: float, ano_base: int
+) -> dict[int, dict[str, float]]:
+    """Participação do grupo g no ano s: part_g(base) + k * (part_g(s) - part_g(base)), com piso em zero,
+    renormalizada e aplicada à população total do ano. Os grupos precisam cobrir todas as idades.
+
+    Anos anteriores ao ano-base ficam como estão; k = 1 devolve a população original.
+    """
+    if k <= 0:
+        raise ValueError("a velocidade do envelhecimento precisa ser maior que zero")
+    if ano_base not in populacao_por_grupo:
+        raise ValueError(f"falta a população de {ano_base}")
+    base = populacao_por_grupo[ano_base]
+    total_base = sum(base.values())
+    if total_base <= 0:
+        raise ValueError("a população do ano-base precisa ser maior que zero")
+    part_base = {g: p / total_base for g, p in base.items()}
+    resultado = {}
+    for ano, grupos in populacao_por_grupo.items():
+        total = sum(grupos.values())
+        if ano < ano_base or k == 1 or total <= 0:
+            resultado[ano] = dict(grupos)
+            continue
+        brutas = {g: max(0.0, part_base.get(g, 0.0) + k * (p / total - part_base.get(g, 0.0))) for g, p in grupos.items()}
+        soma = sum(brutas.values())
+        resultado[ano] = {g: v / soma * total for g, v in brutas.items()}
+    return resultado

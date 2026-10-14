@@ -30,6 +30,9 @@ class RepositorioFalso:
     def domicilios(self):
         return DOMICILIOS
 
+    def domicilios_historicos(self):
+        return []  # sem as POFs anteriores não há tendência: os arranjos ficam congelados
+
     def populacao_por_idade(self, localidade="Brasil"):
         return POPULACAO
 
@@ -95,3 +98,21 @@ def test_endpoint_parametro_ausente_retorna_422(cliente):
     params = dict(PARAMS)
     del params["faixa"]
     assert cliente.get("/simulador", params=params).status_code == 422
+
+
+def test_arranjos_fixos_e_controles_de_simulacao():
+    # sem as POFs anteriores não há tendência: taxas_arranjos_fixos coincide com taxas
+    fixos = _sim(base=BaseSim.taxas_arranjos_fixos)
+    assert fixos.participacao_pct == _sim().participacao_pct and fixos.simulacao is False
+    r = simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, RepositorioFalso(), intensidade=0.5, k=1.2)
+    assert (r.intensidade, r.k, r.simulacao) == (0.5, 1.2, True)
+
+
+@pytest.mark.parametrize("campo, valor", [("intensidade", 2), ("k", 0.1)])
+def test_endpoint_controle_fora_do_limite_retorna_422(cliente, campo, valor):
+    assert cliente.get("/simulador", params={**PARAMS, campo: valor}).status_code == 422
+
+
+def test_endpoint_aceita_os_controles(cliente):
+    r = cliente.get("/simulador", params={**PARAMS, "base": "taxas_arranjos_fixos", "intensidade": 0.5, "k": 1.5})
+    assert r.status_code == 200 and r.json()["simulacao"] is True

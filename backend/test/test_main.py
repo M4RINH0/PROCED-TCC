@@ -14,6 +14,9 @@ class Quebrado:
     def domicilios(self):
         raise ErroFonteDados("fora do ar")
 
+    def domicilios_historicos(self):
+        return []  # sem as POFs anteriores não há tendência: os arranjos ficam congelados
+
     def populacao_por_idade(self, localidade="Brasil"):
         raise ErroFonteDados("fora do ar")
 

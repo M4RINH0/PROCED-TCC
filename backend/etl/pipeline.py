@@ -56,6 +56,7 @@ def projetar(
     pop: dict,
     pop_brasil: dict,
     leitura: dict,
+    historica: pd.DataFrame | None,
     pasta: Path,
     avaliar_ml: bool = True,
     projetar_ml: bool = False,
@@ -71,20 +72,24 @@ def projetar(
     rastro.append(registro)
 
     pop_faixa = modelagem.populacao_por_faixa(pop)
-    ponte = modelagem.Ponte(fato, pop_faixa)
+    historica = historica if historica is not None else pd.DataFrame(columns=modelagem.COLUNAS_HISTORICA.split(","))
+    tendencia = modelagem.tendencia_arranjos(historica, fato)
+    _json(pasta / "tendencia_arranjos.json", tendencia)
+    inclinacoes = {f: (b["unipessoal_sobre_multipessoal"], b["casal_sobre_multipessoal"]) for f, b in tendencia["inclinacoes_por_ano"].items()}
+    ponte = modelagem.Ponte(fato, pop_faixa, tendencia=inclinacoes)
     auditoria = modelagem.auditar(fato_bruto, fato, registro, pop, pop_brasil, leitura)
     auditoria["ponte"] = modelagem.validar_ponte(ponte, pop)
     rastro.append(
         {
             "etapa": "ponte e método das taxas",
             "fonte": "fato_consumo_domiciliar e projecoes_populacao_idade (27 UFs, Ambos)",
-            "transformacao": "taxas de chefia de 2018 por faixa e arranjo (P2); padronização direta com a TEC "
-            "ponderada (P6); contrafactual com a composição de 2026 congelada (P10); consumo total "
-            "calibrado pela população do IBGE (P12)",
+            "transformacao": "taxa de chefia de 2018 por faixa (P2) e tendência dos arranjos (P13); padronização "
+            "direta com a TEC ponderada (P6); arranjos fixos em 2026; contrafactual com a composição de 2026 "
+            "congelada (P10); consumo total calibrado pela população do IBGE (P12)",
         }
     )
 
-    projecoes = [modelagem.projetar_taxas(ponte)]
+    projecoes = [modelagem.projetar_taxas(ponte), modelagem.projetar_arranjos_fixos(ponte)]
     if avaliar_ml:
         avaliacao = modelagem.avaliar(fato)
         _json(pasta / "metricas_modelos.json", avaliacao)

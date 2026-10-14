@@ -55,3 +55,21 @@ def test_le_cada_tabela_uma_vez_so():
     repo = Dados(cliente)
     repo.domicilios(), repo.domicilios(), repo.populacao_por_idade(), repo.populacao_por_idade()
     assert len(cliente.chamadas) == 2
+
+
+def test_le_as_pofs_anteriores_sem_filtrar_a_rede_geral():
+    from app.dados import DomicilioHistorico
+
+    class Cliente:
+        def selecionar(self, tabela, colunas, filtros=None):
+            assert tabela == "fato_consumo_pof_historica" and "energia_rede_geral" in colunas
+            return [
+                {"ano_pof": 2002, "arranjo_familiar": "Casal ou Dupla", "idade_chefe": 70, "peso_final": 10.5, "energia_rede_geral": False},
+                {"ano_pof": 2008, "arranjo_familiar": "Multipessoal (3+)", "idade_chefe": 40, "peso_final": 3.0, "energia_rede_geral": True},
+            ]
+
+    historicos = Dados(Cliente()).domicilios_historicos()
+    assert historicos == [
+        DomicilioHistorico(2002, "Casal ou Dupla", 70, 10.5, False),
+        DomicilioHistorico(2008, "Multipessoal (3+)", 40, 3.0, True),
+    ]

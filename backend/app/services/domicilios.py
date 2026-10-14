@@ -25,6 +25,7 @@ from app.dominio import (
     celula_do_domicilio,
     da_localidade,
     montar_projecao,
+    tendencia_nacional,
 )
 from app.schemas.domicilios import ArranjoConsumo, ArranjosResposta, CategoriaComposicao, ComposicaoResposta, Grupo
 
@@ -87,15 +88,20 @@ def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosRes
 
 class EstruturaDomicilios:
     """Domicílios por faixa do chefe e arranjo no ano s, com a taxa de chefia de 2018
-    constante em cada combinação (premissa P2). Usa a mesma projeção do Panorama.
+    da faixa constante (premissa P2) e a tendência dos arranjos (P13). Usa a mesma projeção do Panorama.
     """
 
-    def __init__(self, domicilios: Iterable[Domicilio], populacao: dict[int, dict[int, int]]):
+    def __init__(
+        self,
+        domicilios: Iterable[Domicilio],
+        populacao: dict[int, dict[int, int]],
+        tendencia: dict[str, tuple[float, float]] | None = None,
+    ):
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
         lista = [d for d in domicilios if celula_do_domicilio(d) is not None]
         self.populacao = populacao
-        self.projecao = montar_projecao(lista, populacao) if lista else None
+        self.projecao = montar_projecao(lista, populacao, tendencia) if lista else None
         self.amostra = {c: p.amostra for c, p in self.projecao.celulas.items()} if self.projecao else {}
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
@@ -180,5 +186,6 @@ def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
 
 def obter_composicao(dados, localidade: str = BRASIL) -> ComposicaoResposta:
     domicilios = da_localidade(dados.domicilios(), localidade)
-    resposta = montar_composicao(EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade)))
+    tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
+    resposta = montar_composicao(EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade), tendencia))
     return resposta.model_copy(update={"localidade": localidade})

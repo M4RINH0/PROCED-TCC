@@ -5,15 +5,16 @@ from pydantic import BaseModel, Field
 
 from app.dominio import ANO_FINAL, ANO_INICIAL, Recorte
 
-FONTE = "POF 2017 a 2018 e Projeções da População (IBGE)"
+FONTE = "POF 2002 a 2003, 2008 a 2009 e 2017 a 2018 e Projeções da População (IBGE)"
 UNIDADE = "kWh/mes/pessoa"
 
 
 class CenarioId(str, Enum):
-    taxas = "taxas"  # método das taxas: padronização direta com a TEC ponderada da POF
+    taxas = "taxas"  # método das taxas com a tendência dos arranjos (P13)
+    taxas_arranjos_fixos = "taxas_arranjos_fixos"  # só o envelhecimento: arranjos congelados em 2026
     ml_rf = "ml_rf"  # Random Forest (pausado: sempre null)
     ml_gb = "ml_gb"  # Gradient Boosting (pausado: sempre null)
-    contrafactual = "contrafactual"  # método das taxas com a composição de domicílios de 2026 congelada
+    contrafactual = "contrafactual"  # composição de domicílios de 2026 congelada (P10)
 
 
 class Cenario(BaseModel):
@@ -45,31 +46,40 @@ class Amostra(BaseModel):
     baixa_confiabilidade: bool = Field(default=False, description="alguma célula do recorte tem menos de 30 domicílios")
 
 
-class ProjecaoResposta(Amostra):
+class Simulacao(BaseModel):
+    intensidade: float = Field(default=1.0, description="intensidade da tendência dos arranjos (0 = congelados, 1 = observada)")
+    k: float = Field(default=1.0, description="velocidade do envelhecimento (1 = projeção do IBGE)")
+    simulacao: bool = Field(default=False, description="algum controle fora do padrão: o resultado é uma simulação")
+
+
+class Efeitos(BaseModel):
+    """Decomposição: envelhecimento = idade + arranjos (taxas menos contrafactual)."""
+
+    efeito_envelhecimento_kwh: float | None = Field(default=None, description="taxas menos contrafactual, na TBC padronizada")
+    efeito_idade_kwh: float | None = Field(default=None, description="taxas_arranjos_fixos menos contrafactual")
+    efeito_arranjos_kwh: float | None = Field(default=None, description="taxas menos taxas_arranjos_fixos")
+    efeito_envelhecimento_total_kwh_mes: float | None = Field(default=None, description="o mesmo, no consumo total calibrado")
+    efeito_idade_total_kwh_mes: float | None = None
+    efeito_arranjos_total_kwh_mes: float | None = None
+
+
+class ProjecaoResposta(Amostra, Simulacao, Efeitos):
     ano: int = Field(ge=ANO_INICIAL, le=ANO_FINAL)
     recorte: Recorte
     unidade: Literal["kWh/mes/pessoa"] = UNIDADE
     cenarios: list[Cenario]
-    efeito_envelhecimento_kwh: float | None = Field(default=None, description="TBC padronizada de taxas menos a do contrafactual")
-    efeito_envelhecimento_total_kwh_mes: float | None = Field(
-        default=None, description="consumo total calibrado de taxas menos o do contrafactual"
-    )
     dados_ilustrativos: bool
     fonte: str = FONTE
     localidade: str = "Brasil"
 
 
-class PontoSerie(BaseModel):
+class PontoSerie(Efeitos):
     ano: int
     cenarios: list[Cenario]
     participacao_60_mais_pct: float | None = Field(description="pessoas de 60 anos ou mais na população; null se o ano não estiver na projeção")
-    efeito_envelhecimento_kwh: float | None = Field(default=None, description="TBC padronizada de taxas menos a do contrafactual")
-    efeito_envelhecimento_total_kwh_mes: float | None = Field(
-        default=None, description="consumo total calibrado de taxas menos o do contrafactual"
-    )
 
 
-class SerieResposta(Amostra):
+class SerieResposta(Amostra, Simulacao):
     recorte: Recorte
     unidade: Literal["kWh/mes/pessoa"] = UNIDADE
     pontos: list[PontoSerie]

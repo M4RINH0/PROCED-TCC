@@ -1,16 +1,31 @@
-"""Regras do Simulador: consulta combinada de ano, arranjo e faixa etária do chefe (RF07).
+"""Regras do Simulador: consulta combinada de ano, arranjo e faixa etária do chefe (RF02, RF07).
 
 A TEC de cada célula (faixa do chefe, arranjo) fica nos níveis da POF (premissa P6),
 então o consumo por pessoa da célula não depende do ano nem do cenário. O ano e o
 cenário definem quantos domicílios a célula tem, a participação dela no total e o
 consumo total calibrado (P12):
-- taxas: taxa de chefia de 2018 constante (P2);
+- taxas: taxa de chefia total da faixa constante (P2) e tendência dos arranjos (P13);
+- taxas_arranjos_fixos: só o envelhecimento, com os arranjos congelados em 2026;
 - contrafactual: o total de domicílios segue a projeção, e a distribuição entre as
   células fica congelada na de 2026 (P10).
+Os controles de simulação (RF02) valem aqui como no Panorama.
 A persistência de cenários (RF09) ainda não foi implementada.
 """
 
-from app.dominio import BRASIL, CASAL_OU_DUPLA, MULTIPESSOAL, UNIPESSOAL, FiltroArranjo, baixa_confiabilidade, da_localidade, montar_projecao
+from app.dominio import (
+    BRASIL,
+    CASAL_OU_DUPLA,
+    INTENSIDADE_PADRAO,
+    K_PADRAO,
+    MULTIPESSOAL,
+    UNIPESSOAL,
+    FiltroArranjo,
+    baixa_confiabilidade,
+    da_localidade,
+    em_simulacao,
+    montar_projecao,
+    tendencia_nacional,
+)
 from app.schemas.simulador import ROTULO_FAIXA, ArranjoSim, BaseSim, FaixaSim, SimulacaoResposta
 from app.services.estrutura_etaria import consumo_por_faixa
 
@@ -21,7 +36,16 @@ NOME_ARRANJO = {
 }
 
 
-def simular(ano: int, faixa: FaixaSim, arranjo: ArranjoSim, base: BaseSim, dados, localidade: str = BRASIL) -> SimulacaoResposta:
+def simular(
+    ano: int,
+    faixa: FaixaSim,
+    arranjo: ArranjoSim,
+    base: BaseSim,
+    dados,
+    localidade: str = BRASIL,
+    intensidade: float = INTENSIDADE_PADRAO,
+    k: float = K_PADRAO,
+) -> SimulacaoResposta:
     domicilios = da_localidade(dados.domicilios(), localidade)
     populacao = dados.populacao_por_idade(localidade)
     por_faixa = consumo_por_faixa(domicilios, FiltroArranjo(arranjo.value))
@@ -36,7 +60,8 @@ def simular(ano: int, faixa: FaixaSim, arranjo: ArranjoSim, base: BaseSim, dados
     elif ano not in populacao:
         motivo = "Sem projeção da população para este ano."
     else:
-        projecao = montar_projecao(domicilios, populacao)
+        tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
+        projecao = montar_projecao(domicilios, populacao, tendencia, intensidade, k)
         todos = projecao.domicilios(ano, base.value)
         resumo = projecao.resumo(ano, base.value, [celula])
         projetados = round(todos[celula])
@@ -57,4 +82,7 @@ def simular(ano: int, faixa: FaixaSim, arranjo: ArranjoSim, base: BaseSim, dados
         consumo_total_calibrado_kwh_mes=calibrado,
         por_faixa=por_faixa,
         localidade=localidade,
+        intensidade=intensidade,
+        k=k,
+        simulacao=em_simulacao(intensidade, k),
     )

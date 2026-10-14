@@ -32,7 +32,8 @@ class ArranjosResposta(BaseModel):
 
 
 FONTE_COMPOSICAO = (
-    "POF 2017 a 2018 e Projeções da População (IBGE); taxa de chefia de 2018 constante por faixa e arranjo"
+    "POF 2002 a 2003, 2008 a 2009 e 2017 a 2018 e Projeções da População (IBGE); taxa de chefia de 2018 "
+    "constante por faixa e tendência dos arranjos"
 )
 
 

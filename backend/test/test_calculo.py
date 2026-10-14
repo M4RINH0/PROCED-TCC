@@ -2,7 +2,18 @@
 
 import pytest
 
+import math
+
 from app.calculo import (
+    TAXAS_ARRANJOS_FIXOS,
+    ajustar_envelhecimento,
+    estimar_tendencia,
+    inclinacao,
+    logs_razoes,
+    projetar_proporcoes,
+    proporcoes_arranjos,
+    proporcoes_dos_logs,
+    validar_tendencia,
     CONTRAFACTUAL,
     TAXAS,
     Celula,
@@ -325,3 +336,227 @@ def test_congelar_composicao():
         congelar_composicao({"a": 0}, 8)
     with pytest.raises(ValueError):
         congelar_composicao({"a": 1}, -1)
+
+
+
+# ---------- tendência dos arranjos (P13) ----------
+A = ("u", "c", "m")  # unipessoal, casal ou dupla, multipessoal
+
+
+def test_proporcoes_ponderadas_excluem_os_fora_da_rede_geral():
+    # faixa F: u peso 2, c peso 3, m peso 5 (e um m fora da rede, peso 90, que sai) -> 0,2, 0,3, 0,5
+    registros = [("F", "u", 2, True), ("F", "c", 3, True), ("F", "m", 5, True), ("F", "m", 90, False), ("G", "u", 1, True)]
+    props = proporcoes_arranjos(registros)
+    assert props["F"] == pytest.approx({"u": 0.2, "c": 0.3, "m": 0.5})
+    assert props["G"] == {"u": 1.0}
+
+
+def test_proporcoes_rejeitam_peso_nao_positivo():
+    with pytest.raises(ValueError):
+        proporcoes_arranjos([("F", "u", 0, True)])
+
+
+def test_logs_das_razoes():
+    # log(0,2 / 0,5) e log(0,3 / 0,5)
+    assert logs_razoes({"u": 0.2, "c": 0.3, "m": 0.5}, A) == pytest.approx((math.log(0.4), math.log(0.6)))
+    assert logs_razoes({"u": 0.0, "c": 0.5, "m": 0.5}, A) is None
+
+
+def test_proporcoes_dos_logs_invertem_os_logs_e_somam_1():
+    props = proporcoes_dos_logs(math.log(0.4), math.log(0.6), A)
+    assert props == pytest.approx({"u": 0.2, "c": 0.3, "m": 0.5})
+    extremas = proporcoes_dos_logs(40.0, -40.0, A)
+    assert sum(extremas.values()) == pytest.approx(1) and all(0 <= v <= 1 for v in extremas.values())
+
+
+def test_inclinacao_de_minimos_quadrados():
+    # t = 2002,5, 2008,5, 2017,5 (média 2009,5; desvios -7, -1, 8; soma dos quadrados 114)
+    # y = 1, 2, 4 -> inclinação (-7*1 - 1*2 + 8*4) / 114 = 23 / 114
+    assert inclinacao([(2002.5, 1), (2008.5, 2), (2017.5, 4)]) == pytest.approx(23 / 114)
+    with pytest.raises(ValueError):
+        inclinacao([(2002.5, 1), (2002.5, 2)])
+
+
+def test_tendencia_nas_tres_edicoes():
+    # u/m: 1/7, 0,25, 0,4; inclinação = soma(desvio * log) / 114
+    props = {
+        2002.5: {"F": {"u": 0.1, "c": 0.2, "m": 0.7}},
+        2008.5: {"F": {"u": 0.15, "c": 0.25, "m": 0.6}},
+        2017.5: {"F": {"u": 0.2, "c": 0.3, "m": 0.5}},
+    }
+    bu, bc = estimar_tendencia(props, A)["F"]
+    assert bu == pytest.approx((-7 * math.log(1 / 7) - math.log(0.25) + 8 * math.log(0.4)) / 114)
+    assert bc == pytest.approx((-7 * math.log(2 / 7) - math.log(0.25 / 0.6) + 8 * math.log(0.6)) / 114)
+    assert bu > 0 and bc > 0  # unipessoal e casal crescem em relação ao multipessoal
+
+
+def test_faixa_sem_duas_edicoes_validas_fica_sem_tendencia():
+    props = {2002.5: {"F": {"u": 0.0, "c": 0.5, "m": 0.5}}, 2017.5: {"F": {"u": 0.2, "c": 0.3, "m": 0.5}}}
+    assert estimar_tendencia(props, A) == {}
+
+
+def test_projecao_das_proporcoes_soma_1_e_respeita_a_intensidade():
+    base = {"u": 0.2, "c": 0.3, "m": 0.5}
+    projetadas = projetar_proporcoes(base, (0.02, 0.01), 10, 1.0, A)
+    # log razão = log razão da base + inclinação * 10
+    assert logs_razoes(projetadas, A) == pytest.approx((math.log(0.4) + 0.2, math.log(0.6) + 0.1))
+    assert sum(projetadas.values()) == pytest.approx(1)
+    meia = projetar_proporcoes(base, (0.02, 0.01), 10, 0.5, A)
+    assert logs_razoes(meia, A) == pytest.approx((math.log(0.4) + 0.1, math.log(0.6) + 0.05))
+    assert projetar_proporcoes(base, (0.02, 0.01), 10, 0.0, A) == pytest.approx(base)
+
+
+def test_projecao_muito_longa_fica_entre_0_e_1():
+    projetadas = projetar_proporcoes({"u": 0.2, "c": 0.3, "m": 0.5}, (0.5, -0.5), 200, 1.5, A)
+    assert sum(projetadas.values()) == pytest.approx(1) and all(0 <= v <= 1 for v in projetadas.values())
+
+
+def test_sem_inclinacao_ou_com_arranjo_zerado_as_proporcoes_ficam():
+    assert projetar_proporcoes({"u": 0.2, "c": 0.3, "m": 0.5}, None, 10, 1, A) == {"u": 0.2, "c": 0.3, "m": 0.5}
+    assert projetar_proporcoes({"u": 0.0, "c": 0.5, "m": 0.5}, (0.1, 0.1), 10, 1, A) == {"u": 0.0, "c": 0.5, "m": 0.5}
+
+
+def _linear(t):
+    # logs exatamente lineares: u/m = -2 + 0,1 (t - 2002,5); c/m = -1 + 0,05 (t - 2002,5)
+    return proporcoes_dos_logs(-2 + 0.1 * (t - 2002.5), -1 + 0.05 * (t - 2002.5), A)
+
+
+def test_validacao_fora_do_tempo_com_tendencia_exata_tem_erro_zero():
+    props = {t: {"F": _linear(t)} for t in (2002.5, 2008.5, 2017.5)}
+    erros = validar_tendencia(props, A, (2002.5, 2008.5), 2017.5)
+    assert erros["F"] == pytest.approx({"u": 0, "c": 0, "m": 0}, abs=1e-9)
+
+
+def test_validacao_fora_do_tempo_mede_o_erro_em_pontos_percentuais():
+    # o previsto para 2017,5 é o linear; o observado tem 2 pontos a mais de unipessoal e 2 a menos de multipessoal
+    previsto = _linear(2017.5)
+    observado = {"u": previsto["u"] + 0.02, "c": previsto["c"], "m": previsto["m"] - 0.02}
+    props = {2002.5: {"F": _linear(2002.5)}, 2008.5: {"F": _linear(2008.5)}, 2017.5: {"F": observado}}
+    erros = validar_tendencia(props, A, (2002.5, 2008.5), 2017.5)
+    assert erros["F"] == pytest.approx({"u": -2.0, "c": 0.0, "m": 2.0})
+
+
+def test_validacao_ancora_no_ultimo_ano_de_treino():
+    # 2002 fora da reta: a inclinação muda, mas a previsão parte do valor observado em 2008,5
+    props = {2002.5: {"F": _linear(2002.5)}, 2008.5: {"F": _linear(2008.5)}, 2017.5: {"F": _linear(2017.5)}}
+    inclinacao_u = (math.log(_linear(2008.5)["u"] / _linear(2008.5)["m"]) - math.log(_linear(2002.5)["u"] / _linear(2002.5)["m"])) / 6
+    assert inclinacao_u == pytest.approx(0.1)
+    assert validar_tendencia(props, A, (2002.5, 2008.5), 2017.5)["F"]["u"] == pytest.approx(0, abs=1e-9)
+
+
+# ---------- velocidade do envelhecimento (k) ----------
+# 2026: A 60, B 40 (participações 0,6 e 0,4); 2050: A 80, B 120 (0,4 e 0,6; total 200)
+POP_GRUPOS = {2018: {"A": 70, "B": 30}, 2026: {"A": 60, "B": 40}, 2050: {"A": 80, "B": 120}}
+
+
+def test_k_igual_a_1_devolve_a_populacao_original():
+    assert ajustar_envelhecimento(POP_GRUPOS, 1.0, 2026) == POP_GRUPOS
+
+
+def test_k_meio_freia_o_envelhecimento():
+    # A: 0,6 + 0,5 * (0,4 - 0,6) = 0,5 -> 100; B: 0,4 + 0,5 * 0,2 = 0,5 -> 100
+    assert ajustar_envelhecimento(POP_GRUPOS, 0.5, 2026)[2050] == pytest.approx({"A": 100, "B": 100})
+
+
+def test_k_acima_de_1_acelera_e_mantem_o_total():
+    # A: 0,6 + 1,5 * (-0,2) = 0,3 -> 60; B: 0,4 + 1,5 * 0,2 = 0,7 -> 140
+    ajustada = ajustar_envelhecimento(POP_GRUPOS, 1.5, 2026)
+    assert ajustada[2050] == pytest.approx({"A": 60, "B": 140})
+    assert sum(ajustada[2050].values()) == pytest.approx(200)
+    assert ajustada[2018] == POP_GRUPOS[2018] and ajustada[2026] == pytest.approx(POP_GRUPOS[2026])
+
+
+def test_k_tem_piso_em_zero_e_renormaliza():
+    # k = 4: A = 0,6 + 4 * (-0,2) = -0,2 -> 0; B = 1,2 -> renormalizado para 1 -> 200
+    assert ajustar_envelhecimento(POP_GRUPOS, 4.0, 2026)[2050] == pytest.approx({"A": 0, "B": 200})
+
+
+def test_k_rejeita_valor_nao_positivo_e_falta_do_ano_base():
+    with pytest.raises(ValueError):
+        ajustar_envelhecimento(POP_GRUPOS, 0, 2026)
+    with pytest.raises(ValueError, match="2030"):
+        ajustar_envelhecimento(POP_GRUPOS, 1.2, 2030)
+
+
+# ---------- projeção com a tendência ----------
+# Faixa F: u peso 2 (TEC 100), c peso 3 (TEC 60), m peso 5 (TEC 40); chefia da faixa 10 / 100 = 0,1
+# Faixa G (sem tendência): u peso 4 (TEC 80); chefia 4 / 40 = 0,1
+# população: F 100 em 2018 e 2026, 200 em 2050; G 40 em 2018 e 2026, 120 em 2050
+
+
+def _celulas_tendencia():
+    return parametros_celulas(
+        [(("F", "u"), 2, 100, 100, 1), (("F", "c"), 3, 120, 60, 2), (("F", "m"), 5, 160, 40, 4), (("G", "u"), 4, 80, 80, 1)]
+    )
+
+
+POP_T = {2018: {"F": 100, "G": 40}, 2026: {"F": 100, "G": 40}, 2050: {"F": 200, "G": 120}}
+
+
+def _projecao_tendencia(intensidade=1.0, tendencia=None):
+    tendencia = {"F": (0.02, 0.01)} if tendencia is None else tendencia
+    return Projecao(_celulas_tendencia(), POP_T, 2018, 2026, None, tendencia, intensidade, A)
+
+
+def test_intensidade_zero_reproduz_o_modelo_sem_tendencia():
+    sem = Projecao(_celulas_tendencia(), POP_T, 2018, 2026)
+    zero = _projecao_tendencia(0.0)
+    for ano in (2026, 2050):
+        assert zero.domicilios(ano) == pytest.approx(sem.domicilios(ano))
+        assert zero.domicilios(ano, TAXAS_ARRANJOS_FIXOS) == pytest.approx(sem.domicilios(ano))
+    # sem tendência: 2050 = 0,1 * 200 * (0,2, 0,3, 0,5) = 4, 6, 10 e 0,1 * 120 = 12
+    assert sem.domicilios(2050) == pytest.approx({("F", "u"): 4, ("F", "c"): 6, ("F", "m"): 10, ("G", "u"): 12})
+
+
+def test_chefia_total_da_faixa_fica_constante_com_a_tendencia():
+    p = _projecao_tendencia(1.5)
+    ndom = p.domicilios(2050)
+    assert ndom[("F", "u")] + ndom[("F", "c")] + ndom[("F", "m")] == pytest.approx(0.1 * 200)
+    assert ndom[("G", "u")] == pytest.approx(12)
+
+
+def test_taxas_usa_as_proporcoes_do_ano_e_arranjos_fixos_as_de_2026():
+    p = _projecao_tendencia()
+    base = {"u": 0.2, "c": 0.3, "m": 0.5}
+    em_2050 = projetar_proporcoes(base, (0.02, 0.01), 2050 - 2017.5, 1.0, A)
+    em_2026 = projetar_proporcoes(base, (0.02, 0.01), 2026 - 2017.5, 1.0, A)
+    assert p.domicilios(2050)[("F", "u")] == pytest.approx(20 * em_2050["u"])
+    assert p.domicilios(2050, TAXAS_ARRANJOS_FIXOS)[("F", "u")] == pytest.approx(20 * em_2026["u"])
+
+
+def test_os_tres_cenarios_coincidem_no_ano_base():
+    p = _projecao_tendencia()
+    for cenario in (TAXAS_ARRANJOS_FIXOS, CONTRAFACTUAL):
+        assert p.domicilios(2026, cenario) == pytest.approx(p.domicilios(2026, TAXAS))
+
+
+def test_contrafactual_congela_a_composicao_de_taxas_em_2026():
+    p = _projecao_tendencia()
+    base = p.domicilios(2026)
+    total_2050 = sum(p.domicilios(2050).values())
+    esperado = {c: n / sum(base.values()) * total_2050 for c, n in base.items()}
+    assert p.domicilios(2050, CONTRAFACTUAL) == pytest.approx(esperado)
+
+
+def test_decomposicao_fecha():
+    p = _projecao_tendencia()
+    t, f, c = (p.resumo(2050, x).tbc_padronizada for x in (TAXAS, TAXAS_ARRANJOS_FIXOS, CONTRAFACTUAL))
+    assert (f - c) + (t - f) == pytest.approx(t - c)
+    assert t > f  # mais unipessoais, que consomem mais por pessoa, elevam a TBC
+
+
+def test_verificacao_com_arranjos_congelados_a_tbc_cresce_com_o_envelhecimento():
+    # jovens (TEC 50) e idosos (TEC 100), uma célula cada; a população idosa cresce
+    celulas = parametros_celulas([(("jovem", "u"), 1, 50, 50, 1), (("idoso", "u"), 1, 100, 100, 1)])
+    pop = {2018: {"jovem": 100, "idoso": 100}, 2026: {"jovem": 100, "idoso": 100}, 2070: {"jovem": 80, "idoso": 160}}
+    p = Projecao(celulas, pop, 2018, 2026, None, {}, 0.0, A)
+    # 2026: (50 + 100) / 2 = 75; 2070: (50 * 0,8 + 100 * 1,6) / 2,4 = 200 / 2,4
+    assert p.resumo(2026, TAXAS_ARRANJOS_FIXOS).tbc_padronizada == pytest.approx(75)
+    assert p.resumo(2070, TAXAS_ARRANJOS_FIXOS).tbc_padronizada == pytest.approx(200 / 2.4)
+
+
+def test_projecao_rejeita_intensidade_negativa_e_tendencia_sem_rotulos():
+    with pytest.raises(ValueError):
+        _projecao_tendencia(-0.1)
+    with pytest.raises(ValueError, match="rótulos"):
+        Projecao(_celulas_tendencia(), POP_T, 2018, 2026, None, {"F": (0.1, 0.1)})

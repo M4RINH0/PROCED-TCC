@@ -194,6 +194,20 @@ def test_ponte_rejeita_fator_invalido_e_falta_de_2018():
 # ---------- leitura ----------
 
 
+# POFs anteriores, faixa de 60 a 69 (proporções por edição, todas na rede geral menos um registro):
+# 2002: uni 1, multi 3 (25% e 75%); 2008: uni 2, multi 2 (50% e 50%); um casal de 2008 fora da rede geral sai
+HISTORICA = pd.DataFrame(
+    {
+        "ano_pof": [2002, 2002, 2008, 2008, 2008],
+        "id_domicilio": ["a", "b", "c", "d", "e"],
+        "arranjo_familiar": [UNIPESSOAL, MULTIPESSOAL, UNIPESSOAL, MULTIPESSOAL, CASAL_OU_DUPLA],
+        "idade_chefe": [65, 66, 67, 68, 69],
+        "peso_final": [1.0, 3.0, 2.0, 2.0, 50.0],
+        "energia_rede_geral": [True, True, True, True, False],
+    }
+)
+
+
 class ClienteFalso:
     """Imita o Supabase: a projeção traz linhas de total (Brasil, região) e os três sexos."""
 
@@ -204,10 +218,13 @@ class ClienteFalso:
             {"localidade": "GO", "sexo": "Ambos", "ano": 2018, "idade": 65, "populacao": 5},
         ]
         self.brasil = [{"localidade": "Brasil", "sexo": "Ambos", "ano": 2018, "idade": 65, "populacao": 15}]
+        self.historica = HISTORICA.to_dict(orient="records")
 
     def selecionar(self, tabela, colunas, filtros=None):
         if tabela == "fato_consumo_domiciliar":
             return MINIMO.to_dict(orient="records")
+        if tabela == "fato_consumo_pof_historica":
+            return self.historica
         if filtros["localidade"] == "eq.Brasil":
             return self.brasil
         assert filtros["localidade"] == f"in.({','.join(UFS)})" and filtros["sexo"] == "eq.Ambos"
@@ -216,13 +233,16 @@ class ClienteFalso:
     def contar(self, tabela, filtros=None):
         if tabela == "fato_consumo_domiciliar":
             return len(MINIMO) + (1 if self.contagem_errada else 0)
+        if tabela == "fato_consumo_pof_historica":
+            return len(HISTORICA)
         return 1 if filtros["localidade"] == "eq.Brasil" else 2
 
 
 def test_carregar_le_as_ufs_e_confere_as_linhas_com_o_banco():
-    fato, pop, brasil, leitura = modelagem.carregar(ClienteFalso())
+    fato, pop, brasil, leitura, historica = modelagem.carregar(ClienteFalso())
     assert len(fato) == 5 and pop == {2018: {65: 15}} and brasil == {2018: {65: 15}}
     assert all(n["lidas"] == n["no_banco"] for n in leitura.values())
+    assert len(historica) == 5 and "fato_consumo_pof_historica" in leitura
 
 
 def test_carregar_falha_se_faltar_linha():
@@ -231,7 +251,7 @@ def test_carregar_falha_se_faltar_linha():
 
 
 def test_auditoria_conta_e_confere_as_ufs_com_o_brasil():
-    fato_bruto, pop, brasil, leitura = modelagem.carregar(ClienteFalso())
+    fato_bruto, pop, brasil, leitura, historica = modelagem.carregar(ClienteFalso())
     fato, registro = modelagem.preparar(fato_bruto)
     a = modelagem.auditar(fato_bruto, fato, registro, pop, brasil, leitura)
     assert a["soma_das_ufs_confere_com_brasil"] is True
@@ -329,13 +349,14 @@ def test_modelo_desconhecido_e_modelo_sem_ajuste():
 
 
 def test_pipeline_gera_as_saidas_sem_ml(tmp_path):
-    fato_bruto, pop, brasil, leitura = modelagem.carregar(ClienteFalso())
+    fato_bruto, pop, brasil, leitura, historica = modelagem.carregar(ClienteFalso())
     pop = {**POP}
     pop[2022] = {65: 400, 35: 350}
     pop.update({a: POP[2050] for a in range(2026, 2071)})
-    resumo = pipeline.projetar(fato_bruto, pop, {2018: {65: 300, 35: 400}}, leitura, tmp_path, avaliar_ml=False)
+    resumo = pipeline.projetar(fato_bruto, pop, {2018: {65: 300, 35: 400}}, leitura, historica, tmp_path, avaliar_ml=False)
     projecoes = pd.read_csv(tmp_path / "projecoes_2026_2070.csv")
-    assert set(projecoes["cenario"]) == {"taxas", "contrafactual"}
+    assert set(projecoes["cenario"]) == {"taxas", "taxas_arranjos_fixos", "contrafactual"}
+    assert (tmp_path / "tendencia_arranjos.json").exists()
     assert "consumo_total_calibrado_kwh_mes" in projecoes and "fator_calibracao" in projecoes
     assert projecoes["ano"].min() == 2026 and projecoes["ano"].max() == 2070
     sensibilidade = pd.read_csv(tmp_path / "sensibilidade_cobertura.csv")
@@ -343,3 +364,47 @@ def test_pipeline_gera_as_saidas_sem_ml(tmp_path):
     auditoria = json.loads((tmp_path / "auditoria.json").read_text(encoding="utf-8"))
     assert [r["etapa"] for r in auditoria["rastro"]][:2] == ["derivacao", "preparacao (P8)"]
     assert resumo["auditoria"]["linhas_depois_da_p8"] == 4
+
+
+
+# ---------- tendência dos arranjos no ETL (P13) ----------
+
+
+def test_tendencia_arranjos_resume_edicoes_inclinacoes_e_projecoes():
+    # MINIMO (2017): 60 a 69 só tem unipessoais, então a faixa fica sem os três arranjos e sem tendência;
+    # o resumo traz as proporções por edição mesmo assim
+    fato, _ = modelagem.preparar(MINIMO)
+    t = modelagem.tendencia_arranjos(HISTORICA, fato)
+    assert t["proporcoes_por_edicao"]["2002.5"]["60 a 69"] == pytest.approx({UNIPESSOAL: 0.25, MULTIPESSOAL: 0.75})
+    # o casal de 2008 está fora da rede geral e sai
+    assert t["proporcoes_por_edicao"]["2008.5"]["60 a 69"] == pytest.approx({UNIPESSOAL: 0.5, MULTIPESSOAL: 0.5})
+    assert t["inclinacoes_por_ano"] == {}
+    assert set(t["proporcoes_projetadas"]) == {"1.0", "0.5"}
+
+
+def test_ponte_com_tendencia_e_arranjos_fixos():
+    # F: casal e multipessoal em 2017 e um unipessoal; com a tendência, os unipessoais crescem
+    fato, _ = modelagem.preparar(
+        pd.DataFrame(
+            {
+                "id_domicilio": [1, 2, 3],
+                "sigla_uf": ["DF"] * 3,
+                "idade_chefe": [65, 66, 67],
+                "arranjo_familiar": [UNIPESSOAL, CASAL_OU_DUPLA, MULTIPESSOAL],
+                "qtd_moradores": [1, 2, 3],
+                "consumo_total_kwh": [120.0, 160.0, 150.0],
+                "peso_final": [1.0, 1.0, 2.0],
+            }
+        )
+    )
+    pop_faixa = modelagem.populacao_por_faixa({2018: {65: 400}, 2026: {65: 400}, 2050: {65: 800}})
+    ponte = modelagem.Ponte(fato, pop_faixa, tendencia={"60 a 69": (0.02, 0.01)})
+    t = modelagem.projetar_taxas(ponte, [2026, 2050]).set_index("ano")
+    f = modelagem.projetar_arranjos_fixos(ponte, [2026, 2050]).set_index("ano")
+    c = modelagem.projetar_contrafactual(ponte, [2026, 2050]).set_index("ano")
+    assert t.loc[2026, "tbc_padronizada_kwh"] == pytest.approx(f.loc[2026, "tbc_padronizada_kwh"])
+    assert t.loc[2026, "tbc_padronizada_kwh"] == pytest.approx(c.loc[2026, "tbc_padronizada_kwh"])
+    assert t.loc[2050, "domicilios_uni_60"] > f.loc[2050, "domicilios_uni_60"]
+    # chefia total constante: 4 / 400 * 800 = 8 domicílios nos três cenários
+    assert t.loc[2050, "domicilios"] == pytest.approx(8) and f.loc[2050, "domicilios"] == pytest.approx(8)
+    assert (f["cenario"] == "taxas_arranjos_fixos").all()

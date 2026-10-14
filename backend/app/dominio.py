@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 
-from app.calculo import Projecao, parametros_celulas
+from app.calculo import Projecao, ajustar_envelhecimento, estimar_tendencia, parametros_celulas, proporcoes_arranjos
 
 ANO_INICIAL = 2026
 ANO_FINAL = 2070  # horizonte do estudo: o mesmo ano em que termina a projeção da população do IBGE
@@ -13,7 +13,9 @@ IDADE_IDOSO = 60
 
 
 class Recorte(str, Enum):
-    chefe_60_mais = "chefe_60_mais"
+    todos_domicilios = "todos_domicilios"  # o único em que o efeito da idade aparece
+    chefe_60_mais_todos = "chefe_60_mais_todos"  # chefe de 60 anos ou mais, todos os arranjos
+    chefe_60_mais = "chefe_60_mais"  # mononucleares com chefe de 60 anos ou mais
     mononuclear_abaixo_60 = "mononuclear_abaixo_60"
 
 
@@ -62,6 +64,8 @@ FAIXAS_CHEFE = (
 )
 
 FAIXAS_DO_RECORTE = {
+    Recorte.todos_domicilios: FAIXAS_CHEFE,
+    Recorte.chefe_60_mais_todos: FAIXAS_CHEFE[4:],
     Recorte.chefe_60_mais: FAIXAS_CHEFE[4:],
     Recorte.mononuclear_abaixo_60: FAIXAS_CHEFE[:4],
 }
@@ -184,8 +188,15 @@ MINIMO_AMOSTRA = 30  # células com menos domicílios na amostra levam aviso de 
 ARRANJOS = (UNIPESSOAL, CASAL_OU_DUPLA, MULTIPESSOAL)
 MONONUCLEARES = (UNIPESSOAL, CASAL_OU_DUPLA)
 
+ARRANJOS_DO_RECORTE = {
+    Recorte.todos_domicilios: ARRANJOS,
+    Recorte.chefe_60_mais_todos: ARRANJOS,
+    Recorte.chefe_60_mais: MONONUCLEARES,
+    Recorte.mononuclear_abaixo_60: MONONUCLEARES,
+}
 CELULAS_DO_RECORTE = {
-    recorte: tuple((f.rotulo, a) for f in faixas for a in MONONUCLEARES) for recorte, faixas in FAIXAS_DO_RECORTE.items()
+    recorte: tuple((f.rotulo, a) for f in faixas for a in ARRANJOS_DO_RECORTE[recorte])
+    for recorte, faixas in FAIXAS_DO_RECORTE.items()
 }
 
 
@@ -208,9 +219,61 @@ def populacao_total(populacao: dict[int, dict[int, int]]) -> dict[int, int]:
     return {ano: sum(idades.values()) for ano, idades in populacao.items()}
 
 
-def montar_projecao(domicilios: Iterable, populacao: dict[int, dict[int, int]]):
+# ---------- controles de simulação (RF02) e tendência dos arranjos (P13) ----------
+
+INTENSIDADE_PADRAO, INTENSIDADE_MINIMA, INTENSIDADE_MAXIMA = 1.0, 0.0, 1.5  # 0 = arranjos congelados
+K_PADRAO, K_MINIMO, K_MAXIMO = 1.0, 0.5, 1.5  # 1 = estrutura etária do IBGE
+GRUPO_0_11 = "0 a 11"  # quem não chefia domicílio; entra só no controle k, para a população fechar
+ANOS_MEDIOS_POF = {2002: 2002.5, 2008: 2008.5, 2017: 2017.5}
+
+
+def em_simulacao(intensidade: float, k: float) -> bool:
+    """Valor fora do padrão: a interface rotula o resultado como simulação."""
+    return intensidade != INTENSIDADE_PADRAO or k != K_PADRAO
+
+
+def populacao_por_grupo(populacao: dict[int, dict[int, int]]) -> dict[int, dict[str, int]]:
+    """Faixas do chefe mais o grupo de 0 a 11 anos: cobrem todas as idades da projeção."""
+    por_faixa = populacao_por_faixa(populacao)
+    return {
+        ano: {**por_faixa[ano], GRUPO_0_11: sum(p for i, p in idades.items() if i < IDADE_MINIMA_CHEFE)}
+        for ano, idades in populacao.items()
+    }
+
+
+def proporcoes_por_edicao(historicos: Iterable, atuais: Iterable) -> dict[float, dict[str, dict[str, float]]]:
+    """Proporção ponderada de cada arranjo por faixa do chefe em 2002,5, 2008,5 e 2017,5.
+
+    A POF 2017 a 2018 não traz a forma de abastecimento: todos os domicílios dela contam como rede geral.
+    """
+    registros: dict[float, list] = {}
+    for d in historicos:
+        faixa = faixa_do_chefe(d.idade_chefe)
+        if faixa is not None:
+            registros.setdefault(ANOS_MEDIOS_POF[d.ano_pof], []).append((faixa.rotulo, d.arranjo, d.peso, d.rede_geral))
+    for d in atuais:
+        faixa = faixa_do_chefe(d.idade_chefe)
+        if faixa is not None:
+            registros.setdefault(ANOS_MEDIOS_POF[2017], []).append((faixa.rotulo, d.arranjo, d.peso, True))
+    return {t: proporcoes_arranjos(r) for t, r in sorted(registros.items())}
+
+
+def tendencia_nacional(historicos: Iterable, atuais: Iterable) -> dict[str, tuple[float, float]]:
+    """Inclinações nacionais dos logs das razões por faixa (P13), aplicadas a qualquer localidade."""
+    return estimar_tendencia(proporcoes_por_edicao(historicos, atuais), ARRANJOS)
+
+
+def montar_projecao(
+    domicilios: Iterable,
+    populacao: dict[int, dict[int, int]],
+    tendencia: dict[str, tuple[float, float]] | None = None,
+    intensidade: float = INTENSIDADE_PADRAO,
+    k: float = K_PADRAO,
+):
     """Projeção do método das taxas a partir dos domicílios da POF (com peso) e da população por idade.
 
+    `tendencia` são as inclinações nacionais (P13); sem ela, os arranjos ficam congelados.
+    `k` acelera ou freia o envelhecimento a partir de 2026, mantendo a população total do IBGE.
     Sem consumo total ou moradores informados (domicílios montados à mão nos testes),
     vale um morador e o consumo total igual ao per capita.
     """
@@ -223,12 +286,19 @@ def montar_projecao(domicilios: Iterable, populacao: dict[int, dict[int, int]]):
         consumo = getattr(d, "consumo_total_kwh", None)
         consumo = d.consumo_per_capita_kwh * moradores if consumo is None else consumo
         registros.append((celula, d.peso, consumo, d.consumo_per_capita_kwh, moradores))
+    por_faixa = populacao_por_faixa(populacao)
+    if k != K_PADRAO and ANO_INICIAL in populacao:
+        ajustada = ajustar_envelhecimento(populacao_por_grupo(populacao), k, ANO_INICIAL)
+        por_faixa = {ano: {f: v for f, v in grupos.items() if f != GRUPO_0_11} for ano, grupos in ajustada.items()}
     return Projecao(
         parametros_celulas(registros),
-        populacao_por_faixa(populacao),
+        por_faixa,
         ANO_REFERENCIA_POF,
         ANO_INICIAL,
         populacao_total(populacao),
+        tendencia=tendencia,
+        intensidade=intensidade,
+        arranjos=ARRANJOS,
     )
 
 

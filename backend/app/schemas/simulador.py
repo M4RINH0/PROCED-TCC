@@ -4,8 +4,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.estrutura_etaria import FaixaConsumo
+from app.schemas.panorama import Simulacao
 
-FONTE = "POF 2017 a 2018 e Projeções da População (IBGE), média ponderada pelo peso amostral"
+FONTE = "POF 2017 a 2018 (média ponderada pelo peso amostral), tendência das POFs 2002 a 2003 e 2008 a 2009 e Projeções da População (IBGE)"
 
 
 class FaixaSim(str, Enum):
@@ -36,11 +37,12 @@ class ArranjoSim(str, Enum):
 
 
 class BaseSim(str, Enum):
-    taxas = "taxas"  # método das taxas
+    taxas = "taxas"  # método das taxas com a tendência dos arranjos (P13)
+    taxas_arranjos_fixos = "taxas_arranjos_fixos"  # só o envelhecimento, arranjos congelados em 2026
     contrafactual = "contrafactual"  # composição de domicílios de 2026 congelada
 
 
-class SimulacaoResposta(BaseModel):
+class SimulacaoResposta(Simulacao):
     ano: int
     faixa: str
     arranjo: ArranjoSim
