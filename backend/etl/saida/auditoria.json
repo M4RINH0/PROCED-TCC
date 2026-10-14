@@ -1,5 +1,9 @@
 {
   "linhas_lidas": {
+    "fato_consumo_pof_historica": {
+      "lidas": 88726,
+      "no_banco": 88726
+    },
     "fato_consumo_domiciliar": {
       "lidas": 52207,
       "no_banco": 52207
@@ -242,19 +246,19 @@
   "celulas_com_menos_de_30": 0,
   "ponte": {
     "2022": {
-      "domicilios_projetados": 67937549.40712158,
-      "moradores_projetados": 202562693.9146793,
+      "domicilios_projetados": 67937549.4071216,
+      "moradores_projetados": 197597838.43099022,
       "populacao_ibge": 210862983,
-      "moradores_menos_populacao_pct": -3.936342437743423
+      "moradores_menos_populacao_pct": -6.290883482858522
     },
     "2026": {
-      "domicilios_projetados": 72392452.1542713,
-      "moradores_projetados": 214581849.5156756,
+      "domicilios_projetados": 72392452.15427129,
+      "moradores_projetados": 204494203.34067777,
       "populacao_ibge": 214211951,
-      "moradores_menos_populacao_pct": 0.17267874829056673
+      "moradores_menos_populacao_pct": -4.53651050464604
     },
     "censo_2022_domicilios_ocupados": 72400000,
-    "ponte_2022_menos_censo_pct": -6.163605791268534
+    "ponte_2022_menos_censo_pct": -6.163605791268512
   },
   "rastro": [
     {
@@ -276,7 +280,7 @@
     {
       "etapa": "ponte e método das taxas",
       "fonte": "fato_consumo_domiciliar e projecoes_populacao_idade (27 UFs, Ambos)",
-      "transformacao": "taxas de chefia de 2018 por faixa e arranjo (P2); padronização direta com a TEC ponderada (P6); contrafactual com a composição de 2026 congelada (P10); consumo total calibrado pela população do IBGE (P12)"
+      "transformacao": "taxa de chefia de 2018 por faixa (P2) e tendência dos arranjos (P13); padronização direta com a TEC ponderada (P6); arranjos fixos em 2026; contrafactual com a composição de 2026 congelada (P10); consumo total calibrado pela população do IBGE (P12)"
     },
     {
       "etapa": "avaliação do machine learning",
