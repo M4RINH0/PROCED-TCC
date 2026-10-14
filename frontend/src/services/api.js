@@ -31,9 +31,9 @@ export function buscarConsumoChefe({ arranjo, localidade }, opcoes) {
   return apiGet('/estrutura-etaria/consumo-chefe', { arranjo, localidade }, opcoes)
 }
 
-/* Simulador: GET /simulador?ano=&faixa=&arranjo=&base=&taxa= (RF07) */
-export function buscarSimulacao({ ano, faixa, arranjo, base, taxa, localidade }, opcoes) {
-  return apiGet('/simulador', { ano, faixa, arranjo, base, taxa, localidade }, opcoes)
+/* Simulador: GET /simulador?ano=&faixa=&arranjo=&base= (RF07); base = taxas ou contrafactual */
+export function buscarSimulacao({ ano, faixa, arranjo, base, localidade }, opcoes) {
+  return apiGet('/simulador', { ano, faixa, arranjo, base, localidade }, opcoes)
 }
 
 /* Gaveta Fontes: GET /fontes (RF10) */

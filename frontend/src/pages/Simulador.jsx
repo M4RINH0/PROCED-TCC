@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import Icone from '../components/Icone.jsx'
 import Odometro from '../components/Odometro.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { useTamanho } from '../hooks/useTamanho.js'
 import { buscarSimulacao } from '../services/api.js'
-import { lerTaxa, umaCasa } from '../utils/formato.js'
+import { inteiro, milhoes, umaCasa } from '../utils/formato.js'
 
-export const ANOS = [2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070]
+export const ANOS = [2026, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070]
 export const FAIXAS = [
   { id: 'ate_29', rotulo: 'até 29' },
   { id: '30_39', rotulo: '30 a 39' },
@@ -23,11 +24,10 @@ export const ARRANJOS = [
   { id: 'multipessoal', rotulo: 'Multipessoal (3 ou mais)' },
 ]
 export const BASES = [
-  { id: 'ibge', rotulo: 'Oficial IBGE' },
-  { id: 'mod', rotulo: 'Modelo próprio' },
-  { id: 'alt', rotulo: 'Alternativo (ML)' },
+  { id: 'taxas', rotulo: 'Método das taxas' },
+  { id: 'contrafactual', rotulo: 'Contrafactual (composição de 2026)' },
 ]
-const PADRAO = { ano: '2070', faixa: '70_79', arranjo: 'unipessoal', base: 'ibge', taxa: '1,7' }
+const PADRAO = { ano: '2070', faixa: '70_79', arranjo: 'unipessoal', base: 'taxas' }
 const rotulo = (lista, id) => lista.find((x) => x.id === id).rotulo
 
 function HistoricoFaixas({ porFaixa, faixa }) {
@@ -70,27 +70,15 @@ const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: ()
 
 export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao, local = LOCAL_PADRAO }) {
   const [form, setForm] = useState(PADRAO)
-  const taxa = lerTaxa(form.taxa)
-  const valido = taxa !== null
-  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, taxa, localidade: local.valor }
+  const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, localidade: local.valor }
   const { status, dados, erro, recarregar } = useConsulta(
-    (o) => (valido ? buscar(params, o) : Promise.resolve(null)),
-    [form.ano, form.faixa, form.arranjo, form.base, taxa, local.valor, versao],
+    (o) => buscar(params, o),
+    [form.ano, form.faixa, form.arranjo, form.base, local.valor, versao],
   )
   const mudar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
 
   let corpo
-  if (!valido) {
-    corpo = (
-      <div className="bill-state">
-        <h3>
-          <Icone nome="alert" />
-          Consulta não realizada
-        </h3>
-        <p>Corrija a taxa de envelhecimento para calcular o cenário.</p>
-      </div>
-    )
-  } else if (status === 'erro') {
+  if (status === 'erro') {
     corpo = (
       <div className="bill-state" role="alert">
         <h3>
@@ -119,7 +107,7 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
           <Icone nome="info" />
           Sem dados para esta combinação
         </h3>
-        <p>{dados.motivo_sem_valor} Troque o ano ou a base de projeção.</p>
+        <p>{dados.motivo_sem_valor} Troque a faixa, o arranjo ou a localidade.</p>
       </div>
     )
   } else {
@@ -130,12 +118,25 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
             <Odometro valor={dados.valor} unidade="kWh/mês por pessoa" />
           </div>
           <p className="bill-read">
-            Em <b>{dados.ano}</b>, um domicílio <b>{rotulo(ARRANJOS, form.arranjo).toLowerCase()}</b> com chefe na faixa de{' '}
-            <b>{dados.faixa}</b> consome <b>{umaCasa(dados.valor)} kWh por mês por pessoa</b> no cenário oficial, média de{' '}
-            {dados.domicilios_amostra.toLocaleString('pt-BR')} domicílios da POF. Nesse cenário o valor de cada tipo de domicílio
-            fica nos níveis da POF; o ano define se há projeção oficial.
+            Um domicílio <b>{rotulo(ARRANJOS, form.arranjo).toLowerCase()}</b> com chefe na faixa de <b>{dados.faixa}</b> consome{' '}
+            <b>{umaCasa(dados.valor)} kWh por mês por pessoa</b>, média ponderada de {dados.domicilios_amostra.toLocaleString('pt-BR')}{' '}
+            domicílios da POF. Esse valor fica nos níveis da POF nos dois cenários.
+            {dados.domicilios_projetados != null && (
+              <>
+                {' '}
+                Em <b>{dados.ano}</b>, no cenário <b>{rotulo(BASES, form.base).toLowerCase()}</b>, são{' '}
+                <b>{inteiro(dados.domicilios_projetados)} domicílios</b> desse tipo ({umaCasa(dados.participacao_pct)}% do total)
+                {dados.consumo_total_calibrado_kwh_mes != null && (
+                  <>
+                    , com consumo total de <b>{milhoes(dados.consumo_total_calibrado_kwh_mes)} de kWh/mês</b>
+                  </>
+                )}
+                .
+              </>
+            )}
           </p>
         </div>
+        <AvisoAmostra ativo={dados.baixa_confiabilidade} />
         <HistoricoFaixas porFaixa={dados.por_faixa} faixa={form.faixa} />
         <div className="bill-f">
           <span className="chip">
@@ -170,7 +171,7 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
             noValidate
             onSubmit={(e) => {
               e.preventDefault()
-              if (valido) recarregar()
+              recarregar()
             }}
           >
             <h2 id="h-form" className="sr">
@@ -205,32 +206,8 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
                   ))}
                 </select>
               </div>
-              <div className="fl">
-                <label htmlFor="fTaxa">Taxa anual (%)</label>
-                <input
-                  type="text"
-                  id="fTaxa"
-                  value={form.taxa}
-                  onChange={mudar('taxa')}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  aria-describedby="fTaxaMsg"
-                  aria-invalid={!valido}
-                  className={valido ? '' : 'err'}
-                />
-                {valido ? (
-                  <div id="fTaxaMsg" className="help">
-                    De 0 a 10; usada pelo cenário do modelo
-                  </div>
-                ) : (
-                  <div id="fTaxaMsg" className="errm">
-                    <Icone nome="alert" />
-                    Informe um número entre 0 e 10, como 1,7.
-                  </div>
-                )}
-              </div>
               <div className="fl full">
-                <label htmlFor="fBase">Base de projeção</label>
+                <label htmlFor="fBase">Cenário</label>
                 <select id="fBase" value={form.base} onChange={mudar('base')}>
                   {BASES.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -240,7 +217,7 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
                 </select>
               </div>
             </div>
-            <button type="submit" className="btn pri wide" disabled={!valido}>
+            <button type="submit" className="btn pri wide">
               Consultar cenário
             </button>
             <button type="button" className="lnk" style={{ alignSelf: 'flex-start' }} onClick={() => setForm(PADRAO)}>
@@ -255,14 +232,14 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
           <div className="bill">
             <div className="bill-h">
               <b id="h-bill">Demonstrativo de consumo projetado</b>
-              <span>POF 2017 a 2018 e IBGE, {local.nome}</span>
+              <span>POF 2017 a 2018 e Projeções da População (IBGE), {local.nome}</span>
             </div>
             <dl className="bill-kv">
               {[
                 ['Unidade', rotulo(ARRANJOS, form.arranjo)],
                 ['Faixa do chefe', rotulo(FAIXAS, form.faixa)],
                 ['Ano de referência', form.ano],
-                ['Base', rotulo(BASES, form.base)],
+                ['Cenário', rotulo(BASES, form.base)],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt>{k}</dt>

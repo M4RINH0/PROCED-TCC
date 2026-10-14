@@ -144,9 +144,13 @@ main.nodock{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .band{fill:var(--teal-soft);opacity:.75}
 .ln{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .ln.fade{opacity:.28}
-.s-mod{stroke:var(--teal)} .s-ibge{stroke:var(--orange);stroke-dasharray:7 5}
-.s-alt{stroke:var(--cobalt);stroke-dasharray:1.5 6;stroke-width:2.8}
-.t-mod{fill:var(--teal)} .t-ibge{fill:var(--orange)} .t-alt{fill:var(--cobalt)}
+.s-taxas{stroke:var(--teal)} .s-contrafactual{stroke:var(--orange);stroke-dasharray:7 5}
+.s-ml_rf{stroke:var(--cobalt);stroke-dasharray:7 5} .s-ml_gb{stroke:var(--cobalt);stroke-dasharray:1.5 6;stroke-width:2.8}
+.t-taxas{fill:var(--teal)} .t-contrafactual{fill:var(--orange)} .t-ml_rf,.t-ml_gb{fill:var(--cobalt)}
+.aviso-amostra{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--ink-2);
+  background:var(--energy-soft);border-radius:8px;padding:8px 10px;margin:8px 0}
+.aviso-amostra svg{width:15px;height:15px;flex:none;margin-top:1px}
+.baixa{font-size:11px;font-weight:600;color:var(--ink-2);background:var(--energy-soft);border-radius:4px;padding:1px 5px;margin-left:6px}
 .endl{font-size:12.5px;font-weight:650;font-family:var(--sans)}
 .endv{fill:var(--muted);font-size:11.5px;font-family:var(--sans);font-variant-numeric:tabular-nums}
 .dot{fill:var(--panel);stroke-width:2.6}

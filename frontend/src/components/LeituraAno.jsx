@@ -1,23 +1,19 @@
-import { comSinal, umaCasa } from '../utils/formato.js'
-import { SERIES } from '../utils/series.js'
+import { comSinal, milhoes, umaCasa } from '../utils/formato.js'
 import Odometro from './Odometro.jsx'
 
-export function textoSemValor(modelado) {
-  if (!modelado) return 'Cenário ainda não modelado'
-  return 'Sem dado neste ano'
-}
+const semDado = (v) => v === null || v === undefined
 
-/* Painel "Leitura do ano" do protótipo. ponto: item da série no ano; modelados: ids com valor em algum ano */
-export default function LeituraAno({ ponto, ano, modelados, visiveis }) {
+/* Painel "Leitura do ano". ponto: item da série no ano; series: só as que têm valor em algum ano */
+export default function LeituraAno({ ponto, ano, series, visiveis }) {
   const cenario = (id) => ponto?.cenarios.find((c) => c.id === id)
-  const texto = (v, sufixo) => (v === null || v === undefined ? 'sem dado' : `${v}${sufixo}`)
+  const taxas = cenario('taxas')
   return (
     <div className="readout">
       <div className="ro-h">
         <h2 id="h-ro">Leitura do ano</h2>
         <span className="yr num">{ano}</span>
       </div>
-      {SERIES.map((s) => {
+      {series.map((s) => {
         const c = cenario(s.id)
         const valor = c?.valor ?? null
         return (
@@ -29,8 +25,8 @@ export default function LeituraAno({ ponto, ano, modelados, visiveis }) {
             <Odometro valor={valor} unidade="kWh/mês" />
             <span className="dl">
               {valor === null
-                ? textoSemValor(modelados.includes(s.id))
-                : c.variacao_kwh === null || c.variacao_kwh === undefined
+                ? 'Sem dado neste ano'
+                : semDado(c.variacao_kwh)
                   ? `${umaCasa(valor)} kWh/mês por pessoa`
                   : `${comSinal(c.variacao_kwh)} kWh desde 2026 (${comSinal(c.variacao_pct)}%)`}
             </span>
@@ -39,16 +35,24 @@ export default function LeituraAno({ ponto, ano, modelados, visiveis }) {
       })}
       <div className="cmp">
         <div>
-          <span>Amplitude entre cenários</span>
-          <b className="num">{ponto?.amplitude_kwh == null ? 'sem dado' : `${umaCasa(ponto.amplitude_kwh)} kWh`}</b>
+          <span>Efeito do envelhecimento (taxas menos contrafactual)</span>
+          <b className="num">{semDado(ponto?.efeito_envelhecimento_kwh) ? 'sem dado' : `${comSinal(ponto.efeito_envelhecimento_kwh)} kWh`}</b>
         </div>
         <div>
-          <span>Modelo menos oficial</span>
-          <b className="num">{ponto?.modelo_menos_oficial_kwh == null ? 'sem dado' : `${comSinal(ponto.modelo_menos_oficial_kwh)} kWh`}</b>
+          <span>Efeito no consumo total (kWh/mês)</span>
+          <b className="num">
+            {semDado(ponto?.efeito_envelhecimento_total_kwh_mes)
+              ? 'sem dado'
+              : `${ponto.efeito_envelhecimento_total_kwh_mes >= 0 ? '+' : '−'}${milhoes(Math.abs(ponto.efeito_envelhecimento_total_kwh_mes))}`}
+          </b>
+        </div>
+        <div>
+          <span>Consumo total do recorte, método das taxas (kWh/mês)</span>
+          <b className="num">{semDado(taxas?.consumo_total_calibrado_kwh_mes) ? 'sem dado' : milhoes(taxas.consumo_total_calibrado_kwh_mes)}</b>
         </div>
         <div>
           <span>Participação 60+ na população</span>
-          <b className="num">{texto(ponto?.participacao_60_mais_pct == null ? null : umaCasa(ponto.participacao_60_mais_pct), '%')}</b>
+          <b className="num">{semDado(ponto?.participacao_60_mais_pct) ? 'sem dado' : `${umaCasa(ponto.participacao_60_mais_pct)}%`}</b>
         </div>
       </div>
     </div>

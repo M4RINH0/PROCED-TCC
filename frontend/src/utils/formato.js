@@ -16,10 +16,7 @@ export function comSinal(valor) {
   return (valor >= 0 ? '+' : '−') + umaCasa(Math.abs(valor))
 }
 
-/* Valida o texto da taxa no formato brasileiro (1,7). Devolve o número ou null. */
-export function lerTaxa(texto) {
-  const bruto = String(texto).trim().replace(',', '.')
-  if (!/^\d{1,2}([.]\d{1,2})?$/.test(bruto)) return null
-  const valor = parseFloat(bruto)
-  return valor >= 0 && valor <= 10 ? valor : null
+/* kWh/mês em milhões, com uma casa: só muda a escala do número que a API devolve */
+export function milhoes(valor) {
+  return `${umaCasa(valor / 1e6)} milhões`
 }

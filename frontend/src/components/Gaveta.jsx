@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarFontes, buscarProjecao } from '../services/api.js'
+import { umaCasa } from '../utils/formato.js'
 import Icone from './Icone.jsx'
 
 function Cabecalho({ icone, titulo, aoFechar }) {
@@ -23,7 +24,7 @@ function Fontes() {
     <div className="dr-b">
       {status === 'erro' && <p className="pend">Não foi possível carregar as fontes.</p>}
       <dl>
-        {(dados ?? []).map((f) => (
+        {(dados?.fontes ?? []).map((f) => (
           <div className="kv" key={f.id}>
             <dt>{f.nome}</dt>
             <dd>
@@ -34,9 +35,29 @@ function Fontes() {
           </div>
         ))}
       </dl>
+      {dados && (
+        <>
+          <p className="lbl">Critério de exclusão</p>
+          <p data-testid="criterio">
+            {dados.criterio_exclusao} A base cobre <b>{umaCasa(dados.cobertura_pct)}%</b> dos domicílios estimados pela POF.
+          </p>
+          <p className="lbl">Premissas principais</p>
+          <dl>
+            {dados.premissas.map((p) => (
+              <div className="kv" key={p.id}>
+                <dt>{p.id}</dt>
+                <dd>{p.texto}</dd>
+              </div>
+            ))}
+          </dl>
+          <a className="lnk" href={dados.premissas_url} target="_blank" rel="noreferrer">
+            Todas as premissas em docs/premissas.md
+          </a>
+        </>
+      )}
       <div className="note-box">
-        A API lê o banco no Supabase só pelo back-end. Premissas adotadas e regras de derivação estão em docs/premissas.md e
-        docs/banco-supabase.md.
+        O IBGE projeta só a população; o consumo de energia é calculado pelo PROCED. A API lê o banco no Supabase só pelo
+        back-end.
       </div>
     </div>
   )
@@ -99,7 +120,7 @@ function Exportar({ ano, aoFechar, avisar }) {
           <input type="radio" name="esc" defaultChecked />
           <span>
             <b>Ano selecionado</b>
-            <small>{Math.round(ano)}, três cenários</small>
+            <small>{Math.round(ano)}, todos os cenários</small>
           </span>
         </label>
         <label className="opt">

@@ -38,11 +38,28 @@ describe('LinhaDoTempo', () => {
 describe('Gaveta', () => {
   const resposta = (dados) => vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(dados) })
 
-  it('lista as fontes vindas da API', async () => {
-    vi.stubGlobal('fetch', resposta([{ id: 'pof', nome: 'Pesquisa de Orçamentos Familiares (IBGE)', periodo: '2017 a 2018', uso: 'Consumo' }]))
+  it('lista as fontes, o critério de exclusão, a cobertura e as premissas vindas da API', async () => {
+    vi.stubGlobal(
+      'fetch',
+      resposta({
+        fontes: [{ id: 'pof', nome: 'Pesquisa de Orçamentos Familiares (IBGE)', periodo: '2017 a 2018', uso: 'Consumo' }],
+        criterio_exclusao: 'Ficaram de fora, na extração, os domicílios sem declaração válida de consumo de energia (sem kWh).',
+        cobertura_pct: 92.4,
+        premissas: [
+          { id: 'P2', texto: 'Taxa de chefia de 2018 constante.' },
+          { id: 'P12', texto: 'Consumo total calibrado pela população do IBGE.' },
+        ],
+        premissas_url: 'https://github.com/M4RINH0/PROCED-TCC/blob/main/docs/premissas.md',
+      }),
+    )
     render(<Gaveta tipo="fontes" ano={2050} aoFechar={() => {}} avisar={() => {}} />)
     expect(await screen.findByText('Pesquisa de Orçamentos Familiares (IBGE)')).toBeInTheDocument()
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Fonte dos dados')
+    expect(screen.getByTestId('criterio')).toHaveTextContent('sem kWh')
+    expect(screen.getByTestId('criterio')).toHaveTextContent('92,4%')
+    expect(screen.getByText('P2')).toBeInTheDocument()
+    expect(screen.getByText('Consumo total calibrado pela população do IBGE.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /docs\/premissas.md/ })).toHaveAttribute('href', expect.stringContaining('docs/premissas.md'))
   })
 
   it('mostra a resposta real da API para o ano', async () => {

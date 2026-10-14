@@ -10,11 +10,11 @@ const piramides = { fonte: 'Projeções da População (IBGE), Brasil', piramide
 const consumo = (arranjo) => ({
   arranjo,
   unidade: 'kWh/mes/pessoa',
-  fonte: 'POF 2017 a 2018 (IBGE)',
+  fonte: 'POF 2017 a 2018 (IBGE), média ponderada pelo peso amostral',
   faixas: [
-    { faixa: 'até 29', domicilios_amostra: 1817, consumo_per_capita_kwh: 76.7 },
-    { faixa: '30 a 39', domicilios_amostra: 0, consumo_per_capita_kwh: null },
-    { faixa: '80+', domicilios_amostra: 1346, consumo_per_capita_kwh: 95.6 },
+    { faixa: 'até 29', domicilios_amostra: 1814, baixa_confiabilidade: false, consumo_per_capita_kwh: 76.7 },
+    { faixa: '30 a 39', domicilios_amostra: 0, baixa_confiabilidade: true, consumo_per_capita_kwh: null },
+    { faixa: '80+', domicilios_amostra: 1346, baixa_confiabilidade: false, consumo_per_capita_kwh: 97.9 },
   ],
 })
 const props = () => ({
@@ -48,11 +48,30 @@ describe('EstruturaEtaria', () => {
     render(<EstruturaEtaria ano={2070} {...props()} />)
     expect(await screen.findByText('37,8%')).toBeInTheDocument()
     expect(screen.getByText('17,1%')).toBeInTheDocument()
-    expect(await screen.findByText('1.817')).toBeInTheDocument()
-    // 95,6 aparece no gráfico e na tabela; a linha da tabela é do recorte
-    const celula = screen.getAllByText('95,6').find((el) => el.tagName === 'TD')
+    expect(await screen.findByText('1.814')).toBeInTheDocument()
+    // 97,9 aparece no gráfico e na tabela; a linha da tabela é do recorte
+    const celula = screen.getAllByText('97,9').find((el) => el.tagName === 'TD')
     expect(celula.closest('tr')).toHaveClass('in')
     expect(screen.getByText('sem dado')).toBeInTheDocument()
+  })
+
+  it('marca a faixa de baixa confiabilidade e mostra o aviso', async () => {
+    render(<EstruturaEtaria ano={2070} {...props()} />)
+    const linha = (await screen.findByText('30 a 39', { selector: 'td' })).closest('tr')
+    expect(linha).toHaveTextContent('baixa confiabilidade')
+    expect(screen.getByText('80+', { selector: 'td' }).closest('tr')).not.toHaveTextContent('baixa confiabilidade')
+    expect(screen.getByTestId('aviso-amostra')).toBeInTheDocument()
+  })
+
+  it('não mostra o aviso sem faixa marcada', async () => {
+    const p = props()
+    p.buscarConsumo = vi.fn(({ arranjo }) => {
+      const r = consumo(arranjo)
+      return Promise.resolve({ ...r, faixas: r.faixas.map((f) => ({ ...f, baixa_confiabilidade: false })) })
+    })
+    render(<EstruturaEtaria ano={2070} {...p} />)
+    await screen.findByText('1.814')
+    expect(screen.queryByTestId('aviso-amostra')).not.toBeInTheDocument()
   })
 
   it('avisa quando o ano não está na projeção', async () => {
@@ -63,7 +82,7 @@ describe('EstruturaEtaria', () => {
   it('consulta o consumo de novo ao mudar o arranjo', async () => {
     const p = props()
     render(<EstruturaEtaria ano={2070} {...p} />)
-    await screen.findByText('1.817')
+    await screen.findByText('1.814')
     fireEvent.click(screen.getByRole('button', { name: 'Multipessoal' }))
     await waitFor(() => expect(p.buscarConsumo).toHaveBeenLastCalledWith({ arranjo: 'multipessoal', localidade: 'Brasil' }, expect.anything()))
     expect(p.buscarPir).toHaveBeenCalledTimes(1)
@@ -78,6 +97,6 @@ describe('EstruturaEtaria', () => {
       />,
     )
     expect(await screen.findByRole('alert')).toHaveTextContent('ano 2050')
-    expect(await screen.findByText('1.817')).toBeInTheDocument()
+    expect(await screen.findByText('1.814')).toBeInTheDocument()
   })
 })

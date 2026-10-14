@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import GraficoSerie from '../components/GraficoSerie.jsx'
@@ -6,44 +7,58 @@ import Icone from '../components/Icone.jsx'
 import LeituraAno from '../components/LeituraAno.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarSerie } from '../services/api.js'
-import { comSinal, umaCasa } from '../utils/formato.js'
-import { RECORTES, SERIES, valoresDoCenario } from '../utils/series.js'
+import { comSinal, milhoes, umaCasa } from '../utils/formato.js'
+import { RECORTES, seriesComDado, valoresDoCenario } from '../utils/series.js'
 
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 
 function frase(ponto, ano, nome) {
-  const ibge = ponto?.cenarios.find((c) => c.id === 'ibge')
-  if (!ibge || ibge.valor === null) {
+  const taxas = ponto?.cenarios.find((c) => c.id === 'taxas')
+  if (!taxas || taxas.valor === null) {
     return (
       <>
-        Sem dado da projeção oficial para <b>{ano}</b>. O cenário do modelo ainda não foi formulado.
+        Sem dado do método das taxas para <b>{ano}</b> nesta localidade.
       </>
     )
   }
+  const efeito = ponto.efeito_envelhecimento_kwh
+  const efeitoTotal = ponto.efeito_envelhecimento_total_kwh_mes
   return (
     <>
-      Em <b>{ano}</b>, a projeção oficial é de <b>{umaCasa(ibge.valor)} kWh/mês por pessoa</b> nos domicílios do recorte ({nome})
-      {ibge.variacao_pct !== null && ibge.variacao_pct !== undefined && <>, {comSinal(ibge.variacao_pct)}% em relação a 2026</>}.
-      O cenário do modelo ainda não foi formulado.
+      Em <b>{ano}</b>, pelo método das taxas, os domicílios do recorte ({nome}) consomem <b>{umaCasa(taxas.valor)} kWh/mês por pessoa</b>
+      {taxas.variacao_pct !== null && taxas.variacao_pct !== undefined && <>, {comSinal(taxas.variacao_pct)}% em relação a 2026</>}.
+      {efeito !== null && efeito !== undefined && (
+        <>
+          {' '}
+          O efeito do envelhecimento, a diferença para o contrafactual com a composição de 2026, é de <b>{comSinal(efeito)} kWh por pessoa</b>
+          {efeitoTotal !== null && efeitoTotal !== undefined && (
+            <>
+              {' '}
+              e de <b>{efeitoTotal >= 0 ? '+' : '−'}{milhoes(Math.abs(efeitoTotal))} de kWh/mês</b> no consumo total
+            </>
+          )}
+          .
+        </>
+      )}
     </>
   )
 }
 
 export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = () => {}, avisar = () => {}, buscar = buscarSerie, local = LOCAL_PADRAO }) {
   const [recorte, setRecorte] = useState(RECORTES[0].id)
-  const [visiveis, setVisiveis] = useState({ mod: true, ibge: true, alt: true })
+  const [visiveis, setVisiveis] = useState({ taxas: true, ml_rf: true, ml_gb: true, contrafactual: true })
   const { status, dados, erro, recarregar } = useConsulta((o) => buscar({ recorte, localidade: local.valor }, o), [recorte, local.valor, versao])
   const anoInteiro = Math.round(ano)
   const rotuloRecorte = RECORTES.find((r) => r.id === recorte).rotulo
 
-  const series = dados ? SERIES.map((s) => ({ id: s.id, pontos: valoresDoCenario(dados.pontos, s.id) })) : []
-  const modelados = series.filter((s) => s.pontos.some((p) => p.valor !== null)).map((s) => s.id)
+  const comDado = dados ? seriesComDado(dados.pontos) : []
+  const series = comDado.map((s) => ({ id: s.id, pontos: valoresDoCenario(dados.pontos, s.id) }))
   const ponto = dados?.pontos.find((p) => p.ano === anoInteiro)
   const carregando = status === 'carregando' && !dados
 
   const alternar = (id) => {
-    if (visiveis[id] && Object.values(visiveis).filter(Boolean).length === 1) {
+    if (visiveis[id] && comDado.filter((s) => visiveis[s.id]).length === 1) {
       avisar('Mantenha ao menos uma série visível')
       return
     }
@@ -78,7 +93,7 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
               Consumo residencial per capita <small>kWh/mês</small>
             </h2>
             <div className="leg" role="group" aria-label="Séries exibidas">
-              {SERIES.map((s) => (
+              {comDado.map((s) => (
                 <button
                   key={s.id}
                   type="button"
@@ -91,10 +106,10 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
                   <span style={{ color: 'var(--ink-2)' }}>{s.curto}</span>
                 </button>
               ))}
-              {modelados.length > 1 && (
+              {comDado.length > 1 && (
                 <span className="lt" style={{ cursor: 'default', color: 'var(--ink-2)' }} aria-hidden="true">
                   <i className="band" />
-                  Intervalo entre cenários
+                  Diferença entre cenários
                 </span>
               )}
             </div>
@@ -112,12 +127,13 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
               />
             </div>
           )}
+          {dados && status !== 'erro' && <AvisoAmostra ativo={dados.baixa_confiabilidade} celulas={dados.celulas} />}
           <div className="pf">
             <span>
-              Fonte: {dados?.fonte ?? 'POF e IBGE'}, {local.nome}.
+              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {local.nome}.
               {typeof dados?.domicilios_amostra === 'number' &&
                 ` Amostra da POF: ${dados.domicilios_amostra.toLocaleString('pt-BR')} domicílios no recorte.`} Linha cheia até o ano
-              selecionado; esmaecida depois dele.
+              selecionado; esmaecida depois dele. O gráfico mostra a TBC padronizada: a média por domicílio do consumo per capita.
             </span>
             <button type="button" className="lnk" onClick={() => abrirGaveta('fontes')}>
               Ver fontes
@@ -125,18 +141,8 @@ export default function Panorama({ ano, aoMudarAno, versao = 0, abrirGaveta = ()
           </div>
         </section>
         <aside className="pan" aria-labelledby="h-ro">
-          <LeituraAno ponto={status === 'erro' ? null : ponto} ano={anoInteiro} modelados={modelados} visiveis={visiveis} />
+          <LeituraAno ponto={status === 'erro' ? null : ponto} ano={anoInteiro} series={comDado} visiveis={visiveis} />
           <div className="ctrls">
-            <div className="fl">
-              <div className="rangeh">
-                <label htmlFor="taxa">Taxa de envelhecimento anual</label>
-                <output htmlFor="taxa">sem dado</output>
-              </div>
-              <input className="tx" type="range" id="taxa" min="0.5" max="4" step="0.1" defaultValue="1.7" disabled aria-describedby="taxaHelp" />
-              <div className="help" id="taxaHelp">
-                Ajusta o cenário do modelo (RF02), que ainda não foi formulado. A projeção oficial não depende dela.
-              </div>
-            </div>
             <div className="fl">
               <span className="flab" id="recLab">
                 Grupo exibido

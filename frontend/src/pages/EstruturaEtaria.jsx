@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import BarrasFaixa from '../components/BarrasFaixa.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
@@ -95,7 +96,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {pir.dados?.fonte ?? 'IBGE'}, {local.nome}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
+            <span>Fonte: {pir.dados?.fonte ?? 'Projeções da População (IBGE)'}, {local.nome}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
           </div>
         </section>
         <section className="pan split-v" aria-labelledby="h-ch">
@@ -128,7 +129,10 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
                     {[...faixas].reverse().map((f) => (
                       <tr key={f.faixa} className={FAIXAS_60.has(f.faixa) ? 'in' : ''}>
                         <td>{f.faixa}</td>
-                        <td className="n">{inteiro(f.domicilios_amostra)}</td>
+                        <td className="n">
+                          {inteiro(f.domicilios_amostra)}
+                          {f.baixa_confiabilidade && <span className="baixa">baixa confiabilidade</span>}
+                        </td>
                         <td className="n">{f.consumo_per_capita_kwh === null ? 'sem dado' : umaCasa(f.consumo_per_capita_kwh)}</td>
                         <td>{FAIXAS_60.has(f.faixa) ? 'Recorte' : 'Comparação'}</td>
                       </tr>
@@ -136,6 +140,7 @@ export default function EstruturaEtaria({ ano, versao = 0, buscarPir = buscarPir
                   </tbody>
                 </table>
               </div>
+              <AvisoAmostra ativo={faixas.some((f) => f.baixa_confiabilidade)} />
             </>
           ) : (
             <div className="plot">

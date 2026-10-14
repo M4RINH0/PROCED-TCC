@@ -4,12 +4,14 @@ import { buscarArranjos, buscarComposicao } from '../../src/services/api.js'
 import { noFiltro } from '../../src/utils/categorias.js'
 import Domicilios from '../../src/pages/Domicilios.jsx'
 
-const cat = (id, arranjo, idoso, casas, pct, kwh) => ({
+/* Consumo por pessoa: valores reais da API (médias ponderadas pelo peso amostral) */
+const cat = (id, arranjo, idoso, casas, pct, kwh, baixa = false) => ({
   id,
   arranjo,
   chefe_60_mais: idoso,
   mononuclear: arranjo !== 'Multipessoal (3+)',
-  domicilios_amostra: 1000,
+  domicilios_amostra: baixa ? 12 : 1000,
+  baixa_confiabilidade: baixa,
   consumo_per_capita_kwh: kwh,
   participacao_pct: pct,
   casas,
@@ -18,11 +20,11 @@ const composicao = {
   anos: [2026, 2070],
   fonte: 'POF 2017 a 2018 e Projeções da População (IBGE)',
   categorias: [
-    cat('uni_60', 'Unipessoal (Mononuclear)', true, [8, 14], [8.4, 14.2], 115.7),
-    cat('cas_60', 'Casal ou Dupla', true, [13, 21], [12.9, 20.8], 81.4),
-    cat('uni_59', 'Unipessoal (Mononuclear)', false, [6, 4], [6.0, 4.1], 114.8),
-    cat('cas_59', 'Casal ou Dupla', false, [14, 10], [14.0, 10.1], 77.1),
-    cat('mul_60', 'Multipessoal (3+)', true, [14, 22], [14.1, 21.9], 55.0),
+    cat('uni_60', 'Unipessoal (Mononuclear)', true, [8, 14], [8.4, 14.2], 119.0),
+    cat('cas_60', 'Casal ou Dupla', true, [13, 21], [12.9, 20.8], 85.2),
+    cat('uni_59', 'Unipessoal (Mononuclear)', false, [6, 4], [6.0, 4.1], 112.2),
+    cat('cas_59', 'Casal ou Dupla', false, [14, 10], [14.0, 10.1], 77.8),
+    cat('mul_60', 'Multipessoal (3+)', true, [14, 22], [14.1, 21.9], 56.7),
     cat('mul_59', 'Multipessoal (3+)', false, [45, 29], [44.6, 28.9], null),
   ],
 }
@@ -46,6 +48,21 @@ describe('noFiltro', () => {
 })
 
 describe('Domicilios', () => {
+  it('marca a categoria de baixa confiabilidade e mostra o aviso', async () => {
+    const pequena = { ...composicao, categorias: composicao.categorias.map((c) => (c.id === 'uni_60' ? { ...c, domicilios_amostra: 12, baixa_confiabilidade: true } : c)) }
+    render(<Domicilios ano={2026} buscar={vi.fn(() => Promise.resolve(pequena))} />)
+    const linha = await screen.findByTestId('linha-uni_60')
+    expect(within(linha).getByText('baixa confiabilidade')).toBeInTheDocument()
+    expect(within(screen.getByTestId('linha-cas_60')).queryByText('baixa confiabilidade')).not.toBeInTheDocument()
+    expect(screen.getByTestId('aviso-amostra')).toBeInTheDocument()
+  })
+
+  it('não mostra o aviso sem categoria marcada', async () => {
+    render(<Domicilios ano={2026} buscar={buscar()} />)
+    await screen.findByTestId('linha-uni_60')
+    expect(screen.queryByTestId('aviso-amostra')).not.toBeInTheDocument()
+  })
+
   it('desenha 100 casas e descreve o recorte no ano', async () => {
     const { container } = render(<Domicilios ano={2070} buscar={buscar()} />)
     expect(await screen.findByText('35 de cada 100 domicílios')).toBeInTheDocument()
@@ -58,7 +75,7 @@ describe('Domicilios', () => {
     render(<Domicilios ano={2026} buscar={buscar()} />)
     const linha = await screen.findByTestId('linha-uni_60')
     expect(within(linha).getByText('8,4%')).toBeInTheDocument()
-    expect(within(linha).getByText('115,7')).toBeInTheDocument()
+    expect(within(linha).getByText('119,0')).toBeInTheDocument()
     expect(within(screen.getByTestId('linha-mul_59')).getByText('sem dado')).toBeInTheDocument()
     expect(screen.getByTestId('total-recorte')).toHaveTextContent('21,3%')
   })

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AvisoAmostra from '../components/AvisoAmostra.jsx'
 import EstadoConsulta from '../components/EstadoConsulta.jsx'
 import FiltroLocal from '../components/FiltroLocal.jsx'
 import GradeCasas from '../components/GradeCasas.jsx'
@@ -107,7 +108,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
             ))}
           </div>
           <div className="pf">
-            <span>Fonte: {dados?.fonte ?? 'POF e IBGE'}, {local.nome}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
+            <span>Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {local.nome}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
           </div>
         </section>
         <section className="pan" aria-labelledby="h-rows">
@@ -140,6 +141,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
                   {APARENCIA[c.id].nome}
                   <small>
                     {APARENCIA[c.id].sub}, {c.domicilios_amostra.toLocaleString('pt-BR')} na amostra
+                    {c.baixa_confiabilidade && <span className="baixa">baixa confiabilidade</span>}
                   </small>
                 </span>
                 <span className="v num">{indice >= 0 ? `${umaCasa(c.participacao_pct[indice])}%` : 'sem dado'}</span>
@@ -161,8 +163,9 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
               </div>
             )}
           </div>
+          <AvisoAmostra ativo={categorias.some((c) => c.baixa_confiabilidade)} />
           <div className="pf">
-            <span>kWh/mês por pessoa, POF 2017 a 2018. Barras acesas: anos até o selecionado na linha do tempo.</span>
+            <span>kWh/mês por pessoa, POF 2017 a 2018, média ponderada pelo peso amostral. Barras acesas: anos até o selecionado na linha do tempo.</span>
           </div>
         </section>
       </div>
