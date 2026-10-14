@@ -18,8 +18,9 @@ from app.dominio import (
     FiltroArranjo,
     baixa_confiabilidade,
     da_faixa,
-    da_localidade,
+    domicilios_da_localidade,
     filtrar,
+    memorizado,
 )
 from app.schemas.estrutura_etaria import (
     ConsumoChefeResposta,
@@ -108,5 +109,7 @@ def obter_piramides(dados, localidade: str = BRASIL, ano_final: int = ANO_FINAL,
 
 
 def obter_consumo_chefe(filtro: FiltroArranjo, dados, localidade: str = BRASIL) -> ConsumoChefeResposta:
-    domicilios = da_localidade(dados.domicilios(), localidade)
-    return ConsumoChefeResposta(arranjo=filtro, faixas=consumo_por_faixa(domicilios, filtro), localidade=localidade)
+    faixas = memorizado(
+        dados, f"consumo_chefe:{localidade}:{filtro.value}", lambda: consumo_por_faixa(domicilios_da_localidade(dados, localidade), filtro)
+    )
+    return ConsumoChefeResposta(arranjo=filtro, faixas=faixas, localidade=localidade)

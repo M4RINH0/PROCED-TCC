@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import DOTENV, Configuracao, ErroConfiguracao, ErroFonteDados, carregar_configuracao
+from app.dominio import BRASIL, base_da_localidade, tendencia_dos_dados
 from app.dados import obter_dados
 from app.routes import domicilios, estrutura_etaria, fontes, localidades, panorama, simulador
 
@@ -37,7 +38,16 @@ def aquecer(cargas: Iterable[Callable[[], object]]) -> int:
 
 def _cargas_iniciais() -> list[Callable[[], object]]:
     dados = obter_dados()
-    return [dados.domicilios, dados.domicilios_historicos, dados.populacao_por_idade, dados.anos_piramide]
+    # tabelas, população das 27 UFs (por idade e por sexo) e o que deriva só delas (RNF02);
+    # em sequência: em paralelo, as leituras disputam as mesmas conexões e terminam mais tarde
+    return [
+        dados.domicilios,
+        dados.domicilios_historicos,
+        dados.populacao_por_idade,
+        lambda: tendencia_dos_dados(dados),
+        lambda: base_da_localidade(dados, BRASIL),
+        dados.anos_piramide,
+    ]
 
 
 @asynccontextmanager

@@ -1,15 +1,17 @@
 """Leitura das tabelas do Supabase (só leitura).
 
-Cada consulta é feita uma vez e mantida em memória: os dados são estáticos e a API
-do Supabase devolve no máximo mil linhas por consulta. A projeção populacional é
-lida por localidade (Brasil, região ou UF) na primeira vez em que é pedida.
+Cada consulta é feita uma vez e mantida em memória: os dados são estáticos. A projeção
+populacional é lida uma vez para as 27 UFs (por idade e por sexo), e o Brasil e as regiões
+são somados em memória pela lista explícita de siglas (RNF02). O cache também guarda o
+que deriva só dos dados (`derivado`), como a tendência dos arranjos e a base da projeção
+de cada localidade; só a parte que depende dos controles de simulação é recalculada.
 """
 
 import threading
 from dataclasses import dataclass
 from functools import lru_cache
 
-from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL, SEXO_AMBOS, sem_repeticao, somar_populacao, ufs_explicitas
+from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL, SEXO_AMBOS, UFS, sem_repeticao, ufs_explicitas
 from app.supabase import ClienteSupabase, obter_cliente
 
 COLUNAS_DOMICILIOS = (
@@ -49,13 +51,24 @@ class Dados:
     def __init__(self, cliente: ClienteSupabase):
         self._cliente = cliente
         self._trava = threading.Lock()
+        self._travas: dict[str, threading.Lock] = {}
         self._cache: dict[str, object] = {}
 
     def _uma_vez(self, chave: str, carregar):
+        """Carrega uma vez por chave. Cada chave tem a sua trava: uma leitura longa não
+        bloqueia as outras, e duas requisições da mesma chave não leem o banco duas vezes."""
+        if chave in self._cache:
+            return self._cache[chave]
         with self._trava:
+            trava = self._travas.setdefault(chave, threading.Lock())
+        with trava:
             if chave not in self._cache:
                 self._cache[chave] = carregar()
-            return self._cache[chave]
+        return self._cache[chave]
+
+    def derivado(self, chave: str, calcular):
+        """Guarda um valor calculado só a partir das tabelas (não depende dos controles)."""
+        return self._uma_vez(f"derivado:{chave}", calcular)
 
     def domicilios(self) -> list[Domicilio]:
         """fato_consumo_domiciliar: um domicílio da POF por linha, com a UF e o peso,
@@ -103,48 +116,81 @@ class Dados:
 
         return self._uma_vez("domicilios_historicos", carregar)
 
-    def populacao_por_idade(self, localidade: str = BRASIL) -> dict[int, dict[int, int]]:
-        """Ambos os sexos na localidade: ano -> idade -> população (2018 e o horizonte).
+    def _populacao_das_ufs(self) -> dict[str, dict[int, dict[int, int]]]:
+        """As 27 UFs, ambos os sexos, de 2018 em diante: UF -> ano -> idade -> população.
 
-        Lê só as UFs da localidade pela lista explícita de siglas (o Brasil são as 27)
-        e soma; as linhas de total da tabela (regiões e Brasil) nunca entram.
+        Uma leitura só; as linhas de total da tabela (regiões e Brasil) nunca são lidas.
         """
 
         def carregar():
-            ufs = ufs_explicitas(localidade)
             linhas = self._cliente.selecionar(
                 "projecoes_populacao_idade",
-                "localidade,sexo,ano,idade,populacao",
+                "localidade,ano,idade,populacao",
                 {
-                    "localidade": f"in.({','.join(ufs)})",
+                    "localidade": f"in.({','.join(UFS)})",
                     "sexo": f"eq.{SEXO_AMBOS}",
                     "ano": f"gte.{ANO_REFERENCIA_POF}",
                     "order": "id.asc",
                 },
             )
-            return somar_populacao(linhas, ufs)
+            por_uf: dict[str, dict[int, dict[int, int]]] = {}
+            for l in linhas:
+                por_uf.setdefault(l["localidade"], {}).setdefault(int(l["ano"]), {})[int(l["idade"])] = int(l["populacao"])
+            return por_uf
 
-        return self._uma_vez(f"populacao:{localidade}", carregar)
+        return self._uma_vez("populacao_ufs", carregar)
 
-    def _por_sexo(self, localidade: str) -> dict[int, dict[str, dict[int, int]]]:
+    def populacao_por_idade(self, localidade: str = BRASIL) -> dict[int, dict[int, int]]:
+        """Ambos os sexos na localidade: ano -> idade -> população (2018 e o horizonte),
+        somando as UFs da localidade pela lista explícita de siglas (o Brasil são as 27)."""
+
+        def somar():
+            por_uf = self._populacao_das_ufs()
+            populacao: dict[int, dict[int, int]] = {}
+            for uf in ufs_explicitas(localidade):
+                for ano, idades in por_uf.get(uf, {}).items():
+                    destino = populacao.setdefault(ano, {})
+                    for idade, p in idades.items():
+                        destino[idade] = destino.get(idade, 0) + p
+            return populacao
+
+        return self._uma_vez(f"populacao:{localidade}", somar)
+
+    def _por_sexo_das_ufs(self) -> dict[str, dict[int, dict[str, dict[int, int]]]]:
+        """As 27 UFs, homens e mulheres, de 2026 em diante: UF -> ano -> sexo -> idade -> população."""
+
         def carregar():
             linhas = self._cliente.selecionar(
                 "projecoes_populacao_idade",
-                "ano,sexo,idade,populacao",
+                "localidade,ano,sexo,idade,populacao",
                 {
-                    "localidade": f"eq.{localidade}",
+                    "localidade": f"in.({','.join(UFS)})",
                     "sexo": "in.(Homem,Mulher)",
                     "ano": f"gte.{ANO_INICIAL}",
                     "order": "id.asc",
                 },
             )
-            dados: dict[int, dict[str, dict[int, int]]] = {}
+            por_uf: dict[str, dict[int, dict[str, dict[int, int]]]] = {}
             for l in linhas:
-                ano = dados.setdefault(int(l["ano"]), {"Homem": {}, "Mulher": {}})
+                ano = por_uf.setdefault(l["localidade"], {}).setdefault(int(l["ano"]), {"Homem": {}, "Mulher": {}})
                 ano[l["sexo"]][int(l["idade"])] = int(l["populacao"])
+            return por_uf
+
+        return self._uma_vez("por_sexo_ufs", carregar)
+
+    def _por_sexo(self, localidade: str) -> dict[int, dict[str, dict[int, int]]]:
+        def somar():
+            por_uf = self._por_sexo_das_ufs()
+            dados: dict[int, dict[str, dict[int, int]]] = {}
+            for uf in ufs_explicitas(localidade):
+                for ano, sexos in por_uf.get(uf, {}).items():
+                    destino = dados.setdefault(ano, {"Homem": {}, "Mulher": {}})
+                    for sexo, idades in sexos.items():
+                        for idade, p in idades.items():
+                            destino[sexo][idade] = destino[sexo].get(idade, 0) + p
             return dados
 
-        return self._uma_vez(f"por_sexo:{localidade}", carregar)
+        return self._uma_vez(f"por_sexo:{localidade}", somar)
 
     def populacao_por_sexo(self, ano: int, localidade: str = BRASIL) -> dict[str, dict[int, int]]:
         """Localidade no ano: {"Homem": {idade: pop}, "Mulher": {idade: pop}}; vazio se não houver o ano."""

@@ -80,3 +80,28 @@ pirâmide ainda não aplicavam os controles de simulação.
   nacional dos arranjos a cada requisição, embora ela só dependa dos dados; cerca de 20%
   remonta os parâmetros das células da localidade, que não dependem dos controles; só
   cerca de 5% é a projeção, a única parte que depende de `intensidade` e `k`.
+
+**Correção aplicada (14/10/2026) e nova medição**
+1. A tendência nacional dos arranjos é calculada uma vez e fica em memória (`Dados.derivado`).
+2. Por localidade, fica em memória o que não depende dos controles: os domicílios da
+   localidade, os parâmetros das células, a taxa de chefia, as proporções observadas e a
+   população por faixa e por grupo (`base_da_localidade`). A cada requisição, só a
+   projeção com `intensidade` e `k` é recalculada.
+3. As páginas do Supabase são lidas em paralelo (6 ao mesmo tempo, depois da primeira, que
+   informa o total). A população das 27 UFs, por idade e por sexo, é lida uma vez, e o
+   Brasil, as regiões e as UFs são somados em memória.
+
+| Medida | Antes | Depois |
+|---|---|---|
+| Leitura da população das 27 UFs (130.221 linhas) | 65,6 s (em sequência) | 14,2 s (6 páginas em paralelo; 12 não melhoram) |
+| Pré-carga em segundo plano até a série do Brasil responder rápido | não cobria as regiões | cerca de 42 s |
+| Pré-carga completa, com a pirâmide de todas as UFs | sem dado | cerca de 82 s |
+| `/projecoes/serie`, primeira chamada de uma região (Nordeste) | 7,31 s | 0,03 s |
+| `/projecoes/serie`, depois da primeira (Brasil, Nordeste, SP) | 0,18 a 0,28 s | 0,008 s |
+| `/arranjos/composicao`, depois da primeira | 0,12 a 0,24 s | 0,002 s |
+| `/estrutura-etaria/piramides`, primeira chamada de uma UF | 1,63 s | 0,01 s |
+
+Com e sem valores de simulação os tempos são os mesmos. A meta (menos de 1 s depois da
+primeira carga de cada localidade) é cumprida com folga; depois da pré-carga, a primeira
+carga de qualquer localidade também fica abaixo de 0,1 s. Rodar as cargas da pré-carga ao
+mesmo tempo foi testado e piorou (cerca de 93 s), porque elas disputam as mesmas conexões.

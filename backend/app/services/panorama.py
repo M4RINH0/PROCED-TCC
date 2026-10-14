@@ -36,10 +36,12 @@ from app.dominio import (
     Recorte,
     baixa_confiabilidade,
     celula_do_domicilio,
-    da_localidade,
     em_simulacao,
-    montar_projecao,
-    tendencia_nacional,
+    BaseProjecao,
+    base_da_localidade,
+    base_da_projecao,
+    projecao_da_base,
+    tendencia_dos_dados,
 )
 from app.schemas.panorama import (
     Amostra,
@@ -67,25 +69,25 @@ class ParametrosRecorte:
         tendencia: dict[str, tuple[float, float]] | None = None,
         intensidade: float = INTENSIDADE_PADRAO,
         k: float = K_PADRAO,
+        base: BaseProjecao | None = None,
     ):
+        """`base` vem do cache da localidade (RNF02); sem ela, é montada a partir dos domicílios."""
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
-        lista = list(domicilios)
+        if base is None:
+            lista = list(domicilios)
+            base = base_da_projecao(lista, populacao) if any(celula_do_domicilio(d) for d in lista) else None
         self.populacao = populacao
         self.celulas = CELULAS_DO_RECORTE[recorte]
-        contagem: dict[tuple[str, str], int] = {}
-        for d in lista:
-            celula = celula_do_domicilio(d)
-            if celula in self.celulas:
-                contagem[celula] = contagem.get(celula, 0) + 1
-        self.amostra_celulas = {c: contagem.get(c, 0) for c in self.celulas}
+        amostra = {c: p.amostra for c, p in base.celulas.items()} if base else {}
+        self.amostra_celulas = {c: amostra.get(c, 0) for c in self.celulas}
         self.amostra = sum(self.amostra_celulas.values())
         # sem domicílio da amostra numa faixa do recorte, a padronização não fecha e o valor fica nulo
         self.completo = all(
             any(self.amostra_celulas[(f.rotulo, a)] for a in {c[1] for c in self.celulas})
             for f in FAIXAS_DO_RECORTE[recorte]
         )
-        self.projecao = montar_projecao(lista, populacao, tendencia, intensidade, k) if lista else None
+        self.projecao = projecao_da_base(base, tendencia, intensidade, k) if base else None
 
     def resumo(self, ano: int, cenario: str = TAXAS) -> Resumo | None:
         if not self.completo or self.projecao is None or ano not in self.populacao:
@@ -173,10 +175,11 @@ def efeitos(cenarios: list[Cenario]) -> Efeitos:
 
 
 def _parametros(recorte: Recorte, dados, localidade: str, intensidade: float, k: float) -> ParametrosRecorte:
-    domicilios = da_localidade(dados.domicilios(), localidade)
-    # inclinações nacionais (P13), aplicadas às proporções observadas da localidade
-    tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
-    return ParametrosRecorte(recorte, domicilios, dados.populacao_por_idade(localidade), tendencia, intensidade, k)
+    # base da localidade e inclinações nacionais (P13) vêm do cache; só a projeção depende dos controles
+    base = base_da_localidade(dados, localidade)
+    return ParametrosRecorte(
+        recorte, (), dados.populacao_por_idade(localidade), tendencia_dos_dados(dados), intensidade, k, base=base
+    )
 
 
 def _simulacao(intensidade: float, k: float) -> Simulacao:

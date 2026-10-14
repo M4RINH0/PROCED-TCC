@@ -21,10 +21,12 @@ from app.dominio import (
     UNIPESSOAL,
     FiltroArranjo,
     baixa_confiabilidade,
-    da_localidade,
+    base_da_localidade,
+    domicilios_da_localidade,
     em_simulacao,
-    montar_projecao,
-    tendencia_nacional,
+    memorizado,
+    projecao_da_base,
+    tendencia_dos_dados,
 )
 from app.schemas.simulador import ROTULO_FAIXA, ArranjoSim, BaseSim, FaixaSim, SimulacaoResposta
 from app.services.estrutura_etaria import consumo_por_faixa
@@ -46,9 +48,11 @@ def simular(
     intensidade: float = INTENSIDADE_PADRAO,
     k: float = K_PADRAO,
 ) -> SimulacaoResposta:
-    domicilios = da_localidade(dados.domicilios(), localidade)
     populacao = dados.populacao_por_idade(localidade)
-    por_faixa = consumo_por_faixa(domicilios, FiltroArranjo(arranjo.value))
+    filtro = FiltroArranjo(arranjo.value)
+    por_faixa = memorizado(
+        dados, f"consumo_chefe:{localidade}:{filtro.value}", lambda: consumo_por_faixa(domicilios_da_localidade(dados, localidade), filtro)
+    )
     rotulo = ROTULO_FAIXA[faixa]
     escolhida = next(f for f in por_faixa if f.faixa == rotulo)
     celula = (rotulo, NOME_ARRANJO[arranjo])
@@ -60,8 +64,7 @@ def simular(
     elif ano not in populacao:
         motivo = "Sem projeção da população para este ano."
     else:
-        tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
-        projecao = montar_projecao(domicilios, populacao, tendencia, intensidade, k)
+        projecao = projecao_da_base(base_da_localidade(dados, localidade), tendencia_dos_dados(dados), intensidade, k)
         todos = projecao.domicilios(ano, base.value)
         resumo = projecao.resumo(ano, base.value, [celula])
         projetados = round(todos[celula])

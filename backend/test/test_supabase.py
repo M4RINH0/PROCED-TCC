@@ -121,3 +121,33 @@ def test_contar_sem_cabecalho_vira_erro_de_fonte():
 )
 def test_total_do_intervalo(cabecalho, total):
     assert total_do_intervalo(cabecalho) == total
+
+
+def test_paginas_em_paralelo_voltam_na_ordem_mesmo_chegando_fora_de_ordem():
+    import time
+
+    linhas = [{"v": i} for i in range(23)]
+
+    def manipulador(req):
+        ini, fim = map(int, req.headers["Range"].split("-"))
+        time.sleep(0.02 * (23 - ini) / 23)  # as últimas páginas respondem antes
+        pagina = linhas[ini : fim + 1]
+        return httpx.Response(206, json=pagina, headers={"content-range": f"{ini}-{ini + len(pagina) - 1}/23"})
+
+    http = httpx.Client(transport=httpx.MockTransport(manipulador))
+    cliente = ClienteSupabase("https://x.supabase.co", "k", http=http, tamanho_pagina=5, paralelas=4)
+    assert cliente.selecionar("t", "v") == linhas
+
+
+def test_paralelo_pede_cada_pagina_uma_vez_so():
+    pedidos = []
+    linhas = [{"v": i} for i in range(10)]
+
+    def manipulador(req):
+        pedidos.append(req.headers["Range"])
+        return _com_contagem(linhas, 3)(req)
+
+    http = httpx.Client(transport=httpx.MockTransport(manipulador))
+    ClienteSupabase("https://x.supabase.co", "k", http=http, tamanho_pagina=4).selecionar("t", "v")
+    # a primeira página vem com 3 linhas (limite do servidor): as demais são pedidas de 3 em 3
+    assert sorted(pedidos) == sorted(["0-3", "3-5", "6-8", "9-11"])

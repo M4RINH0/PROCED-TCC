@@ -266,6 +266,58 @@ def tendencia_nacional(historicos: Iterable, atuais: Iterable) -> dict[str, tupl
     return estimar_tendencia(proporcoes_por_edicao(historicos, atuais), ARRANJOS)
 
 
+@dataclass(frozen=True)
+class BaseProjecao:
+    """O que a projeção de uma localidade usa e não depende dos controles de simulação (RNF02):
+    parâmetros das células medidos na POF e população por faixa e por grupo de idade."""
+
+    celulas: dict
+    por_faixa: dict[int, dict[str, int]]
+    por_grupo: dict[int, dict[str, int]]
+    total: dict[int, int]
+
+
+def base_da_projecao(domicilios: Iterable, populacao: dict[int, dict[int, int]]) -> BaseProjecao:
+    """Sem consumo total ou moradores informados (domicílios montados à mão nos testes),
+    vale um morador e o consumo total igual ao per capita."""
+    registros = []
+    for d in domicilios:
+        celula = celula_do_domicilio(d)
+        if celula is None:
+            continue
+        moradores = getattr(d, "moradores", None) or 1
+        consumo = getattr(d, "consumo_total_kwh", None)
+        consumo = d.consumo_per_capita_kwh * moradores if consumo is None else consumo
+        registros.append((celula, d.peso, consumo, d.consumo_per_capita_kwh, moradores))
+    return BaseProjecao(
+        parametros_celulas(registros), populacao_por_faixa(populacao), populacao_por_grupo(populacao), populacao_total(populacao)
+    )
+
+
+def projecao_da_base(
+    base: BaseProjecao,
+    tendencia: dict[str, tuple[float, float]] | None = None,
+    intensidade: float = INTENSIDADE_PADRAO,
+    k: float = K_PADRAO,
+):
+    """A parte que depende dos controles: só monta a Projecao, sem percorrer os domicílios."""
+    por_faixa = base.por_faixa
+    if k != K_PADRAO and ANO_INICIAL in base.por_grupo:
+        ajustada = ajustar_envelhecimento(base.por_grupo, k, ANO_INICIAL)
+        por_faixa = {ano: {f: v for f, v in grupos.items() if f != GRUPO_0_11} for ano, grupos in ajustada.items()}
+    return Projecao(
+        base.celulas,
+        por_faixa,
+        ANO_REFERENCIA_POF,
+        ANO_INICIAL,
+        base.total,
+        tendencia=tendencia,
+        intensidade=intensidade,
+        arranjos=ARRANJOS,
+        intensidade_ate_base=INTENSIDADE_PADRAO,  # de 2017,5 a 2026 vale sempre o padrão
+    )
+
+
 def montar_projecao(
     domicilios: Iterable,
     populacao: dict[int, dict[int, int]],
@@ -278,33 +330,39 @@ def montar_projecao(
     `tendencia` são as inclinações nacionais (P13); sem ela, os arranjos ficam congelados.
     De 2017,5 a 2026 vale sempre a intensidade padrão; `intensidade` só muda a evolução depois de 2026.
     `k` acelera ou freia o envelhecimento a partir de 2026, mantendo a população total do IBGE.
-    Sem consumo total ou moradores informados (domicílios montados à mão nos testes),
-    vale um morador e o consumo total igual ao per capita.
     """
-    registros = []
-    for d in domicilios:
-        celula = celula_do_domicilio(d)
-        if celula is None:
-            continue
-        moradores = getattr(d, "moradores", None) or 1
-        consumo = getattr(d, "consumo_total_kwh", None)
-        consumo = d.consumo_per_capita_kwh * moradores if consumo is None else consumo
-        registros.append((celula, d.peso, consumo, d.consumo_per_capita_kwh, moradores))
-    por_faixa = populacao_por_faixa(populacao)
-    if k != K_PADRAO and ANO_INICIAL in populacao:
-        ajustada = ajustar_envelhecimento(populacao_por_grupo(populacao), k, ANO_INICIAL)
-        por_faixa = {ano: {f: v for f, v in grupos.items() if f != GRUPO_0_11} for ano, grupos in ajustada.items()}
-    return Projecao(
-        parametros_celulas(registros),
-        por_faixa,
-        ANO_REFERENCIA_POF,
-        ANO_INICIAL,
-        populacao_total(populacao),
-        tendencia=tendencia,
-        intensidade=intensidade,
-        arranjos=ARRANJOS,
-        intensidade_ate_base=INTENSIDADE_PADRAO,  # de 2017,5 a 2026 vale sempre o padrão
-    )
+    return projecao_da_base(base_da_projecao(domicilios, populacao), tendencia, intensidade, k)
+
+
+# ---------- cache do que não depende dos controles (RNF02) ----------
+
+
+def memorizado(fonte, chave: str, calcular):
+    """Guarda `calcular()` no cache da fonte de dados (Dados.derivado); fontes sem cache,
+    como as dos testes, calculam na hora."""
+    derivado = getattr(fonte, "derivado", None)
+    return derivado(chave, calcular) if derivado else calcular()
+
+
+def tendencia_dos_dados(dados) -> dict[str, tuple[float, float]]:
+    """Inclinações nacionais (P13): dependem só das tabelas, então são calculadas uma vez."""
+    return memorizado(dados, "tendencia", lambda: tendencia_nacional(dados.domicilios_historicos(), dados.domicilios()))
+
+
+def domicilios_da_localidade(dados, localidade: str) -> list:
+    return memorizado(dados, f"domicilios:{localidade}", lambda: da_localidade(dados.domicilios(), localidade))
+
+
+def base_da_localidade(dados, localidade: str) -> BaseProjecao | None:
+    """Base da projeção da localidade, montada uma vez; None se a localidade não tiver domicílios na POF."""
+
+    def calcular():
+        domicilios = domicilios_da_localidade(dados, localidade)
+        if not any(celula_do_domicilio(d) for d in domicilios):
+            return None
+        return base_da_projecao(domicilios, dados.populacao_por_idade(localidade))
+
+    return memorizado(dados, f"base:{localidade}", calcular)
 
 
 # Total de domicílios estimado pela POF 2017 a 2018 (IBGE): 68,9 milhões (Agência IBGE Notícias, notícia 28903).

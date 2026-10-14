@@ -64,24 +64,31 @@ def test_ano_sem_populacao_falha():
         montar_piramide(2030, {"Homem": {}, "Mulher": {}})
 
 
-def test_repositorio_le_todos_os_anos_de_uma_vez_e_guarda_em_cache():
+def test_piramide_le_as_27_ufs_uma_vez_e_soma_cada_localidade_em_memoria():
+    from app.dominio import UFS
+
     chamadas = []
 
     class Cliente:
         def selecionar(self, tabela, colunas, filtros=None):
             chamadas.append(filtros)
             return [
-                {"ano": 2030, "sexo": "Homem", "idade": 0, "populacao": 5},
-                {"ano": 2030, "sexo": "Mulher", "idade": 0, "populacao": 6},
-                {"ano": 2031, "sexo": "Homem", "idade": 0, "populacao": 7},
+                {"localidade": "DF", "ano": 2030, "sexo": "Homem", "idade": 0, "populacao": 5},
+                {"localidade": "GO", "ano": 2030, "sexo": "Homem", "idade": 0, "populacao": 2},
+                {"localidade": "DF", "ano": 2030, "sexo": "Mulher", "idade": 0, "populacao": 6},
+                {"localidade": "SP", "ano": 2031, "sexo": "Homem", "idade": 0, "populacao": 7},
             ]
 
     repo = Dados(Cliente())
-    assert repo.populacao_por_sexo(2030) == {"Homem": {0: 5}, "Mulher": {0: 6}}
+    # Brasil: DF + GO + SP; Centro-Oeste: DF + GO; SP só ele
+    assert repo.populacao_por_sexo(2030) == {"Homem": {0: 7}, "Mulher": {0: 6}}
+    assert repo.populacao_por_sexo(2030, "Centro-Oeste") == {"Homem": {0: 7}, "Mulher": {0: 6}}
+    assert repo.populacao_por_sexo(2031, "SP") == {"Homem": {0: 7}, "Mulher": {}}
     assert repo.populacao_por_sexo(2099) == {"Homem": {}, "Mulher": {}}
-    assert repo.anos_piramide() == [2030, 2031]
-    assert len(chamadas) == 1
-    assert chamadas[0]["ano"] == "gte.2026" and chamadas[0]["localidade"] == "eq.Brasil"
+    assert repo.anos_piramide() == [2030, 2031] and repo.anos_piramide("Centro-Oeste") == [2030]
+    assert len(chamadas) == 1  # uma leitura só para todas as localidades
+    assert chamadas[0]["ano"] == "gte.2026" and chamadas[0]["localidade"] == f"in.({','.join(UFS)})"
+    assert chamadas[0]["sexo"] == "in.(Homem,Mulher)"
 
 
 @pytest.fixture

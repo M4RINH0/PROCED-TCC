@@ -73,7 +73,7 @@ def test_enumeracao_aceita_brasil_regioes_e_ufs():
 
 # ---------- leitura do banco ----------
 
-def test_projecao_e_lida_por_localidade_e_guardada_em_cache():
+def test_projecao_e_lida_uma_vez_e_somada_por_localidade():
     chamadas = []
 
     class Cliente:
@@ -88,8 +88,8 @@ def test_projecao_e_lida_por_localidade_e_guardada_em_cache():
     dados = Dados(Cliente())
     sul = dados.populacao_por_idade("Sul")
     dados.populacao_por_idade("Sul"), dados.populacao_por_idade("RS")
-    # a região é a soma das suas UFs pela lista explícita; a linha de total "Sul" não entra
-    assert [c["localidade"] for c in chamadas] == ["in.(PR,RS,SC)", "in.(RS)"]
+    # uma leitura das 27 UFs; a região é a soma das suas UFs e a linha de total "Sul" não entra
+    assert len(chamadas) == 1 and chamadas[0]["localidade"].startswith("in.(AC,")
     assert sul == {2030: {60: 10}}
     assert dados.populacao_por_idade("RS") == {2030: {60: 3}}
     assert chamadas[0]["ano"] == "gte.2018" and chamadas[0]["sexo"] == "eq.Ambos"

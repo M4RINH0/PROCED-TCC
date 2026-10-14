@@ -1,6 +1,6 @@
 """Fontes, período de referência, critério de exclusão e premissas principais (RF10)."""
 
-from app.dominio import TOTAL_DOMICILIOS_POF
+from app.dominio import TOTAL_DOMICILIOS_POF, memorizado
 from app.schemas.fontes import Fonte, FontesResposta, Premissa
 
 FONTES = [
@@ -58,7 +58,7 @@ def obter_fontes(dados) -> FontesResposta:
     return FontesResposta(
         fontes=FONTES,
         criterio_exclusao=CRITERIO_EXCLUSAO,
-        cobertura_pct=cobertura(sum(d.peso for d in dados.domicilios())),
+        cobertura_pct=cobertura(memorizado(dados, "soma_dos_pesos", lambda: sum(d.peso for d in dados.domicilios()))),
         premissas=PREMISSAS,
         premissas_url=PREMISSAS_URL,
     )

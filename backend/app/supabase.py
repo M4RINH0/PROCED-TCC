@@ -5,6 +5,7 @@ o banco (RNF10). Os filtros vão como parâmetros da requisição, nunca montado
 por concatenação de SQL.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
 import httpx
@@ -12,14 +13,23 @@ import httpx
 from app.config import DOTENV, Configuracao, ErroConfiguracao, ErroFonteDados, carregar_configuracao
 
 TAMANHO_PAGINA = 1000  # limite de linhas por resposta do Supabase
+PAGINAS_EM_PARALELO = 6  # páginas pedidas ao mesmo tempo depois da primeira (RNF02)
 
 
 class ClienteSupabase:
-    def __init__(self, url: str, chave: str, http: httpx.Client | None = None, tamanho_pagina: int = TAMANHO_PAGINA):
+    def __init__(
+        self,
+        url: str,
+        chave: str,
+        http: httpx.Client | None = None,
+        tamanho_pagina: int = TAMANHO_PAGINA,
+        paralelas: int = PAGINAS_EM_PARALELO,
+    ):
         self._base = url.rstrip("/") + "/rest/v1"
-        self._http = http or httpx.Client(timeout=30)
+        self._http = http or httpx.Client(timeout=30, limits=httpx.Limits(max_connections=paralelas + 2))
         self._cabecalhos = {"apikey": chave}
         self._pagina = tamanho_pagina
+        self._paralelas = max(1, paralelas)
 
     def _get(self, tabela: str, parametros: dict, cabecalhos: dict) -> httpx.Response:
         try:
@@ -31,36 +41,43 @@ class ClienteSupabase:
         return resposta
 
     def selecionar(self, tabela: str, colunas: str, filtros: dict[str, str] | None = None) -> list[dict]:
-        """Devolve todas as linhas, paginando de mil em mil.
+        """Devolve todas as linhas, na ordem pedida.
 
-        A primeira página pede a contagem exata (Content-Range). Com ela, a leitura
-        só termina quando todas as linhas chegaram, mesmo que o servidor devolva
-        páginas menores que o pedido; se faltar alguma, levanta erro em vez de
-        devolver a tabela pela metade.
+        A primeira página pede a contagem exata (Content-Range) e mostra quantas linhas o
+        servidor devolve por página; as demais são pedidas em paralelo (RNF02). Se faltar
+        alguma linha, levanta erro em vez de devolver a tabela pela metade. Sem a contagem,
+        pagina em sequência até uma página vir incompleta.
         """
-        linhas: list[dict] = []
         parametros = {"select": colunas, **(filtros or {})}
-        total: int | None = None
+        primeira = self._get(tabela, parametros, {"Range": f"0-{self._pagina - 1}", "Prefer": "count=exact"})
+        linhas: list[dict] = list(primeira.json())
+        total = total_do_intervalo(primeira.headers.get("content-range"))
+        if total is None:
+            return self._em_sequencia(tabela, parametros, linhas)
+        if len(linhas) >= total:
+            return linhas
+        if not linhas:
+            raise ErroFonteDados(f"{tabela}: foram lidas 0 de {total} linhas")
+        passo = len(linhas)  # o servidor pode devolver menos linhas que o pedido
+
+        def pagina(inicio: int) -> list[dict]:
+            return self._get(tabela, parametros, {"Range": f"{inicio}-{inicio + passo - 1}"}).json()
+
+        with ThreadPoolExecutor(max_workers=self._paralelas) as executor:
+            for parte in executor.map(pagina, range(passo, total, passo)):  # map preserva a ordem
+                linhas.extend(parte)
+        if len(linhas) != total:
+            raise ErroFonteDados(f"{tabela}: foram lidas {len(linhas)} de {total} linhas")
+        return linhas
+
+    def _em_sequencia(self, tabela: str, parametros: dict, linhas: list[dict]) -> list[dict]:
+        pagina = linhas
         inicio = 0
-        while True:
-            cabecalhos = {"Range": f"{inicio}-{inicio + self._pagina - 1}"}
-            if inicio == 0:
-                cabecalhos["Prefer"] = "count=exact"
-            resposta = self._get(tabela, parametros, cabecalhos)
-            pagina = resposta.json()
-            if inicio == 0:
-                total = total_do_intervalo(resposta.headers.get("content-range"))
+        while len(pagina) == self._pagina:
+            inicio += self._pagina
+            pagina = self._get(tabela, parametros, {"Range": f"{inicio}-{inicio + self._pagina - 1}"}).json()
             linhas.extend(pagina)
-            if total is None:
-                if len(pagina) < self._pagina:
-                    return linhas
-                inicio += self._pagina
-                continue
-            if len(linhas) >= total:
-                return linhas
-            if not pagina:
-                raise ErroFonteDados(f"{tabela}: foram lidas {len(linhas)} de {total} linhas")
-            inicio += len(pagina)
+        return linhas
 
     def contar(self, tabela: str, filtros: dict[str, str] | None = None) -> int:
         """Número de linhas que a consulta devolveria (count exato no banco)."""

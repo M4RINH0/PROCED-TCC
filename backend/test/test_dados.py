@@ -73,3 +73,46 @@ def test_le_as_pofs_anteriores_sem_filtrar_a_rede_geral():
         DomicilioHistorico(2002, "Casal ou Dupla", 70, 10.5, False),
         DomicilioHistorico(2008, "Multipessoal (3+)", 40, 3.0, True),
     ]
+
+
+def test_derivado_calcula_uma_vez_por_chave():
+    repo = Dados(ClienteFalso())
+    contagem = []
+    calcular = lambda: contagem.append(1) or len(contagem)  # noqa: E731
+    assert repo.derivado("x", calcular) == 1
+    assert repo.derivado("x", calcular) == 1
+    assert repo.derivado("y", calcular) == 2
+    assert len(contagem) == 2
+
+
+def test_uma_chave_lenta_nao_bloqueia_outra():
+    import threading
+    import time
+
+    repo = Dados(ClienteFalso())
+    liberar = threading.Event()
+
+    def lento():
+        liberar.wait(2)
+        return "lento"
+
+    t = threading.Thread(target=lambda: repo.derivado("lenta", lento))
+    t.start()
+    time.sleep(0.05)
+    inicio = time.time()
+    assert repo.derivado("rapida", lambda: "ok") == "ok"
+    assert time.time() - inicio < 0.5  # não esperou a chave lenta
+    liberar.set()
+    t.join()
+    assert repo.derivado("lenta", lambda: "outro") == "lento"
+
+
+def test_memorizado_sem_cache_calcula_na_hora():
+    from app.dominio import memorizado
+
+    class SemCache:
+        pass
+
+    assert memorizado(SemCache(), "x", lambda: 42) == 42
+    repo = Dados(ClienteFalso())
+    assert memorizado(repo, "x", lambda: 1) == 1 and memorizado(repo, "x", lambda: 2) == 1

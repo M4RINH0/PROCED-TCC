@@ -23,12 +23,16 @@ from app.dominio import (
     UNIPESSOAL,
     baixa_confiabilidade,
     celula_do_domicilio,
-    da_localidade,
     INTENSIDADE_PADRAO,
     K_PADRAO,
     em_simulacao,
-    montar_projecao,
-    tendencia_nacional,
+    BaseProjecao,
+    base_da_localidade,
+    base_da_projecao,
+    domicilios_da_localidade,
+    memorizado,
+    projecao_da_base,
+    tendencia_dos_dados,
 )
 from app.schemas.domicilios import ArranjoConsumo, ArranjosResposta, CategoriaComposicao, ComposicaoResposta, Grupo
 
@@ -82,8 +86,8 @@ def _consumo_total(d: Domicilio) -> float:
 
 
 def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosResposta:
-    domicilios = da_localidade(dados.domicilios(), localidade)
-    return ArranjosResposta(grupo=grupo, arranjos=agregar(domicilios, grupo), localidade=localidade)
+    arranjos = memorizado(dados, f"arranjos:{localidade}:{grupo.value}", lambda: agregar(domicilios_da_localidade(dados, localidade), grupo))
+    return ArranjosResposta(grupo=grupo, arranjos=arranjos, localidade=localidade)
 
 
 # ---------- composição dos domicílios no tempo ----------
@@ -101,12 +105,16 @@ class EstruturaDomicilios:
         tendencia: dict[str, tuple[float, float]] | None = None,
         intensidade: float = INTENSIDADE_PADRAO,
         k: float = K_PADRAO,
+        base: BaseProjecao | None = None,
     ):
+        """`base` vem do cache da localidade (RNF02); sem ela, é montada a partir dos domicílios."""
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
-        lista = [d for d in domicilios if celula_do_domicilio(d) is not None]
+        if base is None:
+            lista = [d for d in domicilios if celula_do_domicilio(d) is not None]
+            base = base_da_projecao(lista, populacao) if lista else None
         self.populacao = populacao
-        self.projecao = montar_projecao(lista, populacao, tendencia, intensidade, k) if lista else None
+        self.projecao = projecao_da_base(base, tendencia, intensidade, k) if base else None
         self.amostra = {c: p.amostra for c, p in self.projecao.celulas.items()} if self.projecao else {}
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
@@ -192,9 +200,8 @@ def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
 def obter_composicao(
     dados, localidade: str = BRASIL, intensidade: float = INTENSIDADE_PADRAO, k: float = K_PADRAO
 ) -> ComposicaoResposta:
-    domicilios = da_localidade(dados.domicilios(), localidade)
-    tendencia = tendencia_nacional(dados.domicilios_historicos(), dados.domicilios())
-    estrutura = EstruturaDomicilios(domicilios, dados.populacao_por_idade(localidade), tendencia, intensidade, k)
+    base = base_da_localidade(dados, localidade)
+    estrutura = EstruturaDomicilios((), dados.populacao_por_idade(localidade), tendencia_dos_dados(dados), intensidade, k, base=base)
     resposta = montar_composicao(estrutura)
     return resposta.model_copy(
         update={"localidade": localidade, "intensidade": intensidade, "k": k, "simulacao": em_simulacao(intensidade, k)}
