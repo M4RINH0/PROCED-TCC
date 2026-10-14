@@ -70,7 +70,7 @@ Atenção! Os scripts estão localizados na pasta [scripts](./scripts).
 O processo de ETL resulta em quatro tabelas principais disponibilizadas no banco, cada uma com um papel específico no sistema:
 
 1. **`fato_consumo_domiciliar`:** Tabela base (nível microdado) gerada a partir da POF. Sua função é armazenar o perfil de cada domicílio amostrado (arranjo familiar, presença de idosos, consumos e o `peso_final`). É a matéria-prima para os cálculos estatísticos e para a expansão amostral.
-2. **`dim_coeficientes_consumo`:** Tabela de suporte. Sua função é consolidar as médias históricas (ex: média de consumo kWh) agrupadas por perfil e Unidade da Federação. Ela dita os "pesos" que serão aplicados sobre as populações.
+2. **`dim_coeficientes_consumo`:** Tabela de suporte. Sua função é consolidar as médias históricas (ex: média de consumo kWh) agrupadas por perfil e Unidade da Federação. Ela dita os "pesos" que serão aplicados sobre as populações. **Não é usada pela API nem pelas projeções:** foi calculada com média simples, sem o peso amostral; as médias por arranjo saem da `fato_consumo_domiciliar` com `peso_final`.
 3. **`censo_2022_consumo_estimado`:** Tabela que representa o "Ano Base". Ela consolida as populações reais do Censo e estima quanto de energia cada estado consumiu em 2022 (separado por grupo etário). Seus dados servem como tensores de entrada (*Features*) para calibrar as projeções da IA para os próximos anos.
 4. **`projecoes_populacao_idade`:** Originada via processamento Python (planilha IBGE). Sua função é alimentar o motor de cálculo com as populações projetadas do Brasil até 2070. Ao cruzar essa projeção com a `dim_coeficientes_consumo`, o sistema consegue simular as tendências do consumo residencial nacional a longo prazo.
 
@@ -86,6 +86,7 @@ Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a parti
 1. Preparação: premissa P8 (domicílio repetido fica com o chefe de maior idade), faixa etária do chefe e célula (faixa e arranjo).
 2. Auditoria (`saida/auditoria.json`): peso ausente, repetidos, chefes com menos de 18 anos, domicílios acima de 1.000 kWh (mantidos), cobertura da POF e tabela por célula, com aviso nas células com menos de 30 domicílios.
 3. Ponte comum (premissa P2): taxa de chefia por faixa e arranjo com os pesos de 2018; domicílios projetados por ano.
-4. Método das taxas (`taxas`), contrafactual com a composição de 2026 congelada (`contrafactual`) e, para comparação, a validação da ponte contra o Censo 2022.
-5. Método de machine learning (`ml_rf` e `ml_gb`): validação cruzada, métricas e importância das variáveis; projeção por reponderação da amostra.
-6. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.
+4. Método das taxas (`taxas`), contrafactual (`contrafactual`: o total de domicílios segue a projeção e a distribuição entre as células fica na de 2026, premissa P10) e a validação da ponte contra o Censo 2022. A projeção é a mesma da API (`app.calculo.Projecao`).
+5. Calibração (premissa P12): `consumo_total_calibrado_kwh_mes` = consumo por pessoa vezes a população do IBGE no ano. O consumo total bruto (`consumo_total_kwh_mes`) fica só como diagnóstico.
+6. Método de machine learning (`ml_rf` e `ml_gb`): validação cruzada, métricas (`metricas_modelos.json`) e importância das variáveis (`importancia_variaveis.csv`). A projeção por reponderação está pausada (`projetar_ml=False`).
+7. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.

@@ -3,6 +3,13 @@
 import pytest
 
 from app.calculo import (
+    CONTRAFACTUAL,
+    TAXAS,
+    Celula,
+    Projecao,
+    congelar_composicao,
+    fator_calibracao,
+    parametros_celulas,
     consumo_por_pessoa,
     consumo_total,
     domicilios_projetados,
@@ -217,3 +224,104 @@ def test_reponderacao_rejeita_celula_sem_alvo_ou_sem_peso():
         reponderar([0, 0], [C1, C1], {C1: 5})
     with pytest.raises(ValueError):
         reponderar([1], [C1, C2], {C1: 1, C2: 1})
+
+
+# ---------- projeção por células, contrafactual e calibração (P10 e P12) ----------
+# Mesmo conjunto mínimo; população por faixa: 2026 -> 450 e 300; população total de 2050: 25.
+# taxas 2050: ndom 6 e 2; consumo 1210; moradores 12,5; por pessoa 96,8; calibrado 96,8 * 25 = 2420
+# contrafactual 2050: composição de 2026 (4,5 e 3, isto é 60% e 40%) com o total de 2050 (8): 4,8 e 3,2
+#   consumo 4,8*110 + 3,2*275 = 1408; moradores 4,8 + 3,2*3,25 = 15,2; TBC (110*4,8 + 87,5*3,2) / 8 = 101
+#   calibrado 1408 * 25 / 15,2
+
+
+def _projecao(total=None):
+    celulas = parametros_celulas(
+        [(C1, 2, 100, 100, 1), (C1, 1, 130, 130, 1), (C2, 3, 300, 100, 3), (C2, 1, 200, 50, 4)]
+    )
+    pop = {2018: POP_2018, 2026: {"60 a 69": 450, "30 a 39": 300}, 2050: POP_2050}
+    return Projecao(celulas, pop, 2018, 2026, total)
+
+
+def test_parametros_das_celulas_sao_medias_ponderadas():
+    celulas = _projecao().celulas
+    assert celulas[C1] == Celula(amostra=2, peso=3, tec=110, consumo_domicilio=110, moradores=1)
+    assert celulas[C2].amostra == 2 and celulas[C2].peso == 4
+    assert celulas[C2].tec == pytest.approx(87.5) and celulas[C2].consumo_domicilio == pytest.approx(275)
+    assert celulas[C2].moradores == pytest.approx(3.25)
+
+
+def test_parametros_das_celulas_rejeitam_peso_nao_positivo():
+    with pytest.raises(ValueError):
+        parametros_celulas([(C1, 0, 100, 100, 1)])
+
+
+def test_projecao_pelo_metodo_das_taxas_em_2050():
+    r = _projecao({2050: 25}).resumo(2050)
+    assert r.domicilios == pytest.approx(8) and r.consumo_total == pytest.approx(1210)
+    assert r.tbc_padronizada == pytest.approx(104.375) and r.moradores == pytest.approx(12.5)
+    assert r.consumo_por_pessoa == pytest.approx(96.8)
+    assert r.consumo_total_calibrado == pytest.approx(2420)
+
+
+def test_calibrado_e_consumo_por_pessoa_vezes_a_populacao():
+    r = _projecao({2050: 25}).resumo(2050)
+    assert r.consumo_total_calibrado == pytest.approx(r.consumo_por_pessoa * 25)
+
+
+def test_contrafactual_congela_a_distribuicao_de_2026():
+    p = _projecao({2050: 25})
+    assert p.domicilios(2050, CONTRAFACTUAL) == pytest.approx({C1: 4.8, C2: 3.2})
+    r = p.resumo(2050, CONTRAFACTUAL)
+    assert r.consumo_total == pytest.approx(1408) and r.moradores == pytest.approx(15.2)
+    assert r.tbc_padronizada == pytest.approx(101)
+    assert r.consumo_total_calibrado == pytest.approx(1408 * 25 / 15.2)
+
+
+def test_contrafactual_no_ano_base_e_igual_as_taxas():
+    p = _projecao()
+    assert p.domicilios(2026, CONTRAFACTUAL) == pytest.approx(p.domicilios(2026, TAXAS))
+
+
+def test_recorte_usa_o_fator_de_todas_as_celulas():
+    # só C1: consumo 6*110 = 660; fator 25 / 12,5 = 2 (moradores de todas as células) -> 1320
+    r = _projecao({2050: 25}).resumo(2050, TAXAS, [C1])
+    assert r.consumo_total == pytest.approx(660) and r.consumo_total_calibrado == pytest.approx(1320)
+    assert r.tbc_padronizada == pytest.approx(110)
+
+
+def test_sem_populacao_total_nao_calibra():
+    assert _projecao().resumo(2050).consumo_total_calibrado is None
+
+
+def test_recorte_sem_domicilios_fica_sem_resumo():
+    assert _projecao().resumo(2050, TAXAS, [("80+", "uni")]) is None
+
+
+def test_projecao_rejeita_cenario_e_ano_desconhecidos():
+    with pytest.raises(ValueError):
+        _projecao().domicilios(2050, "pde")
+    with pytest.raises(KeyError):
+        _projecao().domicilios(2040)
+
+
+def test_projecao_exige_ano_de_referencia_e_celulas():
+    with pytest.raises(ValueError, match="2018"):
+        Projecao(_projecao().celulas, {2050: POP_2050}, 2018, 2026)
+    with pytest.raises(ValueError):
+        Projecao({}, {2018: POP_2018}, 2018, 2026)
+
+
+def test_fator_de_calibracao():
+    assert fator_calibracao(25, 12.5) == 2
+    with pytest.raises(ValueError):
+        fator_calibracao(25, 0)
+    with pytest.raises(ValueError):
+        fator_calibracao(-1, 10)
+
+
+def test_congelar_composicao():
+    assert congelar_composicao({"a": 3, "b": 1}, 8) == pytest.approx({"a": 6, "b": 2})
+    with pytest.raises(ValueError):
+        congelar_composicao({"a": 0}, 8)
+    with pytest.raises(ValueError):
+        congelar_composicao({"a": 1}, -1)

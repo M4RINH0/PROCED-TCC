@@ -79,7 +79,8 @@ def projetar(
             "etapa": "ponte e método das taxas",
             "fonte": "fato_consumo_domiciliar e projecoes_populacao_idade (27 UFs, Ambos)",
             "transformacao": "taxas de chefia de 2018 por faixa e arranjo (P2); padronização direta com a TEC "
-            "ponderada (P6); contrafactual com a composição de 2026 congelada (P10)",
+            "ponderada (P6); contrafactual com a composição de 2026 congelada (P10); consumo total "
+            "calibrado pela população do IBGE (P12)",
         }
     )
 
@@ -108,7 +109,7 @@ def projetar(
             }
         )
     projecoes.append(modelagem.projetar_contrafactual(ponte))
-    resultado = modelagem.adicionar_populacao(pd.concat(projecoes, ignore_index=True), pop)
+    resultado = modelagem.calibrar(pd.concat(projecoes, ignore_index=True), pop)
     resultado.to_csv(pasta / "projecoes_2026_2070.csv", index=False)
 
     fator = modelagem.fator_cobertura(fato)

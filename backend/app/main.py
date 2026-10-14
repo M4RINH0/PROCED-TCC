@@ -37,7 +37,7 @@ def aquecer(cargas: Iterable[Callable[[], object]]) -> int:
 
 def _cargas_iniciais() -> list[Callable[[], object]]:
     dados = obter_dados()
-    return [dados.domicilios, dados.populacao_por_idade, dados.coeficientes, dados.anos_piramide]
+    return [dados.domicilios, dados.populacao_por_idade, dados.anos_piramide]
 
 
 @asynccontextmanager

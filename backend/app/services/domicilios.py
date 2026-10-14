@@ -1,78 +1,85 @@
-"""Regras de Domicílios (RF03, RF04): consumo por arranjo e composição dos domicílios no tempo."""
+"""Regras de Domicílios (RF03, RF04): consumo por arranjo e composição dos domicílios no tempo.
+
+Toda média usa o peso amostral da POF (peso_final), sobre a tabela fato já sem as
+linhas repetidas (P8).
+"""
 
 import math
 from collections.abc import Iterable
 
-from app.calculo import domicilios_projetados, taxas_chefia, tec
+from app.calculo import media_ponderada
 from app.dados import Domicilio
 from app.dominio import (
     ANO_FINAL,
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
+    ARRANJOS,
     BRASIL,
     CASAL_OU_DUPLA,
     FAIXAS_CHEFE,
+    IDADE_IDOSO,
+    MONONUCLEARES,
     MULTIPESSOAL,
     UNIPESSOAL,
+    baixa_confiabilidade,
+    celula_do_domicilio,
     da_localidade,
-    faixa_do_chefe,
-    populacao_da_faixa,
-    ufs_da_localidade,
+    montar_projecao,
 )
 from app.schemas.domicilios import ArranjoConsumo, ArranjosResposta, CategoriaComposicao, ComposicaoResposta, Grupo
 
-# ---------- consumo por arranjo (tabela de coeficientes por UF) ----------
-# A tabela traz médias por UF; a média nacional pondera cada UF pelo número de
-# domicílios da amostra, o que equivale à média de todos os domicílios.
-
-ORDEM = (UNIPESSOAL, CASAL_OU_DUPLA, MULTIPESSOAL)
-MONONUCLEARES = {UNIPESSOAL, CASAL_OU_DUPLA}
+# ---------- consumo por arranjo ----------
 
 
 def _no_grupo(chefe_60_mais: bool, grupo: Grupo) -> bool:
     return grupo is Grupo.todos or (grupo is Grupo.chefe_60_mais) == chefe_60_mais
 
 
-def agregar(linhas: list[dict], grupo: Grupo) -> list[ArranjoConsumo]:
-    soma: dict[tuple[str, bool], dict[str, float]] = {}
-    for l in linhas:
-        chave = (l["arranjo_familiar"], bool(l["is_60_mais"]))
-        if not _no_grupo(chave[1], grupo):
-            continue
-        n = l["total_domicilios_amostra"]
-        acc = soma.setdefault(chave, {"n": 0, "per_capita": 0.0, "total": 0.0, "gasto": 0.0})
-        acc["n"] += n
-        acc["per_capita"] += n * l["media_consumo_per_capita_kwh"]
-        acc["total"] += n * l["media_consumo_total_kwh"]
-        acc["gasto"] += n * l["media_gasto_rs"]
+def agregar(domicilios: Iterable[Domicilio], grupo: Grupo) -> list[ArranjoConsumo]:
+    """Médias ponderadas por arranjo e por chefe de 60 anos ou mais."""
+    grupos: dict[tuple[str, bool], list[Domicilio]] = {}
+    for d in domicilios:
+        chave = (d.arranjo, d.idade_chefe >= IDADE_IDOSO)
+        if _no_grupo(chave[1], grupo):
+            grupos.setdefault(chave, []).append(d)
 
     def ordem(chave):
         arranjo, idoso = chave
-        return (ORDEM.index(arranjo) if arranjo in ORDEM else len(ORDEM), not idoso)
+        return (ARRANJOS.index(arranjo) if arranjo in ARRANJOS else len(ARRANJOS), not idoso)
 
     resultado = []
-    for chave in sorted(soma, key=ordem):
-        acc, (arranjo, idoso) = soma[chave], chave
-        if acc["n"] <= 0:
-            continue
+    for (arranjo, idoso) in sorted(grupos, key=ordem):
+        g = grupos[(arranjo, idoso)]
+        pesos = [d.peso for d in g]
+        com_gasto = [d for d in g if d.gasto_rs is not None]
         resultado.append(
             ArranjoConsumo(
                 arranjo=arranjo,
                 mononuclear=arranjo in MONONUCLEARES,
                 chefe_60_mais=idoso,
-                domicilios_amostra=int(acc["n"]),
-                consumo_per_capita_kwh=round(tec(acc["per_capita"], acc["n"]), 1),
-                consumo_total_kwh=round(acc["total"] / acc["n"], 1),
-                gasto_rs=round(acc["gasto"] / acc["n"], 2),
+                domicilios_amostra=len(g),
+                baixa_confiabilidade=baixa_confiabilidade(len(g)),
+                consumo_per_capita_kwh=round(media_ponderada([d.consumo_per_capita_kwh for d in g], pesos), 1),
+                consumo_total_kwh=round(
+                    media_ponderada([_consumo_total(d) for d in g], pesos), 1
+                ),
+                gasto_rs=(
+                    round(media_ponderada([d.gasto_rs for d in com_gasto], [d.peso for d in com_gasto]), 2)
+                    if com_gasto
+                    else None
+                ),
             )
         )
     return resultado
 
 
+def _consumo_total(d: Domicilio) -> float:
+    return d.consumo_total_kwh if d.consumo_total_kwh is not None else d.consumo_per_capita_kwh * (d.moradores or 1)
+
+
 def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosResposta:
-    ufs = ufs_da_localidade(localidade)
-    linhas = [l for l in dados.coeficientes() if ufs is None or l["sigla_uf"] in ufs]
-    return ArranjosResposta(grupo=grupo, arranjos=agregar(linhas, grupo), localidade=localidade)
+    domicilios = da_localidade(dados.domicilios(), localidade)
+    return ArranjosResposta(grupo=grupo, arranjos=agregar(domicilios, grupo), localidade=localidade)
 
 
 # ---------- composição dos domicílios no tempo ----------
@@ -80,43 +87,34 @@ def obter_arranjos(grupo: Grupo, dados, localidade: str = BRASIL) -> ArranjosRes
 
 class EstruturaDomicilios:
     """Domicílios por faixa do chefe e arranjo no ano s, com a taxa de chefia de 2018
-    constante em cada combinação (premissa P2 aplicada também ao arranjo).
-    Taxa de chefia e TEC usam o peso amostral da POF (peso_final).
+    constante em cada combinação (premissa P2). Usa a mesma projeção do Panorama.
     """
 
     def __init__(self, domicilios: Iterable[Domicilio], populacao: dict[int, dict[int, int]]):
         if ANO_REFERENCIA_POF not in populacao:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}, ano de referência da POF")
+        lista = [d for d in domicilios if celula_do_domicilio(d) is not None]
         self.populacao = populacao
-        self.amostra: dict[tuple[str, str], int] = {}
-        self.peso: dict[tuple[str, str], float] = {}
-        self.soma: dict[tuple[str, str], float] = {}  # soma de peso * consumo per capita
-        for d in domicilios:
-            faixa = faixa_do_chefe(d.idade_chefe)
-            if faixa is None:
-                continue
-            chave = (faixa.rotulo, d.arranjo)
-            self.amostra[chave] = self.amostra.get(chave, 0) + 1
-            self.peso[chave] = self.peso.get(chave, 0.0) + d.peso
-            self.soma[chave] = self.soma.get(chave, 0.0) + d.peso * d.consumo_per_capita_kwh
-        self._faixas = {f.rotulo: f for f in FAIXAS_CHEFE}
-        self.chefia = taxas_chefia(self.peso, self._populacao_por_faixa(ANO_REFERENCIA_POF))
-
-    def _populacao_por_faixa(self, ano: int) -> dict[str, int]:
-        return {r: populacao_da_faixa(self.populacao[ano], f) for r, f in self._faixas.items()}
+        self.projecao = montar_projecao(lista, populacao) if lista else None
+        self.amostra = {c: p.amostra for c, p in self.projecao.celulas.items()} if self.projecao else {}
 
     def no_ano(self, ano: int) -> dict[tuple[str, str], float] | None:
         """(faixa, arranjo) -> domicílios estimados; None sem projeção para o ano."""
-        if ano not in self.populacao:
+        if ano not in self.populacao or self.projecao is None:
             return None
-        return domicilios_projetados(self.chefia, self._populacao_por_faixa(ano))
+        return self.projecao.domicilios(ano)
 
     def tec_do_grupo(self, faixas: Iterable[str], arranjo: str) -> tuple[int, float | None]:
         """Domicílios da amostra e TEC ponderada de um arranjo num conjunto de faixas."""
-        chaves = [(f, arranjo) for f in faixas if (f, arranjo) in self.amostra]
-        n = sum(self.amostra[c] for c in chaves)
-        peso = sum(self.peso[c] for c in chaves)
-        return n, (tec(sum(self.soma[c] for c in chaves), peso) if peso > 0 else None)
+        celulas = [self.projecao.celulas[(f, arranjo)] for f in faixas if self.projecao and (f, arranjo) in self.projecao.celulas]
+        n = sum(c.amostra for c in celulas)
+        if not celulas:
+            return 0, None
+        return n, media_ponderada([c.tec for c in celulas], [c.peso for c in celulas])
+
+    def baixa_confiabilidade(self, faixas: Iterable[str], arranjo: str) -> bool:
+        """Alguma célula do grupo tem menos de 30 domicílios na amostra (inclusive nenhum)."""
+        return any(baixa_confiabilidade(self.amostra.get((f, arranjo), 0)) for f in faixas)
 
 
 FAIXAS_60 = [f.rotulo for f in FAIXAS_CHEFE if f.minima >= 60]
@@ -171,6 +169,7 @@ def montar_composicao(estrutura: EstruturaDomicilios) -> ComposicaoResposta:
                 chefe_60_mais=idoso,
                 mononuclear=arranjo != MULTIPESSOAL,
                 domicilios_amostra=n,
+                baixa_confiabilidade=estrutura.baixa_confiabilidade(FAIXAS_60 if idoso else FAIXAS_ABAIXO_60, arranjo),
                 consumo_per_capita_kwh=None if valor is None else round(valor, 1),
                 participacao_pct=[round(v[i] / sum(v) * 100, 2) if sum(v) else 0.0 for v in por_ano],
                 casas=[c[i] for c in casas],

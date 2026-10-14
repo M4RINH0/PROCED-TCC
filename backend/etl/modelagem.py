@@ -31,13 +31,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from app.calculo import (
+    CONTRAFACTUAL,
+    TAXAS,
+    Projecao,
     consumo_por_pessoa,
     consumo_total,
-    domicilios_projetados,
+    fator_calibracao,
     media_ponderada,
     moradores_projetados,
+    parametros_celulas,
     reponderar,
-    taxas_chefia,
     tbc_pd,
 )
 from app.dominio import (
@@ -47,21 +50,21 @@ from app.dominio import (
     CASAL_OU_DUPLA,
     FAIXAS_CHEFE,
     IDADE_IDOSO,
+    MINIMO_AMOSTRA,
     MULTIPESSOAL,
     SEXO_AMBOS,
+    TOTAL_DOMICILIOS_POF,
     UFS,
     UNIPESSOAL,
     faixa_do_chefe,
-    populacao_da_faixa,
+    populacao_por_faixa,
     somar_populacao,
 )
 
 ANOS = tuple(range(ANO_INICIAL, ANO_FINAL + 1))
 
-# Totais de referência do IBGE, para validar a cobertura e a ponte
-TOTAL_DOMICILIOS_POF = 68_900_000  # POF 2017 a 2018: 68,9 milhões de domicílios (Agência IBGE Notícias, notícia 28903)
+# Total de referência do IBGE para validar a ponte (o da POF está em app.dominio)
 DOMICILIOS_OCUPADOS_CENSO_2022 = 72_400_000  # Censo 2022: domicílios particulares permanentes ocupados (primeiros resultados)
-MINIMO_AMOSTRA = 30  # células com menos domicílios na amostra levam aviso de baixa confiabilidade
 
 # Mesmos identificadores da composição de domicílios da API
 CATEGORIAS = (
@@ -206,32 +209,35 @@ def auditar(bruto: pd.DataFrame, limpo: pd.DataFrame, registro_p8: dict, pop_ufs
 
 
 # ---------- ponte comum e método das taxas ----------
-
-
-def populacao_por_faixa(populacao: Mapping[int, Mapping[int, int]]) -> dict[int, dict[str, int]]:
-    return {ano: {f.rotulo: populacao_da_faixa(idades, f) for f in FAIXAS_CHEFE} for ano, idades in populacao.items()}
+# A projeção é a mesma da API (app.calculo.Projecao); aqui só se monta a tabela anual.
 
 
 class Ponte:
-    """Parâmetros das células fixados em 2018: taxa de chefia, TEC, consumo e moradores médios."""
+    """Parâmetros das células fixados em 2018 (taxa de chefia, TEC, consumo e moradores médios) e a projeção."""
 
     def __init__(self, fato: pd.DataFrame, pop_faixa: Mapping[int, Mapping[str, int]], fator: float = 1.0):
         if ANO_REFERENCIA_POF not in pop_faixa:
             raise ValueError(f"falta a população de {ANO_REFERENCIA_POF}")
         if fator <= 0:
             raise ValueError("o fator de cobertura precisa ser positivo")
-        celulas = tabela_celulas(fato)
-        chaves = list(zip(celulas["faixa"], celulas["arranjo"]))
-        self.pop_faixa = pop_faixa
-        self.celulas = chaves
-        pesos = {c: p * fator for c, p in zip(chaves, celulas["domicilios_ponderados"])}
-        self.chefia = taxas_chefia(pesos, pop_faixa[ANO_REFERENCIA_POF])
-        self.tec = dict(zip(chaves, celulas["consumo_per_capita_kwh"]))
-        self.consumo_domicilio = dict(zip(chaves, celulas["consumo_domicilio_kwh"]))
-        self.moradores = dict(zip(chaves, celulas["moradores"]))
+        celulas = parametros_celulas(
+            zip(
+                fato["celula"],
+                fato["peso_final"] * fator,
+                fato["consumo_total_kwh"],
+                fato["consumo_per_capita_kwh"],
+                fato["qtd_moradores"],
+            )
+        )
+        self.projecao = Projecao(celulas, pop_faixa, ANO_REFERENCIA_POF, ANO_INICIAL)
+        self.celulas = list(celulas)
+        self.chefia = self.projecao.chefia
+        self.tec = {c: p.tec for c, p in celulas.items()}
+        self.consumo_domicilio = {c: p.consumo_domicilio for c, p in celulas.items()}
+        self.moradores = {c: p.moradores for c, p in celulas.items()}
 
-    def domicilios(self, ano: int) -> dict[tuple[str, str], float]:
-        return domicilios_projetados(self.chefia, self.pop_faixa[ano])
+    def domicilios(self, ano: int, cenario: str = TAXAS) -> dict[tuple[str, str], float]:
+        return self.projecao.domicilios(ano, cenario)
 
 
 def _categoria(celula: tuple[str, str]) -> str:
@@ -260,19 +266,12 @@ def _linha_taxas(ano: int, cenario: str, ponte: Ponte, ndom: Mapping) -> dict:
 
 
 def projetar_taxas(ponte: Ponte, anos: Iterable[int] = ANOS) -> pd.DataFrame:
-    return pd.DataFrame([_linha_taxas(a, "taxas", ponte, ponte.domicilios(a)) for a in anos])
+    return pd.DataFrame([_linha_taxas(a, TAXAS, ponte, ponte.domicilios(a)) for a in anos])
 
 
-def projetar_contrafactual(ponte: Ponte, anos: Iterable[int] = ANOS, ano_base: int = ANO_INICIAL) -> pd.DataFrame:
-    """Composição de ano_base congelada: as participações das células ficam fixas e só o total de domicílios muda."""
-    base = ponte.domicilios(ano_base)
-    total_base = sum(base.values())
-    linhas = []
-    for ano in anos:
-        total = sum(ponte.domicilios(ano).values())
-        ndom = {c: n / total_base * total for c, n in base.items()}
-        linhas.append(_linha_taxas(ano, "contrafactual", ponte, ndom))
-    return pd.DataFrame(linhas)
+def projetar_contrafactual(ponte: Ponte, anos: Iterable[int] = ANOS) -> pd.DataFrame:
+    """P10: o total de domicílios do ano segue a projeção; a distribuição entre as células fica na de 2026."""
+    return pd.DataFrame([_linha_taxas(a, CONTRAFACTUAL, ponte, ponte.domicilios(a, CONTRAFACTUAL)) for a in anos])
 
 
 def validar_ponte(ponte: Ponte, pop: Mapping[int, Mapping[int, int]], anos: Iterable[int] = (2022, ANO_INICIAL)) -> dict:
@@ -301,24 +300,37 @@ def fator_cobertura(fato: pd.DataFrame, total: float = TOTAL_DOMICILIOS_POF) -> 
     return total / float(fato["peso_final"].sum())
 
 
-def sensibilidade_cobertura(projecoes: pd.DataFrame, fator: float) -> pd.DataFrame:
-    """Sensibilidade (nunca resultado principal): domicílios, moradores e consumo total multiplicados pelo fator.
+def calibrar(projecoes: pd.DataFrame, pop: Mapping[int, Mapping[int, int]]) -> pd.DataFrame:
+    """P12: consumo total calibrado = consumo por pessoa * população do IBGE no ano (27 UFs, "Ambos").
 
-    Como o fator é único, as taxas de chefia sobem na mesma proporção em todas as
-    células: a TBC padronizada e o consumo por pessoa não mudam.
+    O fator (população / moradores projetados) é único para todas as células: as
+    colunas por categoria são multiplicadas pelo mesmo fator. O consumo total bruto
+    fica nas colunas consumo_total_kwh_mes, só como diagnóstico.
     """
-    escalaveis = [c for c in projecoes.columns if c.startswith(("domicilios", "moradores", "consumo_total_kwh_mes"))]
-    saida = projecoes.copy()
-    saida[escalaveis] = saida[escalaveis] * fator
-    saida.insert(0, "analise", f"sensibilidade: pesos multiplicados por {fator:.4f}".replace(".", ","))
-    saida.insert(1, "fator_cobertura", fator)
-    return saida
-
-
-def adicionar_populacao(projecoes: pd.DataFrame, pop: Mapping[int, Mapping[int, int]]) -> pd.DataFrame:
     saida = projecoes.copy()
     saida["populacao_ibge"] = [sum(pop[a].values()) for a in saida["ano"]]
     saida["moradores_menos_populacao_pct"] = (saida["moradores"] / saida["populacao_ibge"] - 1) * 100
+    saida["fator_calibracao"] = [fator_calibracao(p, m) for p, m in zip(saida["populacao_ibge"], saida["moradores"])]
+    saida["consumo_total_calibrado_kwh_mes"] = saida["consumo_total_kwh_mes"] * saida["fator_calibracao"]
+    for ident, _, _ in CATEGORIAS:
+        saida[f"consumo_total_calibrado_kwh_mes_{ident}"] = saida[f"consumo_total_kwh_mes_{ident}"] * saida["fator_calibracao"]
+    return saida
+
+
+def sensibilidade_cobertura(projecoes: pd.DataFrame, fator: float) -> pd.DataFrame:
+    """Sensibilidade (nunca resultado principal): domicílios, moradores e consumo total bruto multiplicados pelo fator.
+
+    Como o fator é único, as taxas de chefia sobem na mesma proporção em todas as
+    células: a TBC padronizada, o consumo por pessoa e o consumo total calibrado (P12) não mudam.
+    """
+    escalaveis = [c for c in projecoes.columns if c.startswith(("domicilios", "consumo_total_kwh_mes")) or c == "moradores"]
+    saida = projecoes.copy()
+    saida[escalaveis] = saida[escalaveis] * fator
+    if "populacao_ibge" in saida:
+        saida["moradores_menos_populacao_pct"] = (saida["moradores"] / saida["populacao_ibge"] - 1) * 100
+        saida["fator_calibracao"] = saida["fator_calibracao"] / fator
+    saida.insert(0, "analise", f"sensibilidade: pesos multiplicados por {fator:.4f}".replace(".", ","))
+    saida.insert(1, "fator_cobertura", fator)
     return saida
 
 

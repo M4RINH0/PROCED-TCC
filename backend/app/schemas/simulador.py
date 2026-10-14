@@ -1,11 +1,11 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.estrutura_etaria import FaixaConsumo
 
-FONTE = "POF 2017 a 2018 (IBGE), média dos domicílios da amostra"
+FONTE = "POF 2017 a 2018 e Projeções da População (IBGE), média ponderada pelo peso amostral"
 
 
 class FaixaSim(str, Enum):
@@ -36,9 +36,8 @@ class ArranjoSim(str, Enum):
 
 
 class BaseSim(str, Enum):
-    mod = "mod"
-    ibge = "ibge"
-    alt = "alt"
+    taxas = "taxas"  # método das taxas
+    contrafactual = "contrafactual"  # composição de domicílios de 2026 congelada
 
 
 class SimulacaoResposta(BaseModel):
@@ -46,10 +45,15 @@ class SimulacaoResposta(BaseModel):
     faixa: str
     arranjo: ArranjoSim
     base: BaseSim
-    taxa: float | None
-    valor: float | None
+    valor: float | None = Field(description="TEC ponderada da célula, kWh/mês por pessoa; igual nos dois cenários (P6)")
     motivo_sem_valor: str | None
     domicilios_amostra: int
+    baixa_confiabilidade: bool = Field(description="menos de 30 domicílios na amostra da POF")
+    domicilios_projetados: float | None = Field(default=None, description="domicílios da célula no ano e no cenário")
+    participacao_pct: float | None = Field(default=None, description="participação da célula no total de domicílios do ano")
+    consumo_total_calibrado_kwh_mes: float | None = Field(
+        default=None, description="consumo total da célula calibrado pela população do IBGE (P12), kWh/mês"
+    )
     por_faixa: list[FaixaConsumo]
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     fonte: str = FONTE

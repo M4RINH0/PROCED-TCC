@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-FONTE = "POF 2017 a 2018 (IBGE), médias das UFs ponderadas pelo tamanho da amostra"
+FONTE = "POF 2017 a 2018 (IBGE), médias ponderadas pelo peso amostral"
 
 
 class Grupo(str, Enum):
@@ -17,9 +17,10 @@ class ArranjoConsumo(BaseModel):
     mononuclear: bool
     chefe_60_mais: bool
     domicilios_amostra: int
+    baixa_confiabilidade: bool = Field(description="menos de 30 domicílios na amostra da POF")
     consumo_per_capita_kwh: float
     consumo_total_kwh: float
-    gasto_rs: float
+    gasto_rs: float | None
 
 
 class ArranjosResposta(BaseModel):
@@ -41,6 +42,7 @@ class CategoriaComposicao(BaseModel):
     chefe_60_mais: bool
     mononuclear: bool
     domicilios_amostra: int
+    baixa_confiabilidade: bool = Field(default=False, description="alguma célula do grupo tem menos de 30 domicílios na amostra")
     consumo_per_capita_kwh: float | None
     participacao_pct: list[float]  # um valor por ano, na ordem de anos
     casas: list[int]  # de cada 100 domicílios, por ano (soma 100)

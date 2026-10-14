@@ -4,8 +4,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 
+from app.calculo import Projecao, parametros_celulas
+
 ANO_INICIAL = 2026
-ANO_FINAL = 2070  # horizonte do estudo: o mesmo ano em que termina a projeção oficial do IBGE
+ANO_FINAL = 2070  # horizonte do estudo: o mesmo ano em que termina a projeção da população do IBGE
 ANO_REFERENCIA_POF = 2018  # POF 2017 a 2018
 IDADE_IDOSO = 60
 
@@ -174,3 +176,62 @@ def sem_repeticao(domicilios: Iterable) -> list:
             escolhido[chave] = i
     manter = set(escolhido.values())
     return [d for i, d in enumerate(lista) if getattr(d, "id_domicilio", None) is None or i in manter]
+
+
+# ---------- células (faixa do chefe, arranjo) e projeção pelo método das taxas ----------
+
+MINIMO_AMOSTRA = 30  # células com menos domicílios na amostra levam aviso de baixa confiabilidade
+ARRANJOS = (UNIPESSOAL, CASAL_OU_DUPLA, MULTIPESSOAL)
+MONONUCLEARES = (UNIPESSOAL, CASAL_OU_DUPLA)
+
+CELULAS_DO_RECORTE = {
+    recorte: tuple((f.rotulo, a) for f in faixas for a in MONONUCLEARES) for recorte, faixas in FAIXAS_DO_RECORTE.items()
+}
+
+
+def baixa_confiabilidade(amostra: int) -> bool:
+    return amostra < MINIMO_AMOSTRA
+
+
+def celula_do_domicilio(d) -> tuple[str, str] | None:
+    faixa = faixa_do_chefe(d.idade_chefe)
+    return None if faixa is None else (faixa.rotulo, d.arranjo)
+
+
+def populacao_por_faixa(populacao: dict[int, dict[int, int]]) -> dict[int, dict[str, int]]:
+    """Ano -> faixa do chefe -> população (a faixa "até 29" começa em 12 anos, P4)."""
+    return {ano: {f.rotulo: populacao_da_faixa(idades, f) for f in FAIXAS_CHEFE} for ano, idades in populacao.items()}
+
+
+def populacao_total(populacao: dict[int, dict[int, int]]) -> dict[int, int]:
+    """Ano -> população de todas as idades, usada na calibração (P12)."""
+    return {ano: sum(idades.values()) for ano, idades in populacao.items()}
+
+
+def montar_projecao(domicilios: Iterable, populacao: dict[int, dict[int, int]]):
+    """Projeção do método das taxas a partir dos domicílios da POF (com peso) e da população por idade.
+
+    Sem consumo total ou moradores informados (domicílios montados à mão nos testes),
+    vale um morador e o consumo total igual ao per capita.
+    """
+    registros = []
+    for d in domicilios:
+        celula = celula_do_domicilio(d)
+        if celula is None:
+            continue
+        moradores = getattr(d, "moradores", None) or 1
+        consumo = getattr(d, "consumo_total_kwh", None)
+        consumo = d.consumo_per_capita_kwh * moradores if consumo is None else consumo
+        registros.append((celula, d.peso, consumo, d.consumo_per_capita_kwh, moradores))
+    return Projecao(
+        parametros_celulas(registros),
+        populacao_por_faixa(populacao),
+        ANO_REFERENCIA_POF,
+        ANO_INICIAL,
+        populacao_total(populacao),
+    )
+
+
+# Total de domicílios estimado pela POF 2017 a 2018 (IBGE): 68,9 milhões (Agência IBGE Notícias, notícia 28903).
+# A base cobre os domicílios com kWh declarado (P9); a cobertura é a soma dos pesos dividida por este total.
+TOTAL_DOMICILIOS_POF = 68_900_000

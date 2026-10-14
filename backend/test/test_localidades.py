@@ -35,13 +35,6 @@ class DadosFalsos:
         self.localidades_pedidas.append(localidade)
         return POP
 
-    def coeficientes(self):
-        linha = lambda uf, n, v: {
-            "sigla_uf": uf, "arranjo_familiar": UNI, "is_60_mais": True, "total_domicilios_amostra": n,
-            "media_consumo_per_capita_kwh": v, "media_consumo_total_kwh": v, "media_gasto_rs": 10.0,
-        }
-        return [linha("DF", 10, 100.0), linha("GO", 30, 200.0), linha("SP", 60, 400.0)]
-
 
 # ---------- domínio ----------
 
@@ -106,18 +99,20 @@ def test_serie_usa_so_os_domicilios_e_a_populacao_da_localidade():
     # DF: (100 + 200 + 300) / 3 = 200, com chefia igual nas três faixas
     df = obter_serie(Recorte.chefe_60_mais, dados, "DF")
     assert df.localidade == "DF" and df.domicilios_amostra == 3
-    assert df.pontos[4].cenarios[1].valor == 200.0  # 2030
+    assert df.pontos[4].cenarios[0].valor == 200.0  # 2030, cenário taxas
     assert dados.localidades_pedidas[-1] == "DF"
     # SP só tem a faixa de 60 a 69: as outras duas não têm amostra, então fica sem valor
     sp = obter_serie(Recorte.chefe_60_mais, dados, "SP")
-    assert sp.domicilios_amostra == 1 and sp.pontos[4].cenarios[1].valor is None
+    assert sp.domicilios_amostra == 1 and sp.pontos[4].cenarios[0].valor is None
+    assert sp.baixa_confiabilidade is True
 
 
-def test_consumo_por_arranjo_pondera_so_as_ufs_da_regiao():
-    # Centro-Oeste: DF (10 x 100) e GO (30 x 200) -> 7000 / 40 = 175; SP fica de fora
+def test_consumo_por_arranjo_usa_so_os_domicilios_da_regiao():
+    # Centro-Oeste: só DF tem domicílios; unipessoal 60+: (100 + 300) / 2 = 200; SP (50) fica de fora
     r = obter_arranjos(Grupo.todos, DadosFalsos(), "Centro-Oeste")
     assert r.localidade == "Centro-Oeste"
-    assert r.arranjos[0].domicilios_amostra == 40 and r.arranjos[0].consumo_per_capita_kwh == 175.0
+    assert r.arranjos[0].domicilios_amostra == 2 and r.arranjos[0].consumo_per_capita_kwh == 200.0
+    assert r.arranjos[0].baixa_confiabilidade is True
 
 
 def test_consumo_por_faixa_do_chefe_na_uf():
@@ -138,7 +133,7 @@ def cliente():
 @pytest.mark.parametrize(
     "caminho",
     ["/projecoes/serie?recorte=chefe_60_mais", "/projecoes?ano=2030&recorte=chefe_60_mais", "/arranjos",
-     "/estrutura-etaria/consumo-chefe", "/simulador?ano=2030&faixa=60_69&arranjo=unipessoal&base=ibge"],
+     "/estrutura-etaria/consumo-chefe", "/simulador?ano=2030&faixa=60_69&arranjo=unipessoal&base=taxas"],
 )
 def test_rotas_aceitam_localidade_valida_e_recusam_invalida(cliente, caminho):
     sep = "&" if "?" in caminho else "?"

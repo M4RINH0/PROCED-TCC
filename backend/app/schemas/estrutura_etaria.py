@@ -8,13 +8,14 @@ ANO_INICIAL_PIRAMIDE = 2026
 ANO_FINAL_PIRAMIDE = 2070  # fim da projeção populacional do IBGE
 
 FONTE_PIRAMIDE = "Projeções da População (IBGE)"
-FONTE_CONSUMO = "POF 2017 a 2018 (IBGE), média dos domicílios da amostra"
+FONTE_CONSUMO = "POF 2017 a 2018 (IBGE), média ponderada pelo peso amostral"
 
 
 class FaixaConsumo(BaseModel):
     faixa: str
     domicilios_amostra: int
-    consumo_per_capita_kwh: float | None = Field(description="TEC da faixa; null sem domicílios na amostra")
+    baixa_confiabilidade: bool = Field(default=False, description="menos de 30 domicílios na amostra da POF")
+    consumo_per_capita_kwh: float | None = Field(description="TEC ponderada da faixa; null sem domicílios na amostra")
 
 
 class FaixaPiramide(BaseModel):

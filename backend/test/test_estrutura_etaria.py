@@ -24,9 +24,9 @@ class RepositorioProjecoesFalso:
 
     def domicilios(self):
         return [
-            SimpleNamespace(arranjo="Unipessoal (Mononuclear)", idade_chefe=62, consumo_per_capita_kwh=100.0),
-            SimpleNamespace(arranjo="Casal ou Dupla", idade_chefe=68, consumo_per_capita_kwh=120.0),
-            SimpleNamespace(arranjo="Multipessoal (3+)", idade_chefe=65, consumo_per_capita_kwh=999.0),
+            SimpleNamespace(arranjo="Unipessoal (Mononuclear)", idade_chefe=62, consumo_per_capita_kwh=100.0, peso=1.0),
+            SimpleNamespace(arranjo="Casal ou Dupla", idade_chefe=68, consumo_per_capita_kwh=120.0, peso=1.0),
+            SimpleNamespace(arranjo="Multipessoal (3+)", idade_chefe=65, consumo_per_capita_kwh=999.0, peso=1.0),
         ]
 
     def populacao_por_idade(self, localidade="Brasil"):
@@ -104,7 +104,7 @@ def test_endpoint_consumo_chefe_padrao_mononucleares(cliente):
     corpo = r.json()
     assert corpo["arranjo"] == "mononucleares"
     faixa = next(f for f in corpo["faixas"] if f["faixa"] == "60 a 69")
-    assert faixa == {"faixa": "60 a 69", "domicilios_amostra": 2, "consumo_per_capita_kwh": 110.0}
+    assert faixa == {"faixa": "60 a 69", "domicilios_amostra": 2, "baixa_confiabilidade": True, "consumo_per_capita_kwh": 110.0}
 
 
 def test_endpoint_consumo_chefe_filtro_invalido(cliente):

@@ -1,0 +1,292 @@
+{
+  "linhas_lidas": {
+    "fato_consumo_domiciliar": {
+      "lidas": 52207,
+      "no_banco": 52207
+    },
+    "projecoes_populacao_idade (27 UFs, Ambos, 2018 a 2070)": {
+      "lidas": 130221,
+      "no_banco": 130221
+    },
+    "projecoes_populacao_idade (linha Brasil, Ambos, 2018 a 2070)": {
+      "lidas": 4823,
+      "no_banco": 4823
+    }
+  },
+  "peso_final_ausente_ou_nao_positivo": 0,
+  "p8_domicilios_repetidos": {
+    "domicilios_repetidos": 99,
+    "linhas_dos_repetidos": 204,
+    "linhas_removidas": 105
+  },
+  "linhas_depois_da_p8": 52102,
+  "chefes_com_menos_de_18_anos": 47,
+  "domicilios_acima_de_1000_kwh": 142,
+  "consumo_kwh_ausente_ou_zero": 0,
+  "soma_dos_pesos": 63684287.16246037,
+  "total_domicilios_pof_ibge": 68900000,
+  "cobertura_da_pof_pct": 92.4300249092313,
+  "soma_das_ufs_confere_com_brasil": true,
+  "celulas": [
+    {
+      "faixa": "até 29",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 503,
+      "domicilios_ponderados": 615180.2263039199,
+      "consumo_domicilio_kwh": 107.83541406982253,
+      "consumo_per_capita_kwh": 107.83541406982253,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "até 29",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 1311,
+      "domicilios_ponderados": 1732828.7520102002,
+      "consumo_domicilio_kwh": 131.36486071046014,
+      "consumo_per_capita_kwh": 65.68243035523007,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "até 29",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 2756,
+      "domicilios_ponderados": 3173900.82482791,
+      "consumo_domicilio_kwh": 156.51091422110244,
+      "consumo_per_capita_kwh": 44.11473349816537,
+      "moradores": 3.698881715611859,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "30 a 39",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 725,
+      "domicilios_ponderados": 933653.00791663,
+      "consumo_domicilio_kwh": 114.82395459696237,
+      "consumo_per_capita_kwh": 114.82395459696237,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "30 a 39",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 1668,
+      "domicilios_ponderados": 2208392.7265024898,
+      "consumo_domicilio_kwh": 152.33925007753658,
+      "consumo_per_capita_kwh": 76.16962503876829,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "30 a 39",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 7533,
+      "domicilios_ponderados": 9243629.5522487,
+      "consumo_domicilio_kwh": 177.2027676334888,
+      "consumo_per_capita_kwh": 47.74430954880369,
+      "moradores": 3.896228477869381,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "40 a 49",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 940,
+      "domicilios_ponderados": 1128842.42045177,
+      "consumo_domicilio_kwh": 111.31826017194001,
+      "consumo_per_capita_kwh": 111.31826017194001,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "40 a 49",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 2004,
+      "domicilios_ponderados": 2492945.89044504,
+      "consumo_domicilio_kwh": 157.91027745409053,
+      "consumo_per_capita_kwh": 78.95513872704527,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "40 a 49",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 8347,
+      "domicilios_ponderados": 10009449.88650579,
+      "consumo_domicilio_kwh": 201.86815770844606,
+      "consumo_per_capita_kwh": 52.93039328719278,
+      "moradores": 4.017771993358914,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "50 a 59",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 1442,
+      "domicilios_ponderados": 1803822.2826635798,
+      "consumo_domicilio_kwh": 112.80723438980154,
+      "consumo_per_capita_kwh": 112.80723438980154,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "50 a 59",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 3038,
+      "domicilios_ponderados": 3713104.11731043,
+      "consumo_domicilio_kwh": 167.32178869090947,
+      "consumo_per_capita_kwh": 83.66089434545474,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "50 a 59",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 6482,
+      "domicilios_ponderados": 7926786.25751178,
+      "consumo_domicilio_kwh": 218.720270524694,
+      "consumo_per_capita_kwh": 58.834150879125595,
+      "moradores": 3.937664086601729,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "60 a 69",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 1605,
+      "domicilios_ponderados": 2006814.95630784,
+      "consumo_domicilio_kwh": 117.67293845125108,
+      "consumo_per_capita_kwh": 117.67293845125108,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "60 a 69",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 3063,
+      "domicilios_ponderados": 3851064.99407907,
+      "consumo_domicilio_kwh": 172.10421948674363,
+      "consumo_per_capita_kwh": 86.05210974337182,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "60 a 69",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 3877,
+      "domicilios_ponderados": 4553885.23489161,
+      "consumo_domicilio_kwh": 211.5192031628801,
+      "consumo_per_capita_kwh": 57.70230405463623,
+      "moradores": 3.908953159037322,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "70 a 79",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 1218,
+      "domicilios_ponderados": 1532212.37853445,
+      "consumo_domicilio_kwh": 120.46150042122932,
+      "consumo_per_capita_kwh": 120.46150042122932,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "70 a 79",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 1888,
+      "domicilios_ponderados": 2401406.47983722,
+      "consumo_domicilio_kwh": 171.39335239168625,
+      "consumo_per_capita_kwh": 85.69667619584312,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "70 a 79",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 1760,
+      "domicilios_ponderados": 1982602.8557302197,
+      "consumo_domicilio_kwh": 201.5912000935356,
+      "consumo_per_capita_kwh": 55.22761145610397,
+      "moradores": 3.8359173129163535,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "80+",
+      "arranjo": "Unipessoal (Mononuclear)",
+      "amostra": 592,
+      "domicilios_ponderados": 772403.3295454499,
+      "consumo_domicilio_kwh": 119.54174500255715,
+      "consumo_per_capita_kwh": 119.54174500255715,
+      "moradores": 1.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "80+",
+      "arranjo": "Casal ou Dupla",
+      "amostra": 754,
+      "domicilios_ponderados": 938829.5982476401,
+      "consumo_domicilio_kwh": 160.25723431762944,
+      "consumo_per_capita_kwh": 80.12861715881472,
+      "moradores": 2.0,
+      "baixa_amostra": false
+    },
+    {
+      "faixa": "80+",
+      "arranjo": "Multipessoal (3+)",
+      "amostra": 596,
+      "domicilios_ponderados": 662531.39058863,
+      "consumo_domicilio_kwh": 206.20863319237117,
+      "consumo_per_capita_kwh": 54.226120394954066,
+      "moradores": 4.0127888485471646,
+      "baixa_amostra": false
+    }
+  ],
+  "celulas_com_menos_de_30": 0,
+  "ponte": {
+    "2022": {
+      "domicilios_projetados": 67937549.40712158,
+      "moradores_projetados": 202562693.9146793,
+      "populacao_ibge": 210862983,
+      "moradores_menos_populacao_pct": -3.936342437743423
+    },
+    "2026": {
+      "domicilios_projetados": 72392452.1542713,
+      "moradores_projetados": 214581849.5156756,
+      "populacao_ibge": 214211951,
+      "moradores_menos_populacao_pct": 0.17267874829056673
+    },
+    "censo_2022_domicilios_ocupados": 72400000,
+    "ponte_2022_menos_censo_pct": -6.163605791268534
+  },
+  "rastro": [
+    {
+      "etapa": "derivacao",
+      "fonte": "base limpa da POF 2017 a 2018",
+      "transformacao": "arranjo por número de moradores (1, 2, 3 ou mais); is_60_mais com chefe de 60 anos ou mais; faixa etária do chefe; consumo per capita = consumo total / moradores",
+      "linhas": 52207
+    },
+    {
+      "etapa": "preparacao (P8)",
+      "fonte": "fato_consumo_domiciliar (POF 2017 a 2018)",
+      "transformacao": "id_domicilio repetido fica só com o chefe de maior idade; faixa etária do chefe e célula (faixa, arranjo); consumo per capita = consumo total / moradores",
+      "linhas_entrada": 52207,
+      "domicilios_repetidos": 99,
+      "linhas_dos_repetidos": 204,
+      "linhas_removidas": 105,
+      "linhas": 52102
+    },
+    {
+      "etapa": "ponte e método das taxas",
+      "fonte": "fato_consumo_domiciliar e projecoes_populacao_idade (27 UFs, Ambos)",
+      "transformacao": "taxas de chefia de 2018 por faixa e arranjo (P2); padronização direta com a TEC ponderada (P6); contrafactual com a composição de 2026 congelada (P10); consumo total calibrado pela população do IBGE (P12)"
+    },
+    {
+      "etapa": "avaliação do machine learning",
+      "fonte": "fato_consumo_domiciliar (POF 2017 a 2018)",
+      "transformacao": "KFold com 5 partes e semente 42; alvo em log1p com correção de Duan; métricas ponderadas e importância por permutação"
+    },
+    {
+      "etapa": "sensibilidade da cobertura",
+      "fonte": "POF 2017 a 2018 (68,9 milhões de domicílios)",
+      "transformacao": "pesos multiplicados por 1.0819 (P9); saída separada do resultado principal"
+    }
+  ]
+}

@@ -14,11 +14,7 @@ from app.supabase import ClienteSupabase, obter_cliente
 
 COLUNAS_DOMICILIOS = (
     "id_domicilio,sigla_uf,arranjo_familiar,idade_chefe,qtd_moradores,"
-    "consumo_total_kwh,consumo_per_capita_kwh,peso_final"
-)
-COLUNAS_COEFICIENTES = (
-    "sigla_uf,arranjo_familiar,is_60_mais,total_domicilios_amostra,"
-    "media_consumo_total_kwh,media_consumo_per_capita_kwh,media_gasto_rs"
+    "consumo_total_kwh,consumo_per_capita_kwh,gasto_total_rs,peso_final"
 )
 
 
@@ -32,6 +28,7 @@ class Domicilio:
     consumo_total_kwh: float | None = None
     moradores: int | None = None
     id_domicilio: int | None = None
+    gasto_rs: float | None = None
 
 
 class Dados:
@@ -67,6 +64,7 @@ class Dados:
                     float(l["consumo_total_kwh"]),
                     int(l["qtd_moradores"]),
                     int(l["id_domicilio"]),
+                    None if l.get("gasto_total_rs") is None else float(l["gasto_total_rs"]),
                 )
                 for l in linhas
             )
@@ -95,13 +93,6 @@ class Dados:
             return somar_populacao(linhas, ufs)
 
         return self._uma_vez(f"populacao:{localidade}", carregar)
-
-    def coeficientes(self) -> list[dict]:
-        """dim_coeficiente_consumo: uma linha por UF, arranjo e indicador 60+."""
-        return self._uma_vez(
-            "coeficientes",
-            lambda: self._cliente.selecionar("dim_coeficiente_consumo", COLUNAS_COEFICIENTES, {"order": "id.asc"}),
-        )
 
     def _por_sexo(self, localidade: str) -> dict[int, dict[str, dict[int, int]]]:
         def carregar():

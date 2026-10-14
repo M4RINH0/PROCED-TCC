@@ -17,9 +17,8 @@ def consultar_simulacao(
     ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
     faixa: Annotated[FaixaSim, Query(description="Faixa etária do chefe")],
     arranjo: Annotated[ArranjoSim, Query()],
-    base: Annotated[BaseSim, Query(description="Cenário de projeção")],
+    base: Annotated[BaseSim, Query(description="Cenário: taxas ou contrafactual")],
     dados: Annotated[Dados, Depends(obter_dados)],
-    taxa: Annotated[float | None, Query(ge=0, le=10, description="Taxa de envelhecimento anual; usada pelo cenário do modelo")] = None,
     localidade: Annotated[Localidade, Query(description="Brasil, região ou sigla da UF")] = Localidade.Brasil,
 ) -> SimulacaoResposta:
-    return simular(ano, faixa, arranjo, base, taxa, dados, localidade.value)
+    return simular(ano, faixa, arranjo, base, dados, localidade.value)

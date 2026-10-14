@@ -6,6 +6,8 @@ Recorte chefe 60+ (só mononucleares entram):
     80+:     um domicílio, 200 kWh (idade 90) -> TEC 200, n = 1
 População de 2018: 65 anos 1000, 75 anos 500, 90 anos 250
     chefia: 2/1000 = 0,002; 1/500 = 0,002; 1/250 = 0,004
+A população de 2026 repete a de 2018: a composição do contrafactual é a da amostra.
+Sem moradores informados, cada domicílio conta um morador.
 """
 
 from app.dados import Domicilio
@@ -24,6 +26,7 @@ DOMICILIOS = [
 
 POPULACAO = {
     2018: {25: 2000, 35: 2000, 45: 2000, 55: 1000, 65: 1000, 75: 500, 90: 250},
+    2026: {25: 2000, 35: 2000, 45: 2000, 55: 1000, 65: 1000, 75: 500, 90: 250},
     2030: {25: 2000, 35: 2000, 45: 2000, 55: 1000, 65: 1000, 75: 1000, 90: 500},
     2070: {25: 1000, 35: 1000, 45: 1000, 55: 1000, 65: 1000, 75: 500, 90: 250},
 }

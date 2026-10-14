@@ -1,0 +1,64 @@
+"""Fontes, período de referência, critério de exclusão e premissas principais (RF10)."""
+
+from app.dominio import TOTAL_DOMICILIOS_POF
+from app.schemas.fontes import Fonte, FontesResposta, Premissa
+
+FONTES = [
+    Fonte(
+        id="pof",
+        nome="Pesquisa de Orçamentos Familiares (IBGE)",
+        periodo="2017 a 2018",
+        uso="Consumo de energia em kWh por domicílio, arranjo e idade do chefe, com o peso amostral",
+    ),
+    Fonte(
+        id="projecao",
+        nome="Projeções da População (IBGE)",
+        periodo="2000 a 2070 (usadas de 2018 a 2070)",
+        uso="Pirâmide etária, taxas de chefia de 2018 e domicílios projetados de 2026 a 2070",
+    ),
+]
+
+CRITERIO_EXCLUSAO = (
+    "Ficaram de fora, na extração, os domicílios sem declaração válida de consumo de energia "
+    "(sem kWh), conforme o critério de exclusão da Metodologia do TCC."
+)
+
+PREMISSAS = [
+    Premissa(
+        id="P2",
+        texto="Taxa de chefia de 2018 constante por faixa do chefe e arranjo. Congelar as taxas congela os "
+        "arranjos e não capta o aumento de idosos morando sozinhos.",
+    ),
+    Premissa(id="P8", texto="Domicílio repetido na POF fica só com a linha do chefe de maior idade."),
+    Premissa(
+        id="P9",
+        texto="O consumo se refere aos domicílios com kWh declarado, que cobrem parte do total de domicílios da POF.",
+    ),
+    Premissa(
+        id="P11",
+        texto="Moradores médios de cada célula constantes; os moradores projetados não são limitados pela população do IBGE.",
+    ),
+    Premissa(
+        id="P12",
+        texto="Consumo total calibrado: consumo por pessoa vezes a população do IBGE no ano. O fator é único "
+        "para todas as células e corrige o nível, mas não a composição.",
+    ),
+]
+
+PREMISSAS_URL = "https://github.com/M4RINH0/PROCED-TCC/blob/main/docs/premissas.md"
+
+
+def cobertura(soma_pesos: float, total: float = TOTAL_DOMICILIOS_POF) -> float:
+    if total <= 0:
+        raise ValueError("o total de domicílios precisa ser maior que zero")
+    return round(soma_pesos / total * 100, 1)
+
+
+def obter_fontes(dados) -> FontesResposta:
+    return FontesResposta(
+        fontes=FONTES,
+        criterio_exclusao=CRITERIO_EXCLUSAO,
+        cobertura_pct=cobertura(sum(d.peso for d in dados.domicilios())),
+        premissas=PREMISSAS,
+        premissas_url=PREMISSAS_URL,
+    )

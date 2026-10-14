@@ -157,6 +157,27 @@ def test_sensibilidade_multiplica_so_as_quantidades_e_fica_rotulada():
     assert "analise" not in t.columns  # o resultado principal fica intocado
 
 
+def test_calibracao_pela_populacao_do_ibge():
+    # 2050: consumo 1210 e moradores 12,5; população 800 -> fator 64; calibrado 1210 * 64 = 96,8 * 800 = 77.440
+    _, ponte = _ponte()
+    c = modelagem.calibrar(modelagem.projetar_taxas(ponte, [2050]), POP).iloc[0]
+    assert c["populacao_ibge"] == 800 and c["fator_calibracao"] == pytest.approx(64)
+    assert c["consumo_total_calibrado_kwh_mes"] == pytest.approx(77440)
+    assert c["consumo_total_calibrado_kwh_mes"] == pytest.approx(c["consumo_por_pessoa_kwh"] * 800)
+    assert c["consumo_total_calibrado_kwh_mes_uni_60"] == pytest.approx(660 * 64)
+    assert c["consumo_total_kwh_mes"] == pytest.approx(1210)  # o bruto continua, como diagnóstico
+    assert c["moradores_menos_populacao_pct"] == pytest.approx((12.5 / 800 - 1) * 100)
+
+
+def test_sensibilidade_nao_muda_o_calibrado_e_refaz_a_comparacao_com_a_populacao():
+    _, ponte = _ponte()
+    calibrado = modelagem.calibrar(modelagem.projetar_taxas(ponte, [2050]), POP)
+    s = modelagem.sensibilidade_cobertura(calibrado, 2.0).iloc[0]
+    assert s["consumo_total_calibrado_kwh_mes"] == pytest.approx(77440)
+    assert s["moradores"] == pytest.approx(25) and s["fator_calibracao"] == pytest.approx(32)
+    assert s["moradores_menos_populacao_pct"] == pytest.approx((25 / 800 - 1) * 100)
+
+
 def test_fator_de_cobertura():
     fato, _ = modelagem.preparar(MINIMO)
     assert modelagem.fator_cobertura(fato, total=14) == pytest.approx(2.0)  # 14 / 7
@@ -315,6 +336,7 @@ def test_pipeline_gera_as_saidas_sem_ml(tmp_path):
     resumo = pipeline.projetar(fato_bruto, pop, {2018: {65: 300, 35: 400}}, leitura, tmp_path, avaliar_ml=False)
     projecoes = pd.read_csv(tmp_path / "projecoes_2026_2070.csv")
     assert set(projecoes["cenario"]) == {"taxas", "contrafactual"}
+    assert "consumo_total_calibrado_kwh_mes" in projecoes and "fator_calibracao" in projecoes
     assert projecoes["ano"].min() == 2026 and projecoes["ano"].max() == 2070
     sensibilidade = pd.read_csv(tmp_path / "sensibilidade_cobertura.csv")
     assert sensibilidade["analise"].str.startswith("sensibilidade").all()

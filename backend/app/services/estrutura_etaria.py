@@ -2,9 +2,19 @@
 
 from collections.abc import Iterable
 
-from app.calculo import tec
+from app.calculo import media_ponderada
 from app.dados import Domicilio
-from app.dominio import ANO_FINAL, BRASIL, FAIXAS_CHEFE, IDADE_IDOSO, FiltroArranjo, da_faixa, da_localidade, filtrar
+from app.dominio import (
+    ANO_FINAL,
+    BRASIL,
+    FAIXAS_CHEFE,
+    IDADE_IDOSO,
+    FiltroArranjo,
+    baixa_confiabilidade,
+    da_faixa,
+    da_localidade,
+    filtrar,
+)
 from app.schemas.estrutura_etaria import (
     ConsumoChefeResposta,
     FaixaConsumo,
@@ -18,16 +28,17 @@ FAIXAS_PIRAMIDE = tuple((f"{i} a {i + 9}", i, i + 9) for i in range(0, 80, 10)) 
 
 
 def consumo_por_faixa(domicilios: Iterable[Domicilio], filtro: FiltroArranjo) -> list[FaixaConsumo]:
-    """TEC por faixa etária do chefe."""
+    """TEC ponderada por peso_final em cada faixa etária do chefe."""
     selecionados = filtrar(domicilios, filtro)
     resultado = []
     for faixa in FAIXAS_CHEFE:
         grupo = da_faixa(selecionados, faixa)
-        valor = tec(sum(d.consumo_per_capita_kwh for d in grupo), len(grupo)) if grupo else None
+        valor = media_ponderada([d.consumo_per_capita_kwh for d in grupo], [d.peso for d in grupo]) if grupo else None
         resultado.append(
             FaixaConsumo(
                 faixa=faixa.rotulo,
                 domicilios_amostra=len(grupo),
+                baixa_confiabilidade=baixa_confiabilidade(len(grupo)),
                 consumo_per_capita_kwh=None if valor is None else round(valor, 1),
             )
         )

@@ -1,12 +1,37 @@
+import pytest
 from fastapi.testclient import TestClient
 
+from app.dados import Domicilio, obter_dados
 from app.main import criar_app
+from app.services.fontes import cobertura
 
 
-def test_lista_fontes_com_periodo():
-    r = TestClient(criar_app()).get("/fontes")
+class RepositorioFalso:
+    # soma dos pesos 34.450.000: metade dos 68,9 milhões de domicílios da POF
+    def domicilios(self):
+        return [Domicilio("Casal ou Dupla", 70, 90.0, peso=34_450_000.0)]
+
+
+def test_cobertura_e_a_soma_dos_pesos_sobre_o_total_da_pof():
+    # 63.684.287 / 68.900.000 = 92,43%
+    assert cobertura(63_684_287) == 92.4
+    assert cobertura(5, total=10) == 50.0
+    with pytest.raises(ValueError):
+        cobertura(1, total=0)
+
+
+def test_fontes_criterio_cobertura_e_premissas():
+    app = criar_app()
+    app.dependency_overrides[obter_dados] = RepositorioFalso
+    r = TestClient(app).get("/fontes")
     assert r.status_code == 200
-    fontes = {f["id"]: f for f in r.json()}
+    corpo = r.json()
+    fontes = {f["id"]: f for f in corpo["fontes"]}
     assert fontes["pof"]["periodo"] == "2017 a 2018"
-    assert fontes["projecao"]["periodo"] == "2000 a 2070"
+    assert fontes["projecao"]["periodo"].startswith("2000 a 2070")
     assert all(f["nome"] and f["uso"] for f in fontes.values())
+    assert "kWh" in corpo["criterio_exclusao"]
+    assert corpo["cobertura_pct"] == 50.0
+    assert [p["id"] for p in corpo["premissas"]] == ["P2", "P8", "P9", "P11", "P12"]
+    assert corpo["premissas_url"].endswith("docs/premissas.md")
+    assert "oficial" not in r.text

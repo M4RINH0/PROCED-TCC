@@ -80,3 +80,56 @@ def test_repeticao_com_mesma_idade_fica_com_a_primeira_linha():
 def test_linhas_sem_id_passam_todas():
     a, b = SimpleNamespace(idade_chefe=1), SimpleNamespace(id_domicilio=None, idade_chefe=2)
     assert sem_repeticao([a, b]) == [a, b]
+
+
+def test_celulas_do_recorte_sao_as_faixas_com_os_arranjos_mononucleares():
+    from app.dominio import CASAL_OU_DUPLA, CELULAS_DO_RECORTE, UNIPESSOAL, Recorte
+
+    assert CELULAS_DO_RECORTE[Recorte.chefe_60_mais] == (
+        ("60 a 69", UNIPESSOAL), ("60 a 69", CASAL_OU_DUPLA),
+        ("70 a 79", UNIPESSOAL), ("70 a 79", CASAL_OU_DUPLA),
+        ("80+", UNIPESSOAL), ("80+", CASAL_OU_DUPLA),
+    )
+    assert len(CELULAS_DO_RECORTE[Recorte.mononuclear_abaixo_60]) == 8
+
+
+@pytest.mark.parametrize("amostra, baixa", [(0, True), (29, True), (30, False), (500, False)])
+def test_baixa_confiabilidade_abaixo_de_30(amostra, baixa):
+    from app.dominio import baixa_confiabilidade
+
+    assert baixa_confiabilidade(amostra) is baixa
+
+
+def test_celula_do_domicilio():
+    from app.dominio import celula_do_domicilio
+
+    assert celula_do_domicilio(SimpleNamespace(idade_chefe=91, arranjo="Casal ou Dupla")) == ("80+", "Casal ou Dupla")
+    assert celula_do_domicilio(SimpleNamespace(idade_chefe=10, arranjo="Casal ou Dupla")) is None
+
+
+def test_populacao_por_faixa_e_total():
+    from app.dominio import populacao_por_faixa, populacao_total
+
+    pop = {2018: {5: 100, 12: 1, 29: 2, 30: 3, 90: 4}}
+    # até 29 começa em 12 (P4): 1 + 2; a idade 5 só entra no total
+    assert populacao_por_faixa(pop)[2018]["até 29"] == 3
+    assert populacao_por_faixa(pop)[2018]["80+"] == 4
+    assert populacao_total(pop) == {2018: 110}
+
+
+def test_montar_projecao_usa_peso_consumo_e_moradores_do_domicilio():
+    from app.dados import Domicilio
+    from app.dominio import montar_projecao
+
+    # dois domicílios casal 60 a 69: (peso 1, 200 kWh, 2 moradores) e (peso 3, 100 kWh, 2 moradores)
+    domicilios = [
+        Domicilio("Casal ou Dupla", 62, 100.0, peso=1.0, consumo_total_kwh=200.0, moradores=2),
+        Domicilio("Casal ou Dupla", 66, 50.0, peso=3.0, consumo_total_kwh=100.0, moradores=2),
+        Domicilio("Casal ou Dupla", 8, 50.0, peso=3.0, consumo_total_kwh=100.0, moradores=2),  # sem faixa: fica de fora
+    ]
+    pop = {2018: {65: 40}, 2026: {65: 40}}
+    celula = montar_projecao(domicilios, pop).celulas[("60 a 69", "Casal ou Dupla")]
+    # consumo por domicílio (200 + 300) / 4 = 125; per capita (100 + 150) / 4 = 62,5
+    assert celula.amostra == 2 and celula.peso == 4
+    assert celula.consumo_domicilio == pytest.approx(125) and celula.tec == pytest.approx(62.5)
+    assert celula.moradores == pytest.approx(2)
