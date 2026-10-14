@@ -113,18 +113,6 @@
     }
   },
   "inclinacoes_por_ano": {
-    "70 a 79": {
-      "unipessoal_sobre_multipessoal": 0.02893563228972343,
-      "casal_sobre_multipessoal": 0.028942960536123892
-    },
-    "40 a 49": {
-      "unipessoal_sobre_multipessoal": 0.0281047628333883,
-      "casal_sobre_multipessoal": 0.04039955065560001
-    },
-    "80+": {
-      "unipessoal_sobre_multipessoal": 0.020970989053481704,
-      "casal_sobre_multipessoal": 0.033737186247945375
-    },
     "60 a 69": {
       "unipessoal_sobre_multipessoal": 0.033652393360224804,
       "casal_sobre_multipessoal": 0.041031250484527694
@@ -133,31 +121,28 @@
       "unipessoal_sobre_multipessoal": 0.02979880818745881,
       "casal_sobre_multipessoal": 0.026975599292904363
     },
-    "50 a 59": {
-      "unipessoal_sobre_multipessoal": 0.034325505899434366,
-      "casal_sobre_multipessoal": 0.048066613463627915
+    "80+": {
+      "unipessoal_sobre_multipessoal": 0.020970989053481704,
+      "casal_sobre_multipessoal": 0.033737186247945375
+    },
+    "70 a 79": {
+      "unipessoal_sobre_multipessoal": 0.02893563228972343,
+      "casal_sobre_multipessoal": 0.028942960536123892
     },
     "30 a 39": {
       "unipessoal_sobre_multipessoal": 0.01639593477163899,
       "casal_sobre_multipessoal": 0.02041665769376415
+    },
+    "40 a 49": {
+      "unipessoal_sobre_multipessoal": 0.0281047628333883,
+      "casal_sobre_multipessoal": 0.04039955065560001
+    },
+    "50 a 59": {
+      "unipessoal_sobre_multipessoal": 0.034325505899434366,
+      "casal_sobre_multipessoal": 0.048066613463627915
     }
   },
   "validacao_fora_do_tempo_pp": {
-    "70 a 79": {
-      "Unipessoal (Mononuclear)": -0.33327572809793704,
-      "Casal ou Dupla": -2.107531918485994,
-      "Multipessoal (3+)": 2.4408076465839255
-    },
-    "40 a 49": {
-      "Unipessoal (Mononuclear)": 1.371742856795194,
-      "Casal ou Dupla": 2.6429855027531395,
-      "Multipessoal (3+)": -4.014728359548336
-    },
-    "80+": {
-      "Unipessoal (Mononuclear)": -6.148331603245722,
-      "Casal ou Dupla": 4.491352174684438,
-      "Multipessoal (3+)": 1.6569794285612727
-    },
     "60 a 69": {
       "Unipessoal (Mononuclear)": -1.560047403225426,
       "Casal ou Dupla": 2.7201067119301703,
@@ -168,244 +153,385 @@
       "Casal ou Dupla": 4.660521487801344,
       "Multipessoal (3+)": -6.679187531817354
     },
-    "50 a 59": {
-      "Unipessoal (Mononuclear)": -3.3361310087427722,
-      "Casal ou Dupla": 9.497956328541878,
-      "Multipessoal (3+)": -6.161825319799108
+    "80+": {
+      "Unipessoal (Mononuclear)": -6.148331603245722,
+      "Casal ou Dupla": 4.491352174684438,
+      "Multipessoal (3+)": 1.6569794285612727
+    },
+    "70 a 79": {
+      "Unipessoal (Mononuclear)": -0.33327572809793704,
+      "Casal ou Dupla": -2.107531918485994,
+      "Multipessoal (3+)": 2.4408076465839255
     },
     "30 a 39": {
       "Unipessoal (Mononuclear)": 1.3373559441730216,
       "Casal ou Dupla": 1.3555703845834572,
       "Multipessoal (3+)": -2.692926328756473
+    },
+    "40 a 49": {
+      "Unipessoal (Mononuclear)": 1.371742856795194,
+      "Casal ou Dupla": 2.6429855027531395,
+      "Multipessoal (3+)": -4.014728359548336
+    },
+    "50 a 59": {
+      "Unipessoal (Mononuclear)": -3.3361310087427722,
+      "Casal ou Dupla": 9.497956328541878,
+      "Multipessoal (3+)": -6.161825319799108
     }
   },
+  "calibracao_da_intensidade": {
+    "intensidade_otima": 0.56,
+    "intensidade_padrao": 0.6,
+    "erro_medio_absoluto_pp": {
+      "0.0": 3.671097693861175,
+      "0.5": 1.472782742348452,
+      "0.56": 1.3956106824146577,
+      "0.6": 1.456822529420364,
+      "1.0": 3.2452302027313062,
+      "1.5": 6.159578219733216
+    },
+    "regra": "erro médio absoluto da previsão de 2017 (inclinação de 2002 e 2008, ancorada em 2008), cada faixa pesando pelos seus domicílios ponderados de 2017"
+  },
   "proporcoes_projetadas": {
-    "1.0": {
+    "0.6": {
       "2026": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.2106192697473192,
-          "Casal ou Dupla": 0.43033898951616023,
-          "Multipessoal (3+)": 0.35904174073652045
+          "Unipessoal (Mononuclear)": 0.20391825945404252,
+          "Casal ou Dupla": 0.4063245649935585,
+          "Multipessoal (3+)": 0.38975717555239886
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.08291803468483284,
-          "Casal ou Dupla": 0.20294685166293644,
-          "Multipessoal (3+)": 0.7141351136522307
+          "Unipessoal (Mononuclear)": 0.07986823803333963,
+          "Casal ou Dupla": 0.19282814246518265,
+          "Multipessoal (3+)": 0.7273036195014777
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.09583623572158897,
-          "Casal ou Dupla": 0.23496086118387385,
-          "Multipessoal (3+)": 0.6692029030945371
+          "Unipessoal (Mononuclear)": 0.09062682735747818,
+          "Casal ou Dupla": 0.21309244668388158,
+          "Multipessoal (3+)": 0.6962807259586402
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.2793926443124415,
-          "Casal ou Dupla": 0.43791390135992525,
-          "Multipessoal (3+)": 0.28269345432763326
+          "Unipessoal (Mononuclear)": 0.27146192232756067,
+          "Casal ou Dupla": 0.4254728604756293,
+          "Multipessoal (3+)": 0.30306521719681007
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.12895133781911677,
-          "Casal ou Dupla": 0.3546151172316792,
-          "Multipessoal (3+)": 0.516433544949204
+          "Unipessoal (Mononuclear)": 0.12182624851345095,
+          "Casal ou Dupla": 0.3382525023211626,
+          "Multipessoal (3+)": 0.5399212491653864
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.15160957051651913,
-          "Casal ou Dupla": 0.35074810905050424,
-          "Multipessoal (3+)": 0.49764232043297674
+          "Unipessoal (Mononuclear)": 0.14499863679635736,
+          "Casal ou Dupla": 0.32014188936651977,
+          "Multipessoal (3+)": 0.5348594738371228
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.32546901563157177,
-          "Casal ou Dupla": 0.44093923340935354,
-          "Multipessoal (3+)": 0.23359175095907456
+          "Unipessoal (Mononuclear)": 0.3259468616352679,
+          "Casal ou Dupla": 0.42282953305700544,
+          "Multipessoal (3+)": 0.25122360530772664
         }
       },
       "2050": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.23814124544456644,
-          "Casal ou Dupla": 0.580841368601057,
-          "Multipessoal (3+)": 0.18101738595437664
+          "Unipessoal (Mononuclear)": 0.22762189388765758,
+          "Casal ou Dupla": 0.5044024551807991,
+          "Multipessoal (3+)": 0.26797565093154324
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.10519331408679515,
-          "Casal ou Dupla": 0.28355004650077065,
-          "Multipessoal (3+)": 0.6112566394124342
+          "Unipessoal (Mononuclear)": 0.09302771324903823,
+          "Casal ou Dupla": 0.2379872110584249,
+          "Multipessoal (3+)": 0.6689850756925368
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.12738480381556488,
-          "Casal ou Dupla": 0.4195008112111855,
-          "Multipessoal (3+)": 0.45311438497324974
+          "Unipessoal (Mononuclear)": 0.11194986407107671,
+          "Casal ou Dupla": 0.3142132482999246,
+          "Multipessoal (3+)": 0.5738368876289986
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.3254255384020556,
-          "Casal ou Dupla": 0.5101545667140919,
-          "Multipessoal (3+)": 0.1644198948838524
+          "Unipessoal (Mononuclear)": 0.30271031377035473,
+          "Casal ou Dupla": 0.4744997531441522,
+          "Multipessoal (3+)": 0.22278993308549302
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.18087602230543984,
-          "Casal ou Dupla": 0.4648211653642439,
-          "Multipessoal (3+)": 0.3543028123303163
+          "Unipessoal (Mononuclear)": 0.15263729773167645,
+          "Casal ou Dupla": 0.4069161415095135,
+          "Multipessoal (3+)": 0.44044656075881017
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.17675708656730155,
-          "Casal ou Dupla": 0.5686827410526759,
-          "Multipessoal (3+)": 0.2545601723800225
+          "Unipessoal (Mononuclear)": 0.16831793926772773,
+          "Casal ou Dupla": 0.45294313883667414,
+          "Multipessoal (3+)": 0.37873892189559816
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.3054031829114162,
-          "Casal ou Dupla": 0.5620896482820377,
-          "Multipessoal (3+)": 0.13250716880654603
+          "Unipessoal (Mononuclear)": 0.319602002879649,
+          "Casal ou Dupla": 0.4982711745479566,
+          "Multipessoal (3+)": 0.18212682257239438
         }
       },
       "2070": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.23726435617237585,
-          "Casal ou Dupla": 0.6707294227705933,
-          "Multipessoal (3+)": 0.0920062210570309
+          "Unipessoal (Mononuclear)": 0.23768366735202553,
+          "Casal ou Dupla": 0.5754633404065861,
+          "Multipessoal (3+)": 0.18685299224138832
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.12334338913282297,
-          "Casal ou Dupla": 0.3603139014792878,
-          "Multipessoal (3+)": 0.5163427093878892
+          "Unipessoal (Mononuclear)": 0.10425843406311307,
+          "Casal ou Dupla": 0.27990238888002605,
+          "Multipessoal (3+)": 0.6158391770568609
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.13814497094847228,
-          "Casal ou Dupla": 0.5817567512980871,
-          "Multipessoal (3+)": 0.28009827775344065
+          "Unipessoal (Mononuclear)": 0.12640024495960975,
+          "Casal ou Dupla": 0.4111720067327879,
+          "Multipessoal (3+)": 0.46242774830760225
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.35073760492590406,
-          "Casal ou Dupla": 0.5499157152564762,
-          "Multipessoal (3+)": 0.09934667981761972
+          "Unipessoal (Mononuclear)": 0.32386342984472516,
+          "Casal ou Dupla": 0.5077020007920497,
+          "Multipessoal (3+)": 0.16843456936322504
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.22182267799144892,
-          "Casal ou Dupla": 0.5387518315761513,
-          "Multipessoal (3+)": 0.2394254904323999
+          "Unipessoal (Mononuclear)": 0.17872580394813112,
+          "Casal ou Dupla": 0.4605939825100475,
+          "Multipessoal (3+)": 0.36068021354182145
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.16779038839605181,
-          "Casal ou Dupla": 0.7105817293211414,
-          "Multipessoal (3+)": 0.12162788228280685
+          "Unipessoal (Mononuclear)": 0.17655780278365002,
+          "Casal ou Dupla": 0.5602894458542019,
+          "Multipessoal (3+)": 0.2631527513621481
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.27314301078470715,
-          "Casal ou Dupla": 0.6489450145639829,
-          "Multipessoal (3+)": 0.07791197465130996
+          "Unipessoal (Mononuclear)": 0.30672886191902043,
+          "Casal ou Dupla": 0.5573684509526928,
+          "Multipessoal (3+)": 0.13590268712828665
         }
       }
     },
     "0.5": {
       "2026": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.20214558350818648,
-          "Casal ou Dupla": 0.4002739375162521,
-          "Multipessoal (3+)": 0.3975804789755615
+          "Unipessoal (Mononuclear)": 0.20391825945404252,
+          "Casal ou Dupla": 0.4063245649935585,
+          "Multipessoal (3+)": 0.38975717555239886
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.07911277650307003,
-          "Casal ou Dupla": 0.1903525458069496,
-          "Multipessoal (3+)": 0.7305346776899805
+          "Unipessoal (Mononuclear)": 0.07986823803333963,
+          "Casal ou Dupla": 0.19282814246518265,
+          "Multipessoal (3+)": 0.7273036195014777
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.08932109469706338,
-          "Casal ou Dupla": 0.20783883128770103,
-          "Multipessoal (3+)": 0.7028400740152356
+          "Unipessoal (Mononuclear)": 0.09062682735747818,
+          "Casal ou Dupla": 0.21309244668388158,
+          "Multipessoal (3+)": 0.6962807259586402
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.2694294146195732,
-          "Casal ou Dupla": 0.4222846014346967,
-          "Multipessoal (3+)": 0.3082859839457301
+          "Unipessoal (Mononuclear)": 0.27146192232756067,
+          "Casal ou Dupla": 0.4254728604756293,
+          "Multipessoal (3+)": 0.30306521719681007
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.12006572316548077,
-          "Casal ou Dupla": 0.33416532021855283,
-          "Multipessoal (3+)": 0.5457689566159665
+          "Unipessoal (Mononuclear)": 0.12182624851345095,
+          "Casal ou Dupla": 0.3382525023211626,
+          "Multipessoal (3+)": 0.5399212491653864
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.1432626056064889,
-          "Casal ou Dupla": 0.3126359355531904,
-          "Multipessoal (3+)": 0.5441014588403207
+          "Unipessoal (Mononuclear)": 0.14499863679635736,
+          "Casal ou Dupla": 0.32014188936651977,
+          "Multipessoal (3+)": 0.5348594738371228
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.32596157401543613,
-          "Casal ou Dupla": 0.41828498035510153,
-          "Multipessoal (3+)": 0.25575344562946234
+          "Unipessoal (Mononuclear)": 0.3259468616352679,
+          "Casal ou Dupla": 0.42282953305700544,
+          "Multipessoal (3+)": 0.25122360530772664
         }
       },
       "2050": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.22337354166220302,
-          "Casal ou Dupla": 0.4832589984201863,
-          "Multipessoal (3+)": 0.2933674599176107
+          "Unipessoal (Mononuclear)": 0.22454842774055506,
+          "Casal ou Dupla": 0.48885734553036153,
+          "Multipessoal (3+)": 0.28659422672908336
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.09001009620284511,
-          "Casal ou Dupla": 0.2272780121084388,
-          "Multipessoal (3+)": 0.682711891688716
+          "Unipessoal (Mononuclear)": 0.09079736140210609,
+          "Casal ou Dupla": 0.23005076160794286,
+          "Multipessoal (3+)": 0.6791518769899509
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.10737822715153411,
-          "Casal ou Dupla": 0.2895766809405453,
-          "Multipessoal (3+)": 0.6030450919079207
+          "Unipessoal (Mononuclear)": 0.1085937551829916,
+          "Casal ou Dupla": 0.29593125283615096,
+          "Multipessoal (3+)": 0.5954749919808574
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.29620656388883687,
-          "Casal ou Dupla": 0.46429403836387934,
-          "Multipessoal (3+)": 0.23949939774728385
+          "Unipessoal (Mononuclear)": 0.2979393237951323,
+          "Casal ou Dupla": 0.467012991497255,
+          "Multipessoal (3+)": 0.23504768470761264
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.145571241701139,
-          "Casal ou Dupla": 0.3916559003502739,
-          "Multipessoal (3+)": 0.4627728579485871
+          "Unipessoal (Mononuclear)": 0.14741587214427504,
+          "Casal ou Dupla": 0.395668197827582,
+          "Multipessoal (3+)": 0.45691593002814296
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.16422617756506094,
-          "Casal ou Dupla": 0.42263034975651087,
-          "Multipessoal (3+)": 0.4131434726784283
+          "Unipessoal (Mononuclear)": 0.1653696698878875,
+          "Casal ou Dupla": 0.4305728980770834,
+          "Multipessoal (3+)": 0.40405743203502914
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.32198617327885337,
-          "Casal ou Dupla": 0.481586777825272,
-          "Multipessoal (3+)": 0.19642704889587473
+          "Unipessoal (Mononuclear)": 0.3214127965588243,
+          "Casal ou Dupla": 0.48597411911021826,
+          "Multipessoal (3+)": 0.19261308433095747
         }
       },
       "2070": {
         "60 a 69": {
-          "Unipessoal (Mononuclear)": 0.23434622677959294,
-          "Casal ou Dupla": 0.5458234044918959,
-          "Multipessoal (3+)": 0.21983036872851114
+          "Unipessoal (Mononuclear)": 0.23499596327930689,
+          "Casal ou Dupla": 0.5507804266491426,
+          "Multipessoal (3+)": 0.21422361007155052
         },
         "30 a 39": {
-          "Unipessoal (Mononuclear)": 0.09933986228126328,
-          "Casal ou Dupla": 0.26112684868801095,
-          "Multipessoal (3+)": 0.6395332890307258
+          "Unipessoal (Mononuclear)": 0.10013666036848184,
+          "Casal ou Dupla": 0.2641224568802831,
+          "Multipessoal (3+)": 0.6357408827512352
         },
         "40 a 49": {
-          "Unipessoal (Mononuclear)": 0.12063161731633204,
-          "Casal ou Dupla": 0.3678782333575844,
-          "Multipessoal (3+)": 0.5114901493260836
+          "Unipessoal (Mononuclear)": 0.12163014263282362,
+          "Casal ou Dupla": 0.3748200225963289,
+          "Multipessoal (3+)": 0.5035498347708475
         },
         "70 a 79": {
-          "Unipessoal (Mononuclear)": 0.3151607433654285,
-          "Casal ou Dupla": 0.4940402939229993,
-          "Multipessoal (3+)": 0.19079896271157232
+          "Unipessoal (Mononuclear)": 0.31662750074030055,
+          "Casal ou Dupla": 0.496342648028222,
+          "Multipessoal (3+)": 0.18702985123147756
         },
         "até 29": {
-          "Unipessoal (Mononuclear)": 0.16735298385260658,
-          "Casal ou Dupla": 0.4377251566412771,
-          "Multipessoal (3+)": 0.3949218595061163
+          "Unipessoal (Mononuclear)": 0.1692017691288503,
+          "Casal ou Dupla": 0.44150005077773713,
+          "Multipessoal (3+)": 0.3892981800934125
         },
         "50 a 59": {
-          "Unipessoal (Mononuclear)": 0.17429753022024683,
-          "Casal ou Dupla": 0.5146196934355438,
-          "Multipessoal (3+)": 0.31108277634420944
+          "Unipessoal (Mononuclear)": 0.1748043342306558,
+          "Casal ou Dupla": 0.522179597652253,
+          "Multipessoal (3+)": 0.3030160681170912
         },
         "80+": {
-          "Unipessoal (Mononuclear)": 0.31308913404035965,
-          "Casal ou Dupla": 0.5320448177465213,
-          "Multipessoal (3+)": 0.15486604821311897
+          "Unipessoal (Mononuclear)": 0.3121312915574266,
+          "Casal ou Dupla": 0.5362041575868087,
+          "Multipessoal (3+)": 0.15166455085576466
+        }
+      }
+    },
+    "1.0": {
+      "2026": {
+        "60 a 69": {
+          "Unipessoal (Mononuclear)": 0.20391825945404252,
+          "Casal ou Dupla": 0.4063245649935585,
+          "Multipessoal (3+)": 0.38975717555239886
+        },
+        "30 a 39": {
+          "Unipessoal (Mononuclear)": 0.07986823803333963,
+          "Casal ou Dupla": 0.19282814246518265,
+          "Multipessoal (3+)": 0.7273036195014777
+        },
+        "40 a 49": {
+          "Unipessoal (Mononuclear)": 0.09062682735747818,
+          "Casal ou Dupla": 0.21309244668388158,
+          "Multipessoal (3+)": 0.6962807259586402
+        },
+        "70 a 79": {
+          "Unipessoal (Mononuclear)": 0.27146192232756067,
+          "Casal ou Dupla": 0.4254728604756293,
+          "Multipessoal (3+)": 0.30306521719681007
+        },
+        "até 29": {
+          "Unipessoal (Mononuclear)": 0.12182624851345095,
+          "Casal ou Dupla": 0.3382525023211626,
+          "Multipessoal (3+)": 0.5399212491653864
+        },
+        "50 a 59": {
+          "Unipessoal (Mononuclear)": 0.14499863679635736,
+          "Casal ou Dupla": 0.32014188936651977,
+          "Multipessoal (3+)": 0.5348594738371228
+        },
+        "80+": {
+          "Unipessoal (Mononuclear)": 0.3259468616352679,
+          "Casal ou Dupla": 0.42282953305700544,
+          "Multipessoal (3+)": 0.25122360530772664
+        }
+      },
+      "2050": {
+        "60 a 69": {
+          "Unipessoal (Mononuclear)": 0.23635624934620778,
+          "Casal ou Dupla": 0.5622045804153534,
+          "Multipessoal (3+)": 0.20143917023843885
+        },
+        "30 a 39": {
+          "Unipessoal (Mononuclear)": 0.10201127469243836,
+          "Casal ou Dupla": 0.27123938756902616,
+          "Multipessoal (3+)": 0.6267493377385356
+        },
+        "40 a 49": {
+          "Unipessoal (Mononuclear)": 0.12388391216675487,
+          "Casal ou Dupla": 0.3912691394014913,
+          "Multipessoal (3+)": 0.48484694843175397
+        },
+        "70 a 79": {
+          "Unipessoal (Mononuclear)": 0.3199903255286942,
+          "Casal ou Dupla": 0.5016215362760277,
+          "Multipessoal (3+)": 0.17838813819527816
+        },
+        "até 29": {
+          "Unipessoal (Mononuclear)": 0.17354192701437823,
+          "Casal ou Dupla": 0.4502752393377433,
+          "Multipessoal (3+)": 0.3761828336478785
+        },
+        "50 a 59": {
+          "Unipessoal (Mononuclear)": 0.17578074473234798,
+          "Casal ou Dupla": 0.5397272893201871,
+          "Multipessoal (3+)": 0.28449196594746495
+        },
+        "80+": {
+          "Unipessoal (Mononuclear)": 0.3097655219503678,
+          "Casal ou Dupla": 0.5459017960554949,
+          "Multipessoal (3+)": 0.14433268199413735
+        }
+      },
+      "2070": {
+        "60 a 69": {
+          "Unipessoal (Mononuclear)": 0.23856811543346554,
+          "Casal ou Dupla": 0.6577057343938946,
+          "Multipessoal (3+)": 0.10372615017263996
+        },
+        "30 a 39": {
+          "Unipessoal (Mononuclear)": 0.12036913837995239,
+          "Casal ou Dupla": 0.3468512692738106,
+          "Multipessoal (3+)": 0.532779592346237
+        },
+        "40 a 49": {
+          "Unipessoal (Mononuclear)": 0.13755785219770178,
+          "Casal ou Dupla": 0.5555680215817237,
+          "Multipessoal (3+)": 0.30687412622057453
+        },
+        "70 a 79": {
+          "Unipessoal (Mononuclear)": 0.347176586210393,
+          "Casal ou Dupla": 0.5443188902118318,
+          "Multipessoal (3+)": 0.10850452357777526
+        },
+        "até 29": {
+          "Unipessoal (Mononuclear)": 0.21521026391088907,
+          "Casal ou Dupla": 0.527733361143387,
+          "Multipessoal (3+)": 0.25705637494572403
+        },
+        "50 a 59": {
+          "Unipessoal (Mononuclear)": 0.17075787895809344,
+          "Casal ou Dupla": 0.69014059262811,
+          "Multipessoal (3+)": 0.13910152841379647
+        },
+        "80+": {
+          "Unipessoal (Mononuclear)": 0.2792321929943358,
+          "Casal ou Dupla": 0.6352325046563437,
+          "Multipessoal (3+)": 0.08553530234932046
         }
       }
     }
   },
-  "regras": "domicílios fora da rede geral excluídos (P13); inclinação nacional por mínimos quadrados nas edições de 2002,5, 2008,5 e 2017,5; projeção ancorada no observado de 2017,5"
+  "regras": "domicílios fora da rede geral excluídos (P13); inclinação nacional por mínimos quadrados nas edições de 2002,5, 2008,5 e 2017,5; projeção ancorada no observado de 2017,5; de 2017,5 a 2026 vale a intensidade padrão, e a intensidade escolhida só age depois de 2026"
 }

@@ -246,19 +246,19 @@
   "celulas_com_menos_de_30": 0,
   "ponte": {
     "2022": {
-      "domicilios_projetados": 67937549.4071216,
-      "moradores_projetados": 197597838.43099022,
+      "domicilios_projetados": 67937549.40712157,
+      "moradores_projetados": 199590894.09172446,
       "populacao_ibge": 210862983,
-      "moradores_menos_populacao_pct": -6.290883482858522
+      "moradores_menos_populacao_pct": -5.345693562665543
     },
     "2026": {
-      "domicilios_projetados": 72392452.15427129,
-      "moradores_projetados": 204494203.34067777,
+      "domicilios_projetados": 72392452.1542713,
+      "moradores_projetados": 208540509.24555326,
       "populacao_ibge": 214211951,
-      "moradores_menos_populacao_pct": -4.53651050464604
+      "moradores_menos_populacao_pct": -2.647584193118502
     },
     "censo_2022_domicilios_ocupados": 72400000,
-    "ponte_2022_menos_censo_pct": -6.163605791268512
+    "ponte_2022_menos_censo_pct": -6.163605791268556
   },
   "rastro": [
     {
