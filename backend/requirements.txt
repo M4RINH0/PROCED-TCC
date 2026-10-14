@@ -2,6 +2,7 @@ fastapi>=0.115,<1
 uvicorn>=0.30,<1
 httpx>=0.27,<1      # cliente da API do Supabase e base do TestClient
 pandas>=2.2,<3      # ETL
+scikit-learn>=1.5,<2  # ETL: método de machine learning (etl/modelagem.py)
 
 # testes
 pytest>=8,<9
