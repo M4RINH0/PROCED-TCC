@@ -195,6 +195,7 @@ class Resumo:
     tbc_padronizada: float
     consumo_por_pessoa: float
     consumo_total_calibrado: float | None  # None sem população total do ano
+    participacao_consumo: float | None = None  # consumo do recorte / consumo de todos os domicílios da localidade
 
 
 TAXAS = "taxas"
@@ -323,6 +324,8 @@ class Projecao:
         if ano in self.populacao_total:
             moradores_todos = moradores_projetados(todos, {c: self.celulas[c].moradores for c in todos})
             calibrado = consumo * fator_calibracao(self.populacao_total[ano], moradores_todos)
+        # o fator de calibração é o mesmo para todas as células, então a participação não depende dele
+        consumo_todos = consumo_total(todos, {c: self.celulas[c].consumo_domicilio for c in todos})
         return Resumo(
             domicilios=sum(sub.values()),
             moradores=moradores,
@@ -330,6 +333,7 @@ class Projecao:
             tbc_padronizada=tbc_pd({c: self.celulas[c].tec for c in sub}, sub),
             consumo_por_pessoa=por_pessoa,
             consumo_total_calibrado=calibrado,
+            participacao_consumo=consumo / consumo_todos if consumo_todos > 0 else None,
         )
 
 

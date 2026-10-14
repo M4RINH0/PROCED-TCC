@@ -18,22 +18,26 @@ def test_entrada_valida_segue_o_contrato():
     assert set(corpo) == {
         "ano", "recorte", "unidade", "cenarios", "efeito_envelhecimento_kwh", "efeito_envelhecimento_total_kwh_mes",
         "efeito_idade_kwh", "efeito_idade_total_kwh_mes", "efeito_arranjos_kwh", "efeito_arranjos_total_kwh_mes",
+        "efeito_envelhecimento_participacao_pp", "efeito_idade_participacao_pp", "efeito_arranjos_participacao_pp",
         "dados_ilustrativos", "fonte", "localidade", "domicilios_amostra", "celulas", "baixa_confiabilidade",
         "intensidade", "k", "simulacao",
     }
     assert corpo["cenarios"] == [
         {"id": "taxas", "valor": 153.3, "consumo_por_pessoa_kwh": 153.3, "consumo_total_calibrado_kwh_mes": 794545,
-         "variacao_kwh": None, "variacao_pct": None},
+         "participacao_consumo_pct": 29.7, "variacao_kwh": None, "variacao_pct": None},
         {"id": "taxas_arranjos_fixos", "valor": 153.3, "consumo_por_pessoa_kwh": 153.3,
-         "consumo_total_calibrado_kwh_mes": 794545, "variacao_kwh": None, "variacao_pct": None},
+         "consumo_total_calibrado_kwh_mes": 794545, "participacao_consumo_pct": 29.7, "variacao_kwh": None, "variacao_pct": None},
         {"id": "ml_rf", "valor": None, "consumo_por_pessoa_kwh": None, "consumo_total_calibrado_kwh_mes": None,
-         "variacao_kwh": None, "variacao_pct": None},
+         "participacao_consumo_pct": None, "variacao_kwh": None, "variacao_pct": None},
         {"id": "ml_gb", "valor": None, "consumo_por_pessoa_kwh": None, "consumo_total_calibrado_kwh_mes": None,
-         "variacao_kwh": None, "variacao_pct": None},
+         "participacao_consumo_pct": None, "variacao_kwh": None, "variacao_pct": None},
         {"id": "contrafactual", "valor": 142.5, "consumo_por_pessoa_kwh": 142.5,
-         "consumo_total_calibrado_kwh_mes": 676875, "variacao_kwh": None, "variacao_pct": None},
+         "consumo_total_calibrado_kwh_mes": 676875, "participacao_consumo_pct": 32.59, "variacao_kwh": None, "variacao_pct": None},
     ]
     assert corpo["efeito_envelhecimento_kwh"] == 10.8 and corpo["efeito_envelhecimento_total_kwh_mes"] == 117670
+    # participação: taxas 920 / 3098 = 29,70%; contrafactual 783,75 / 2404,875 = 32,59%
+    assert corpo["efeito_envelhecimento_participacao_pp"] == -2.89
+    assert (corpo["efeito_idade_participacao_pp"], corpo["efeito_arranjos_participacao_pp"]) == (-2.89, 0.0)
     assert corpo["dados_ilustrativos"] is False
     assert corpo["fonte"].startswith("POF 2002 a 2003, 2008 a 2009 e 2017 a 2018")
     assert (corpo["intensidade"], corpo["k"], corpo["simulacao"]) == (0.6, 1.0, False)

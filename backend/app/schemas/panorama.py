@@ -29,6 +29,9 @@ class Cenario(BaseModel):
     consumo_total_calibrado_kwh_mes: float | None = Field(
         default=None, description="consumo total do recorte calibrado pela população do IBGE (P12), kWh/mês"
     )
+    participacao_consumo_pct: float | None = Field(
+        default=None, description="participação do recorte no consumo residencial de todos os domicílios da localidade, %"
+    )
     variacao_kwh: float | None = Field(default=None, description="diferença do valor em relação a 2026 (só na série)")
     variacao_pct: float | None = Field(default=None, description="variação percentual do valor em relação a 2026 (só na série)")
 
@@ -61,6 +64,9 @@ class Efeitos(BaseModel):
     efeito_envelhecimento_total_kwh_mes: float | None = Field(default=None, description="o mesmo, no consumo total calibrado")
     efeito_idade_total_kwh_mes: float | None = None
     efeito_arranjos_total_kwh_mes: float | None = None
+    efeito_envelhecimento_participacao_pp: float | None = Field(default=None, description="o mesmo, na participação, em pontos percentuais")
+    efeito_idade_participacao_pp: float | None = None
+    efeito_arranjos_participacao_pp: float | None = None
 
 
 class ProjecaoResposta(Amostra, Simulacao, Efeitos):

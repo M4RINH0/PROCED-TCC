@@ -134,6 +134,7 @@ def _cenario(id_: CenarioId, resumo: Resumo | None) -> Cenario:
         valor=round(resumo.tbc_padronizada, 1),
         consumo_por_pessoa_kwh=round(resumo.consumo_por_pessoa, 1),
         consumo_total_calibrado_kwh_mes=None if calibrado is None else round(calibrado),
+        participacao_consumo_pct=None if resumo.participacao_consumo is None else round(resumo.participacao_consumo * 100, 2),
     )
 
 
@@ -164,6 +165,9 @@ def efeitos(cenarios: list[Cenario]) -> Efeitos:
     def total(x: Cenario | None) -> float | None:
         return None if x is None else x.consumo_total_calibrado_kwh_mes
 
+    def participacao(x: Cenario | None) -> float | None:
+        return None if x is None else x.participacao_consumo_pct
+
     return Efeitos(
         efeito_envelhecimento_kwh=_diferenca(valor(t), valor(c), 1),
         efeito_idade_kwh=_diferenca(valor(f), valor(c), 1),
@@ -171,6 +175,9 @@ def efeitos(cenarios: list[Cenario]) -> Efeitos:
         efeito_envelhecimento_total_kwh_mes=_diferenca(total(t), total(c), None),
         efeito_idade_total_kwh_mes=_diferenca(total(f), total(c), None),
         efeito_arranjos_total_kwh_mes=_diferenca(total(t), total(f), None),
+        efeito_envelhecimento_participacao_pp=_diferenca(participacao(t), participacao(c), 2),
+        efeito_idade_participacao_pp=_diferenca(participacao(f), participacao(c), 2),
+        efeito_arranjos_participacao_pp=_diferenca(participacao(t), participacao(f), 2),
     )
 
 

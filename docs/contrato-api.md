@@ -79,10 +79,12 @@ Exemplo real (Brasil, todos os domicílios, consulta de 14/10/2026):
 - `valor`: TBC padronizada, a média por domicílio do consumo per capita (kWh/mês por pessoa).
 - `consumo_por_pessoa_kwh`: consumo total do recorte dividido pelos moradores projetados (P11).
 - `consumo_total_calibrado_kwh_mes`: consumo total do recorte calibrado pela população do IBGE (P12). O consumo total bruto não sai na API.
-- Decomposição, na TBC (`_kwh`) e no consumo total (`_total_kwh_mes`):
+- `participacao_consumo_pct`: participação do recorte no consumo residencial de todos os domicílios da localidade, em %. Como o fator de calibração é único, é a mesma com o consumo bruto ou o calibrado. Em `todos_domicilios` é sempre 100.
+- Decomposição, na TBC (`_kwh`), no consumo total (`_total_kwh_mes`) e na participação (`_participacao_pp`):
   - `efeito_idade`: `taxas_arranjos_fixos` menos `contrafactual`;
   - `efeito_arranjos`: `taxas` menos `taxas_arranjos_fixos`;
   - `efeito_envelhecimento`: a soma dos dois, `taxas` menos `contrafactual`.
+- A decomposição também sai na participação, em pontos percentuais (`_participacao_pp`).
 - Um cenário fica `null` se alguma faixa do recorte não tiver domicílio na amostra da localidade.
 - O IBGE projeta só a população; nenhum cenário é uma projeção oficial de consumo.
 

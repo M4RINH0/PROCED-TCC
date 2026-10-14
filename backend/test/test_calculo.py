@@ -616,3 +616,13 @@ def test_calibracao_acha_a_intensidade_que_reproduz_a_tendencia():
     melhor, curva = calibrar_intensidade(props, A, (2002.5, 2008.5), 2017.5, {"F": 1}, [i / 10 for i in range(16)])
     assert melhor == 0.5 and curva[0.5] == pytest.approx(0, abs=1e-9)
     assert curva[0.0] > curva[0.3] > curva[0.5] < curva[0.7] < curva[1.0]
+
+
+def test_participacao_do_recorte_no_consumo_de_todos_os_domicilios():
+    # 2050: consumo de C1 = 6 * 110 = 660; de todas as células = 1210 -> 660 / 1210
+    p = _projecao({2050: 25})
+    assert p.resumo(2050, TAXAS, [C1]).participacao_consumo == pytest.approx(660 / 1210)
+    assert p.resumo(2050).participacao_consumo == pytest.approx(1.0)
+    # com o fator de calibração (2), a participação é a mesma: 1320 / 2420
+    r = p.resumo(2050, TAXAS, [C1])
+    assert r.consumo_total_calibrado / p.resumo(2050).consumo_total_calibrado == pytest.approx(r.participacao_consumo)
