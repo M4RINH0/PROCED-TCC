@@ -47,6 +47,7 @@ export default function PainelSimulacao({ simulacao, semEfeito = {} }) {
                 step={c.passo}
                 value={valor}
                 disabled={Boolean(motivo)}
+                title={motivo ?? c.ajuda}
                 aria-describedby={`${id}-${campo}-ajuda`}
                 onChange={(e) => aoMudar(campo, lerControle(e.target.value))}
               />

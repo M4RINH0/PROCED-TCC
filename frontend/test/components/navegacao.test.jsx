@@ -96,3 +96,22 @@ describe('MenuDemonstracao', () => {
     expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 })
+
+describe('Gaveta Fontes: como ler o Panorama', () => {
+  it('explica cada linha e como os efeitos são calculados', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ fontes: [], criterio_exclusao: 'Sem kWh.', cobertura_pct: 92.4, premissas: [], premissas_url: 'x' }),
+      }),
+    )
+    render(<Gaveta tipo="fontes" ano={2050} aoFechar={() => {}} avisar={() => {}} />)
+    const guia = await screen.findByTestId('como-ler')
+    for (const linha of ['Envelhecimento e arranjos', 'Só o envelhecimento', 'Sem mudanças desde 2026']) {
+      expect(guia).toHaveTextContent(linha)
+    }
+    expect(guia).toHaveTextContent('Efeito da idade = só o envelhecimento menos sem mudanças desde 2026')
+    expect(guia).toHaveTextContent('Efeito dos arranjos = envelhecimento e arranjos menos só o envelhecimento')
+  })
+})

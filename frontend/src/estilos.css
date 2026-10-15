@@ -567,3 +567,38 @@ circle.dot{transition:cy .12s linear}
   border:1px solid var(--rule);border-radius:8px}
 .recorte-explica{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--ink-2)}
 @media (max-width:760px){.sim-ctrls{grid-template-columns:minmax(0,1fr)}}
+.guia{stroke:var(--muted);stroke-width:1;opacity:.6}
+
+/* Panorama: título e frase em cima, filtros e controles numa barra, para o gráfico e a leitura do ano caberem */
+.vh-compacto{margin-bottom:8px}
+.barra-filtros{flex:0 0 auto;display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px 18px;margin-bottom:12px}
+.barra-filtros>.fl{min-width:190px}
+.barra-filtros .fl label{margin-bottom:4px}
+.barra-filtros .sim-painel{flex:1 1 420px;max-width:560px}
+.barra-filtros .sim-ctrls .help,.vh-lado .sim-ctrls .help{margin-top:2px}
+.vh-lado{flex-direction:row;flex-wrap:wrap;align-items:flex-end;justify-content:flex-end;gap:10px 18px}
+.recorte-explica{margin:-2px 0 6px;font-size:12px;line-height:1.4;color:var(--muted);max-width:110ch}
+/* Leitura do ano compacta */
+.readout .ro-h{margin-bottom:0}
+.ro-ind{margin:0 0 4px;font-size:12px;color:var(--muted)}
+.readout .reg{padding:6px 0;gap:0 10px}
+.readout .reg .lb{font-size:12.5px;line-height:1.25}
+.readout .odo{font-size:24px}
+.readout .cmp div{padding:5px 0;font-size:12.5px}
+.readout .cmp{margin-top:2px}
+/* barra do Panorama numa linha só: a ajuda dos controles vira dica (title) */
+.barra-filtros{flex-wrap:nowrap}
+.barra-filtros .sim-ctrls .help{display:none}
+.barra-filtros .filtro-local select{min-width:118px}
+.barra-filtros>.fl{min-width:0;flex:0 1 220px}
+.barra-filtros .recorte-sel{min-width:0}
+.barra-filtros .sim-painel{flex:1 1 440px;min-width:380px}
+.barra-filtros .rangeh{flex-wrap:wrap;column-gap:6px}
+@media (max-width:1180px){.barra-filtros{flex-wrap:wrap}}
+@media (max-height:820px){
+  .readout{padding-top:10px}
+  .readout .reg{padding:4px 0}
+  .readout .odo{font-size:21px}
+  .readout .cmp div{padding:3px 0}
+  .vh p{font-size:13px}
+}

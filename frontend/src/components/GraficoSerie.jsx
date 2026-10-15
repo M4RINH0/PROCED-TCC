@@ -3,15 +3,36 @@ import { useTamanho } from '../hooks/useTamanho.js'
 import { umaCasa } from '../utils/formato.js'
 import { ANO_FINAL, ANO_INICIAL, SERIES } from '../utils/series.js'
 
-/* Faixa do eixo do gráfico de linhas: folga de 1 kWh e múltiplos de 10, para a curva ocupar a altura
-   (de 71,5 a 82,7 kWh, o eixo vai de 70 a 90). Só vale para linhas; gráfico de barras começa no zero. */
-export function dominioY(series) {
+/* Faixa do eixo do gráfico de linhas: folga e múltiplos de `passo`, para a curva ocupar a altura
+   (consumo por pessoa de 71,5 a 82,7 kWh: eixo de 70 a 90). Só vale para linhas; barras começam no zero. */
+const ARRED = (v) => Math.round(v * 1e6) / 1e6
+export function dominioY(series, { folga = 1, passo = 10 } = {}) {
   const valores = series.flatMap((s) => s.pontos.map((p) => p.valor)).filter((v) => v !== null)
   if (!valores.length) return [120, 280]
-  const lo = Math.floor((Math.min(...valores) - 1) / 10) * 10
-  const hi = Math.ceil((Math.max(...valores) + 1) / 10) * 10
-  return [lo, Math.max(hi, lo + 10)]
+  const lo = ARRED(Math.floor(ARRED((Math.min(...valores) - folga) / passo)) * passo)
+  const hi = ARRED(Math.ceil(ARRED((Math.max(...valores) + folga) / passo)) * passo)
+  return [lo, Math.max(hi, ARRED(lo + passo))]
 }
+
+/* Rótulos do fim das linhas sem sobreposição: cada bloco (nome e valor) ocupa `altura` px.
+   Ordena pela posição, empurra para baixo o que encostaria no de cima e, se passar do fim
+   do gráfico, devolve para cima. Recebe e devolve [{ id, y }] na ordem de entrada. */
+export function afastarRotulos(itens, altura, topo, base) {
+  const ordem = [...itens].sort((a, b) => a.y - b.y).map((i) => ({ ...i }))
+  for (let i = 1; i < ordem.length; i++) ordem[i].y = Math.max(ordem[i].y, ordem[i - 1].y + altura)
+  if (ordem.length && ordem[ordem.length - 1].y > base) {
+    ordem[ordem.length - 1].y = base
+    for (let i = ordem.length - 2; i >= 0; i--) ordem[i].y = Math.min(ordem[i].y, ordem[i + 1].y - altura)
+  }
+  if (ordem.length && ordem[0].y < topo) {
+    ordem[0].y = topo
+    for (let i = 1; i < ordem.length; i++) ordem[i].y = Math.max(ordem[i].y, ordem[i - 1].y + altura)
+  }
+  const porId = Object.fromEntries(ordem.map((i) => [i.id, i.y]))
+  return itens.map((i) => ({ id: i.id, y: porId[i.id] }))
+}
+
+const ALTURA_ROTULO = 30 // nome (12,5 px) e valor (11,5 px) do fim da linha
 
 export function marcasY([lo, hi], quantidade = 5) {
   const bruto = (hi - lo) / Math.max(1, quantidade)
@@ -27,19 +48,20 @@ const caminho = (pontos, x, y) =>
     .map((p, i) => `${i ? 'L' : 'M'}${x(p.ano).toFixed(1)},${y(p.valor).toFixed(1)}`)
     .join('')
 
-/* series: [{ id, pontos: [{ ano, valor }] }]; visiveis: { id: bool } */
-export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
+/* series: [{ id, pontos: [{ ano, valor }] }]; visiveis: { id: bool };
+   eixo: { folga, passo } do indicador; sufixo: unidade curta junto do valor (por exemplo, %) */
+export default function GraficoSerie({ series, visiveis, ano, aoMudarAno, eixo, sufixo = '', descricao = 'Consumo residencial per capita' }) {
   const [ref, { largura: W, altura: H }] = useTamanho({ largura: 800, altura: 380 })
   const idClip = useId().replace(/:/g, '')
   const [dica, setDica] = useState(null)
   const arrastando = useRef(false)
 
   const mob = W < 560
-  const m = { t: 30, r: mob ? 14 : 140, b: 30, l: 44 }
+  const m = { t: 30, r: mob ? 14 : 196, b: 30, l: 44 }
   const iw = W - m.l - m.r
   const ih = H - m.t - m.b
   const ativas = series.filter((s) => visiveis[s.id])
-  const [lo, hi] = dominioY(ativas)
+  const [lo, hi] = dominioY(ativas, eixo)
   const x = (a) => m.l + ((a - ANO_INICIAL) / (ANO_FINAL - ANO_INICIAL)) * iw
   const y = (v) => m.t + ih - ((v - lo) / (hi - lo)) * ih
   const meta = (id) => SERIES.find((s) => s.id === id)
@@ -82,12 +104,12 @@ export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
 
   return (
     <div className="plot" ref={ref} tabIndex={0} onKeyDown={teclado} aria-label="Gráfico da projeção. Use as setas para mudar o ano.">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Consumo residencial per capita projetado, ${ANO_INICIAL} a ${ANO_FINAL}`}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${descricao} projetado, ${ANO_INICIAL} a ${ANO_FINAL}`}>
         {marcasY([lo, hi], mob ? 4 : 5).map((v) => (
           <g key={v}>
             <line className="gl" x1={m.l} x2={m.l + iw} y1={y(v)} y2={y(v)} />
             <text className="ax" x={m.l - 8} y={y(v) + 4} textAnchor="end">
-              {Math.round(v)}
+              {Number.isInteger(v) ? v : umaCasa(v)}
             </text>
           </g>
         ))}
@@ -115,21 +137,34 @@ export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
           ))}
         </g>
         {!mob &&
-          ativas.map((s) => {
-            const validos = s.pontos.filter((p) => p.valor !== null)
-            const ultimo = validos[validos.length - 1]
-            if (!ultimo) return null
-            return (
-              <g key={`r-${s.id}`}>
-                <text className={`endl t-${s.id}`} x={x(ultimo.ano) + 9} y={y(ultimo.valor) + 4}>
-                  {meta(s.id).curto}
-                </text>
-                <text className="endv" x={x(ultimo.ano) + 9} y={y(ultimo.valor) + 18}>
-                  {umaCasa(ultimo.valor)} em {ultimo.ano}
-                </text>
-              </g>
+          (() => {
+            const fins = ativas
+              .map((s) => {
+                const validos = s.pontos.filter((p) => p.valor !== null)
+                const ultimo = validos[validos.length - 1]
+                return ultimo ? { id: s.id, ultimo, y: y(ultimo.valor) } : null
+              })
+              .filter(Boolean)
+            const afastados = Object.fromEntries(
+              afastarRotulos(fins.map((f) => ({ id: f.id, y: f.y })), ALTURA_ROTULO, m.t + 4, m.t + ih - ALTURA_ROTULO + 8).map((a) => [a.id, a.y]),
             )
-          })}
+            return fins.map(({ id, ultimo, y: yPonto }) => {
+              const yRotulo = afastados[id]
+              const xr = x(ultimo.ano) + 9
+              return (
+                <g key={`r-${id}`} data-testid={`rotulo-${id}`} data-y={yRotulo.toFixed(1)}>
+                  {Math.abs(yRotulo - yPonto) > 2 && <line className="guia" x1={x(ultimo.ano) + 2} y1={yPonto} x2={xr - 2} y2={yRotulo} />}
+                  <text className={`endl t-${id}`} x={xr} y={yRotulo + 4}>
+                    {meta(id).curto}
+                  </text>
+                  <text className="endv" x={xr} y={yRotulo + 18}>
+                    {umaCasa(ultimo.valor)}
+                    {sufixo} em {ultimo.ano}
+                  </text>
+                </g>
+              )
+            })
+          })()}
         <g transform={`translate(${xc.toFixed(1)},0)`}>
           <line className="cur" y1={m.t - 2} y2={m.t + ih} />
           <rect className="curtag" x={-22 + dx} y={m.t - 24} width="44" height="19" rx="5" />
@@ -175,7 +210,7 @@ export default function GraficoSerie({ series, visiveis, ano, aoMudarAno }) {
                 <div key={s.id} style={{ color: `var(--${meta(s.id).cor})` }}>
                   <i />
                   <span style={{ color: 'var(--paper)' }}>{meta(s.id).curto}</span>
-                  {v === null || v === undefined ? <small>sem dado</small> : <em style={{ color: 'var(--paper)' }}>{umaCasa(v)}</em>}
+                  {v === null || v === undefined ? <small>sem dado</small> : <em style={{ color: 'var(--paper)' }}>{umaCasa(v)}{sufixo}</em>}
                 </div>
               )
             })}

@@ -105,3 +105,17 @@ Com e sem valores de simulação os tempos são os mesmos. A meta (menos de 1 s 
 primeira carga de cada localidade) é cumprida com folga; depois da pré-carga, a primeira
 carga de qualquer localidade também fica abaixo de 0,1 s. Rodar as cargas da pré-carga ao
 mesmo tempo foi testado e piorou (cerca de 93 s), porque elas disputam as mesmas conexões.
+
+## Panorama: indicadores e rótulos (15/10/2026)
+
+- O gráfico tem três indicadores, todos calculados no back-end: consumo por pessoa (TBC
+  padronizada), consumo total do recorte (calibrado, exibido em bilhões de kWh/mês) e
+  participação no consumo residencial da localidade (%). "Todos os domicílios" abre no
+  consumo por pessoa; os outros recortes, na participação, porque a média por pessoa de um
+  grupo não sobe só porque o grupo cresce. A decomposição dos efeitos vale para os três.
+- Rótulos da interface: `taxas` é "Envelhecimento e arranjos", `taxas_arranjos_fixos` é "Só o
+  envelhecimento" e `contrafactual` é "Sem mudanças desde 2026". O texto do TCC mantém os
+  termos técnicos.
+- Layout conferido num Chrome de verdade (headless, protocolo DevTools) em 1920x1080, 1600x900 e
+  1366x768: sem sobreposição dos rótulos do fim das linhas, sem rolagem no painel "Leitura do
+  ano" e sem controle escondido.

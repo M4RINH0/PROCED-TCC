@@ -111,7 +111,7 @@ export default function App() {
         <div className="acts">
           <span className="illus">
             <Icone nome="info" />
-            Cenário do modelo pendente
+            Machine learning pausado
           </span>
           <button type="button" className="ib" aria-label="Fonte dos dados" onClick={() => setGaveta('fontes')}>
             <Icone nome="db" />

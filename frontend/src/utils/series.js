@@ -1,18 +1,19 @@
-/* Significado fixo das séries: cor, traço e rótulo (nunca só a cor).
+/* Significado fixo das séries: cor, traço e rótulo (nunca só a cor). Os rótulos da interface são simples;
+   o texto do TCC mantém os termos técnicos (taxas, taxas_arranjos_fixos, contrafactual).
    Verde-petróleo: método das taxas (cheio com a tendência dos arranjos, tracejado só com o envelhecimento);
    laranja: contrafactual; azul-cobalto: machine learning. */
 export const SERIES = [
-  { id: 'taxas', rotulo: 'Método das taxas (envelhecimento e arranjos)', curto: 'Taxas', cor: 'teal', traco: 'solid' },
+  { id: 'taxas', rotulo: 'Envelhecimento e arranjos', curto: 'Envelhecimento e arranjos', cor: 'teal', traco: 'solid' },
   {
     id: 'taxas_arranjos_fixos',
-    rotulo: 'Só o envelhecimento (arranjos de 2026)',
-    curto: 'Arranjos fixos',
+    rotulo: 'Só o envelhecimento',
+    curto: 'Só o envelhecimento',
     cor: 'teal',
     traco: 'dashed',
   },
   { id: 'ml_rf', rotulo: 'Machine learning (Random Forest)', curto: 'Random Forest', cor: 'cobalt', traco: 'dashed' },
   { id: 'ml_gb', rotulo: 'Machine learning (Gradient Boosting)', curto: 'Gradient Boosting', cor: 'cobalt', traco: 'dotted' },
-  { id: 'contrafactual', rotulo: 'Contrafactual (composição de 2026)', curto: 'Contrafactual', cor: 'orange', traco: 'dashed' },
+  { id: 'contrafactual', rotulo: 'Sem mudanças desde 2026', curto: 'Sem mudanças desde 2026', cor: 'orange', traco: 'dashed' },
 ]
 
 export const ANO_INICIAL = 2026
@@ -28,17 +29,17 @@ export const RECORTES = [
   {
     id: 'chefe_60_mais_todos',
     rotulo: 'Chefe 60+, todos os arranjos',
-    explica: 'Mostra principalmente o efeito dos arranjos: entre as faixas de 60 anos ou mais, o consumo por pessoa muda pouco com a idade.',
+    explica: 'Mostra principalmente o efeito dos arranjos. A média por pessoa de um grupo não sobe só porque o grupo cresce: o crescimento dos domicílios de idosos aparece no consumo total e na participação.',
   },
   {
     id: 'chefe_60_mais',
     rotulo: 'Chefe 60+, mononucleares',
-    explica: 'Esconde os dois efeitos: o recorte já é definido pela idade do chefe e pelo arranjo, então o envelhecimento quase não muda a média.',
+    explica: 'Na média por pessoa, esconde os dois efeitos: o recorte já é definido pela idade do chefe e pelo arranjo. A média de um grupo não sobe só porque o grupo cresce; o crescimento aparece no consumo total e na participação.',
   },
   {
     id: 'mononuclear_abaixo_60',
     rotulo: 'Abaixo de 60, mononucleares',
-    explica: 'Esconde os dois efeitos: o recorte já é definido pela idade do chefe e pelo arranjo, então o envelhecimento quase não muda a média.',
+    explica: 'Na média por pessoa, esconde os dois efeitos: o recorte já é definido pela idade do chefe e pelo arranjo. A média de um grupo não sobe só porque o grupo cresce; o crescimento aparece no consumo total e na participação.',
   },
 ]
 

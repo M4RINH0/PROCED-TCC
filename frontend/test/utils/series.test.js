@@ -17,6 +17,15 @@ describe('SERIES', () => {
     expect(cor).toEqual({ taxas: 'teal', taxas_arranjos_fixos: 'teal', ml_rf: 'cobalt', ml_gb: 'cobalt', contrafactual: 'orange' })
   })
 
+  it('usa os rótulos simples na interface', () => {
+    const rotulo = Object.fromEntries(SERIES.map((s) => [s.id, s.rotulo]))
+    expect([rotulo.taxas, rotulo.taxas_arranjos_fixos, rotulo.contrafactual]).toEqual([
+      'Envelhecimento e arranjos',
+      'Só o envelhecimento',
+      'Sem mudanças desde 2026',
+    ])
+  })
+
   it('taxas em traço cheio e arranjos fixos em verde-petróleo tracejado', () => {
     const traco = Object.fromEntries(SERIES.map((s) => [s.id, s.traco]))
     expect([traco.taxas, traco.taxas_arranjos_fixos]).toEqual(['solid', 'dashed'])
@@ -30,7 +39,8 @@ describe('RECORTES', () => {
     expect(RECORTES[0].explica).toMatch(/idade/)
     expect(RECORTES[0].explica).toMatch(/arranjos/)
     expect(RECORTES[1].explica).toMatch(/principalmente o efeito dos arranjos/)
-    expect(RECORTES[2].explica).toMatch(/Esconde os dois efeitos/)
+    expect(RECORTES[2].explica).toMatch(/esconde os dois efeitos/)
+    for (const r of RECORTES.slice(1)) expect(r.explica).toMatch(/não sobe só porque o grupo cresce/)
   })
 
   it('diferencia cada série também pelo traço e pelo rótulo, não só pela cor', () => {

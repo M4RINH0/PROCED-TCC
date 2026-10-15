@@ -56,6 +56,28 @@ function Fontes() {
           </a>
         </>
       )}
+      <p className="lbl">Como ler o Panorama</p>
+      <dl data-testid="como-ler">
+        <div className="kv">
+          <dt>Envelhecimento e arranjos</dt>
+          <dd>A população envelhece como na projeção da população do IBGE, e a divisão entre quem mora só, em dupla ou com mais pessoas segue a tendência das POFs.</dd>
+        </div>
+        <div className="kv">
+          <dt>Só o envelhecimento</dt>
+          <dd>A população envelhece, mas a divisão entre os arranjos fica como em 2026.</dd>
+        </div>
+        <div className="kv">
+          <dt>Sem mudanças desde 2026</dt>
+          <dd>O número de domicílios cresce como na projeção, mas a composição por idade do chefe e arranjo fica a de 2026.</dd>
+        </div>
+        <div className="kv">
+          <dt>Efeitos</dt>
+          <dd>
+            Efeito da idade = só o envelhecimento menos sem mudanças desde 2026. Efeito dos arranjos = envelhecimento e
+            arranjos menos só o envelhecimento. Os dois somam o efeito do envelhecimento, calculado em cada indicador.
+          </dd>
+        </div>
+      </dl>
       <div className="note-box">
         O IBGE projeta só a população; o consumo de energia é calculado pelo PROCED. A API lê o banco no Supabase só pelo
         back-end.
