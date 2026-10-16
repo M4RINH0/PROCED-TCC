@@ -9,6 +9,7 @@ import Segmentado from '../components/Segmentado.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarComposicao } from '../services/api.js'
 import { ANOS_HISTORICO, APARENCIA, FILTROS, noFiltro } from '../utils/categorias.js'
+import { FONTE_COMPOSICAO } from '../utils/fontes.js'
 import { umaCasa } from '../utils/formato.js'
 import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
@@ -77,17 +78,17 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
 
   return (
     <>
-      <div className="vh">
+      <div className="vh vh-compacto">
         <div>
           <h1>Domicílios por arranjo</h1>
           <p className={atualizando ? 'esmaecido' : undefined}>{frase}</p>
           <Atualizando ativo={atualizando} destino={local.nome} />
         </div>
-        <div className="vh-lado">
-          <FiltroLocal local={local} />
-          <PainelSimulacao simulacao={simulacao} />
-          <Segmentado rotulo="Filtrar arranjos" opcoes={FILTROS} valor={filtro} aoMudar={setFiltro} />
-        </div>
+      </div>
+      <div className="barra-filtros" role="group" aria-label="Filtros de Domicílios">
+        <FiltroLocal local={local} />
+        <Segmentado rotulo="Filtrar arranjos" opcoes={FILTROS} valor={filtro} aoMudar={setFiltro} />
+        <PainelSimulacao simulacao={simulacao} />
       </div>
       <div className="body g-dom">
         <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-iso">
@@ -121,7 +122,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
           <div className="pf">
             <span>
               {dados?.simulacao && <b>Simulação. </b>}
-              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {nomeDosDados}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
+              Fonte: {dados?.fonte ?? FONTE_COMPOSICAO}, {nomeDosDados}. Os arranjos do recorte ocupam as primeiras casas da grade.</span>
           </div>
         </section>
         <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-rows">

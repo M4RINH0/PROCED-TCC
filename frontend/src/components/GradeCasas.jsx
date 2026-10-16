@@ -1,16 +1,17 @@
 import { useTamanho } from '../hooks/useTamanho.js'
 import { APARENCIA, noFiltro } from '../utils/categorias.js'
+import { melhorGrade } from '../utils/grade.js'
 import { CAMINHO_CASA } from './Icone.jsx'
 
-/* Isotype do protótipo: 100 casas coloridas por arranjo. casas[i] = quantidade da categoria i */
+/* Isotype do protótipo: 100 casas coloridas por arranjo, preenchidas por linha (os arranjos do recorte
+   ficam nas primeiras casas). casas[i] = quantidade da categoria i */
 export default function GradeCasas({ categorias, casas, filtro, destaque }) {
   const [ref, { largura: W, altura: H }] = useTamanho({ largura: 520, altura: 420 })
-  const colunas = 10
-  const gap = Math.max(3, Math.min(W, H) * 0.012)
-  const celula = Math.min((W - gap * (colunas - 1)) / colunas, (H - gap * (colunas - 1)) / colunas)
+  // as colunas acompanham a forma do painel, para a grade ocupá-lo inteiro
+  const { colunas, linhas, celula, gap } = melhorGrade(W, H)
   const escala = celula / 20
   const ox = (W - (celula * colunas + gap * (colunas - 1))) / 2
-  const oy = (H - (celula * colunas + gap * (colunas - 1))) / 2
+  const oy = (H - (celula * linhas + gap * (linhas - 1))) / 2
 
   const lista = []
   categorias.forEach((c, i) => {

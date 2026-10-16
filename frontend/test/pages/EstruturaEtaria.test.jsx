@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import Piramide from '../../src/components/Piramide.jsx'
 import { buscarConsumoChefe, buscarPiramides } from '../../src/services/api.js'
@@ -111,5 +111,24 @@ describe('EstruturaEtaria: controles de simulação', () => {
     expect(p.buscarConsumo).toHaveBeenCalledWith({ arranjo: 'mononucleares', localidade: 'Brasil' }, expect.anything())
     expect(screen.getByLabelText('Intensidade da mudança de arranjos')).toBeDisabled()
     expect(screen.getByText(/a mudança de arranjos não altera esta página/)).toBeInTheDocument()
+  })
+})
+
+describe('EstruturaEtaria: revisão no navegador', () => {
+  it('no erro, os dois rodapés citam as mesmas fontes do estado normal', async () => {
+    const { FONTE_CONSUMO_CHEFE, FONTE_PIRAMIDE } = await import('../../src/utils/fontes.js')
+    const falha = () => vi.fn().mockRejectedValue(new Error('A API respondeu com o código 503'))
+    render(<EstruturaEtaria ano={2050} buscarPir={falha()} buscarConsumo={falha()} />)
+    await screen.findAllByRole('alert')
+    expect(screen.getByText(`Fonte: ${FONTE_PIRAMIDE}`, { exact: false })).toBeInTheDocument()
+    expect(screen.getByText(`Fonte: ${FONTE_CONSUMO_CHEFE}`, { exact: false })).toBeInTheDocument()
+  })
+
+  it('filtros e simulação ficam na barra comum, como no Panorama', () => {
+    render(<EstruturaEtaria ano={2050} {...props()} />)
+    const barra = screen.getByRole('group', { name: 'Filtros de Estrutura etária' })
+    expect(barra).toHaveClass('barra-filtros')
+    expect(within(barra).getByLabelText('Região')).toBeInTheDocument()
+    expect(within(barra).getByRole('button', { name: 'Parâmetros de simulação' })).toBeInTheDocument()
   })
 })

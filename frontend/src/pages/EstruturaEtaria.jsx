@@ -9,6 +9,7 @@ import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import Piramide from '../components/Piramide.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarConsumoChefe, buscarPiramides } from '../services/api.js'
+import { FONTE_CONSUMO_CHEFE, FONTE_PIRAMIDE } from '../utils/fontes.js'
 import { inteiro, umaCasa } from '../utils/formato.js'
 import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
@@ -67,20 +68,20 @@ export default function EstruturaEtaria({
 
   return (
     <>
-      <div className="vh">
+      <div className="vh vh-compacto">
         <div>
           <h1>Estrutura etária</h1>
           <p className={atualizandoPir ? 'esmaecido' : undefined}>{frase}</p>
           <Atualizando ativo={atualizandoPir || atualizandoConsumo} destino={local.nome} />
         </div>
-        <div className="vh-lado">
-          <FiltroLocal local={local} />
-          <PainelSimulacao simulacao={simulacao} semEfeito={SEM_EFEITO_ETARIA} />
-          <span className="rec">
-            <Icone nome="target" />
-            Recorte: chefe com 60 anos ou mais
-          </span>
-        </div>
+        <span className="rec">
+          <Icone nome="target" />
+          Recorte: chefe com 60 anos ou mais
+        </span>
+      </div>
+      <div className="barra-filtros" role="group" aria-label="Filtros de Estrutura etária">
+        <FiltroLocal local={local} />
+        <PainelSimulacao simulacao={simulacao} semEfeito={SEM_EFEITO_ETARIA} />
       </div>
       <div className="body g-eta">
         <section className={atualizandoPir ? 'pan esmaecido' : 'pan'} aria-labelledby="h-pyr">
@@ -120,7 +121,7 @@ export default function EstruturaEtaria({
           <div className="pf">
             <span>
               {pir.dados?.simulacao && <b>Simulação. </b>}
-              Fonte: {pir.dados?.fonte ?? 'Projeções da População (IBGE)'}, {nomeDosDados}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
+              Fonte: {pir.dados?.fonte ?? FONTE_PIRAMIDE}, {nomeDosDados}. Arraste a linha do tempo para ver a pirâmide mudar de forma.</span>
           </div>
         </section>
         <section className={atualizandoConsumo ? 'pan split-v esmaecido' : 'pan split-v'} aria-labelledby="h-ch">
@@ -179,7 +180,7 @@ export default function EstruturaEtaria({
             </div>
           )}
           <div className="pf">
-            <span>Fonte: {consumo.dados?.fonte ?? 'POF'}, {nomeDoConsumo}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
+            <span>Fonte: {consumo.dados?.fonte ?? FONTE_CONSUMO_CHEFE}, {nomeDoConsumo}. A POF retrata 2017 a 2018; o valor de cada faixa não muda com o ano.</span>
           </div>
         </section>
       </div>

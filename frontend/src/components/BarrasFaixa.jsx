@@ -18,7 +18,7 @@ export default function BarrasFaixa({ faixas }) {
   const y = (v) => m.t + ih - (v / topo) * ih
 
   return (
-    <div className="plot" ref={ref} style={{ flex: '1 1 55%' }}>
+    <div className="plot plot-barras" ref={ref}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Consumo por pessoa por faixa etária do chefe do domicílio">
         {marcas.map((v) => (
           <g key={v}>

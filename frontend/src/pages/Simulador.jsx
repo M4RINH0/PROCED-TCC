@@ -9,6 +9,8 @@ import { useConsulta } from '../hooks/useConsulta.js'
 import { useTamanho } from '../hooks/useTamanho.js'
 import { buscarSimulacao } from '../services/api.js'
 import { inteiro, milhoes, umaCasa } from '../utils/formato.js'
+import { FONTE_SIMULADOR } from '../utils/fontes.js'
+import { rotuloDaSerie } from '../utils/series.js'
 import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 export const ANOS = [2026, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070]
@@ -26,11 +28,8 @@ export const ARRANJOS = [
   { id: 'casal_ou_dupla', rotulo: 'Casal ou dupla' },
   { id: 'multipessoal', rotulo: 'Multipessoal (3 ou mais)' },
 ]
-export const BASES = [
-  { id: 'taxas', rotulo: 'Método das taxas' },
-  { id: 'taxas_arranjos_fixos', rotulo: 'Só o envelhecimento (arranjos de 2026)' },
-  { id: 'contrafactual', rotulo: 'Contrafactual (composição de 2026)' },
-]
+/* Os mesmos rótulos de cenário do Panorama (utils/series.js) */
+export const BASES = ['taxas', 'taxas_arranjos_fixos', 'contrafactual'].map((id) => ({ id, rotulo: rotuloDaSerie(id) }))
 const PADRAO = { ano: '2070', faixa: '70_79', arranjo: 'unipessoal', base: 'taxas' }
 const rotulo = (lista, id) => lista.find((x) => x.id === id).rotulo
 
@@ -103,6 +102,7 @@ export default function Simulador({
           <Icone nome="refresh" />
           Tentar novamente
         </button>
+        <p className="bill-fonte">Fonte: {FONTE_SIMULADOR}</p>
       </div>
     )
   } else if (!dados) {
@@ -133,7 +133,7 @@ export default function Simulador({
           <p className="bill-read">
             Um domicílio <b>{rotulo(ARRANJOS, form.arranjo).toLowerCase()}</b> com chefe na faixa de <b>{dados.faixa}</b> consome{' '}
             <b>{umaCasa(dados.valor)} kWh por mês por pessoa</b>, média ponderada de {dados.domicilios_amostra.toLocaleString('pt-BR')}{' '}
-            domicílios da POF. Esse valor fica nos níveis da POF nos dois cenários.
+            domicílios da POF. Esse valor fica nos níveis da POF nos três cenários.
             {dados.domicilios_projetados != null && (
               <>
                 {' '}
@@ -158,7 +158,7 @@ export default function Simulador({
               {dados.recuperado ? 'Recuperado de cenário já calculado' : 'Calculado agora e salvo para as próximas consultas'}
             </span>
           </span>
-          <span>Fonte: {dados.fonte}</span>
+          <span>Fonte: {dados.fonte ?? FONTE_SIMULADOR}</span>
           <button type="button" className="btn" onClick={() => abrirGaveta('exportar')}>
             <Icone nome="down" />
             Exportar resultado
@@ -170,16 +170,16 @@ export default function Simulador({
 
   return (
     <>
-      <div className="vh">
+      <div className="vh vh-compacto">
         <div>
           <h1>Simulador de cenário</h1>
           <p>Combine os parâmetros para obter o consumo projetado de um tipo de domicílio num ano específico.</p>
           <Atualizando ativo={atualizando} destino={local.nome} />
         </div>
-        <div className="vh-lado">
-          <FiltroLocal local={local} />
-          <PainelSimulacao simulacao={simulacao} />
-        </div>
+      </div>
+      <div className="barra-filtros" role="group" aria-label="Filtros do Simulador">
+        <FiltroLocal local={local} />
+        <PainelSimulacao simulacao={simulacao} />
       </div>
       <div className="body g-sim">
         <section className="pan" aria-labelledby="h-form">

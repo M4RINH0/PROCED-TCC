@@ -16,6 +16,9 @@ export const SERIES = [
   { id: 'contrafactual', rotulo: 'Sem mudanças desde 2026', curto: 'Sem mudanças desde 2026', cor: 'orange', traco: 'dashed' },
 ]
 
+/* Rótulo de um cenário na interface; todas as páginas e a gaveta usam este, para o nome ser o mesmo em todo lugar */
+export const rotuloDaSerie = (id) => SERIES.find((s) => s.id === id).rotulo
+
 export const ANO_INICIAL = 2026
 export const ANO_FINAL = 2070 // horizonte do estudo, o mesmo ano em que termina a projeção da população do IBGE
 

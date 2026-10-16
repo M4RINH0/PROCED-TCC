@@ -2,7 +2,7 @@
 export default function Segmentado({ rotulo, opcoes, valor, aoMudar }) {
   const id = `seg-${rotulo.toLowerCase().replace(/\W+/g, '-')}`
   return (
-    <div className="fl">
+    <div className="fl fl-seg">
       <span className="flab" id={id}>
         {rotulo}
       </span>

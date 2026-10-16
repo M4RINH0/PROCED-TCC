@@ -248,3 +248,18 @@ describe('Panorama: indicador do gráfico', () => {
     expect(screen.getByText('14,6 em 2070')).toBeInTheDocument()
   })
 })
+
+describe('Panorama: revisão no navegador', () => {
+  it('no erro, o rodapé cita as mesmas fontes do estado normal', async () => {
+    const { FONTE_PANORAMA } = await import('../../src/utils/fontes.js')
+    const { unmount } = render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscarOk()} />)
+    await screen.findByTestId('reg-taxas')
+    const normal = screen.getByText(/^Fonte:/).textContent.split(', Brasil')[0]
+    unmount()
+    render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={vi.fn().mockRejectedValue(new Error('A API respondeu com o código 503'))} />)
+    await screen.findByRole('alert')
+    const erro = screen.getByText(/^Fonte:/).textContent.split(', Brasil')[0]
+    expect(erro).toBe(normal)
+    expect(erro).toBe(`Fonte: ${FONTE_PANORAMA}`)
+  })
+})

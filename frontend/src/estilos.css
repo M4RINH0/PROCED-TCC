@@ -664,3 +664,37 @@ circle.dot{transition:cy .12s linear}
   .pan{overflow:visible}
   .plot,.iso{height:360px;flex:none}
 }
+.bill-fonte{margin:12px 0 0;font-size:12px;color:var(--muted)}
+
+/* ═════════ barra de filtros comum e altura dos gráficos (revisão no navegador) ═════════ */
+/* painel de simulação: o título recolhe os controles; recolhido, mostra os valores em uso */
+.sim-alterna{display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:none;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:650;color:var(--ink-2)}
+.sim-alterna svg{width:15px;height:15px;transition:transform .18s var(--ease)}
+.sim-alterna[aria-expanded="true"] svg{transform:rotate(180deg)}
+.sim-alterna:hover{color:var(--ink)}
+.sim-resumo{font-size:12.5px;color:var(--muted)}
+.sim-ctrls[hidden]{display:none}
+.barra-filtros .sim-painel.recolhido{flex:0 1 auto;min-width:0}
+/* a ajuda some na barra (vira dica), menos a de um controle desligado, que explica por quê */
+.barra-filtros .sim-ctrls .fl:has(input:disabled) .help{display:block}
+/* controle segmentado e recorte seguem a mesma linha dos outros filtros */
+.barra-filtros>.fl.fl-seg{flex:0 0 auto;min-width:0}
+.vh-compacto .rec{align-self:flex-start;margin-top:6px}
+/* desktop: cada gráfico principal tem ao menos 320 px; se não couber, a página rola */
+@media (min-width:1081px){
+  main{overflow-y:auto}
+  .body{flex:1 0 auto}
+  .plot,.iso{min-height:320px}
+  /* a tabela rola por dentro em vez de esticar a linha inteira (e a pirâmide ao lado) */
+  .split-v .plot-barras{flex:1 1 auto}
+  .split-v .twrap{flex:1 1 0;min-height:150px}
+}
+/* o painel de simulação cresce com a barra, para a explicação de um controle desligado caber em menos linhas */
+.barra-filtros .sim-painel{max-width:none}
+@media (max-width:760px){
+  .plot,.iso{height:320px}
+}
+@media (pointer:coarse){
+  .sim-alterna{min-height:44px}
+}

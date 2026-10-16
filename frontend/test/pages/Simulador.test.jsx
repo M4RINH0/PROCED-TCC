@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { buscarSimulacao } from '../../src/services/api.js'
 import Simulador from '../../src/pages/Simulador.jsx'
@@ -147,5 +147,27 @@ describe('Simulador', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Consultar cenário' }))
     await waitFor(() => expect(screen.getByTestId('chip-cenario')).toHaveTextContent('Recuperado de cenário já calculado'))
     expect(screen.getByTestId('chip-cenario')).not.toHaveClass('calc')
+  })
+})
+
+describe('Simulador: revisão no navegador', () => {
+  it('diz que o consumo por pessoa fica nos níveis da POF nos três cenários', async () => {
+    render(<Simulador buscar={buscarOk()} />)
+    expect(await screen.findByText(/nos três cenários/)).toBeInTheDocument()
+    expect(screen.queryByText(/nos dois cenários/)).not.toBeInTheDocument()
+  })
+
+  it('no erro, o rodapé cita as mesmas fontes do estado normal', async () => {
+    const { FONTE_SIMULADOR } = await import('../../src/utils/fontes.js')
+    render(<Simulador buscar={vi.fn().mockRejectedValue(new Error('A API respondeu com o código 503'))} />)
+    expect(await screen.findByRole('alert')).toHaveTextContent(`Fonte: ${FONTE_SIMULADOR}`)
+  })
+
+  it('filtros e simulação ficam na barra comum, como no Panorama', () => {
+    render(<Simulador buscar={buscarOk()} />)
+    const barra = screen.getByRole('group', { name: 'Filtros do Simulador' })
+    expect(barra).toHaveClass('barra-filtros')
+    expect(within(barra).getByLabelText('Região')).toBeInTheDocument()
+    expect(within(barra).getByRole('button', { name: 'Parâmetros de simulação' })).toBeInTheDocument()
   })
 })

@@ -27,6 +27,7 @@ export default function App() {
   const [localidade, setLocalidade] = useState(BRASIL)
   /* parâmetros de simulação (RF02): globais, preservados ao trocar de aba; as consultas usam os adiados */
   const [parametros, setParametros] = useState(PADRAO_SIMULACAO)
+  const [simulacaoRecolhida, setSimulacaoRecolhida] = useState(false)
   const aplicados = useAdiado(parametros, ESPERA_MS)
   const listaLocalidades = useConsulta((o) => buscarLocalidades(o), [])
   const temporizador = useRef(0)
@@ -85,6 +86,8 @@ export default function App() {
     ativa: emSimulacao(parametros),
     aoMudar: (campo, valor) => setParametros((p) => ({ ...p, [campo]: valor })),
     restaurar: () => setParametros(PADRAO_SIMULACAO),
+    recolhido: simulacaoRecolhida,
+    alternarRecolhido: () => setSimulacaoRecolhida((r) => !r),
   }
 
   const escuro = tema === 'dark'

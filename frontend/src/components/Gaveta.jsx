@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarFontes, buscarProjecao, exportarDados } from '../services/api.js'
 import { umaCasa } from '../utils/formato.js'
+import { rotuloDaSerie } from '../utils/series.js'
 import { PADRAO_SIMULACAO } from '../utils/simulacao.js'
 import Icone from './Icone.jsx'
 import { ANO_FINAL, ANO_INICIAL } from './LinhaDoTempo.jsx'
@@ -60,15 +61,15 @@ function Fontes() {
       <p className="lbl">Como ler o Panorama</p>
       <dl data-testid="como-ler">
         <div className="kv">
-          <dt>Envelhecimento e arranjos</dt>
+          <dt>{rotuloDaSerie('taxas')}</dt>
           <dd>A população envelhece como na projeção da população do IBGE, e a divisão entre quem mora só, em dupla ou com mais pessoas segue a tendência das POFs.</dd>
         </div>
         <div className="kv">
-          <dt>Só o envelhecimento</dt>
+          <dt>{rotuloDaSerie('taxas_arranjos_fixos')}</dt>
           <dd>A população envelhece, mas a divisão entre os arranjos fica como em 2026.</dd>
         </div>
         <div className="kv">
-          <dt>Sem mudanças desde 2026</dt>
+          <dt>{rotuloDaSerie('contrafactual')}</dt>
           <dd>O número de domicílios cresce como na projeção, mas a composição por idade do chefe e arranjo fica a de 2026.</dd>
         </div>
         <div className="kv">

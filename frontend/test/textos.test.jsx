@@ -7,9 +7,11 @@ import { SERIES } from '../src/utils/series.js'
 /* O IBGE projeta só a população: nenhum texto pode chamar o consumo de "oficial" nem atribuí-lo ao IBGE */
 const fontes = import.meta.glob('../src/**/*.{js,jsx}', { query: '?raw', import: 'default', eager: true })
 
-/* Únicas formas em que o IBGE pode aparecer: como fonte da população */
+/* Únicas formas em que o IBGE pode aparecer: como fonte da população, ou como autor da POF (a pesquisa
+   de onde vem o consumo declarado, sem nenhuma projeção de consumo atribuída ao IBGE) */
 const IBGE_PERMITIDO = [
   /Projeções da População \(IBGE\)/g,
+  /POF 2017 a 2018 \(IBGE\)/g,
   /projeção (populacional|da população) do IBGE/g,
   /O IBGE projeta só a população/g,
 ]

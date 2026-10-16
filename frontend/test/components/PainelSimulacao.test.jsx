@@ -60,3 +60,31 @@ describe('utilitários da simulação', () => {
     expect([lerControle('0.30000000000000004'), lerControle('1.5'), lerControle('0')]).toEqual([0.3, 1.5, 0])
   })
 })
+
+describe('PainelSimulacao recolhível', () => {
+  it('o título recolhe os controles e, recolhido, mostra os valores em uso', () => {
+    render(<PainelSimulacao simulacao={estado({ k: 1.3, intensidade: 0.6 })} />)
+    const titulo = screen.getByRole('button', { name: 'Parâmetros de simulação' })
+    expect(titulo).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByLabelText('Velocidade do envelhecimento (k)')).toBeVisible()
+    expect(screen.queryByTestId('resumo-simulacao')).not.toBeInTheDocument()
+    fireEvent.click(titulo)
+    expect(titulo).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByLabelText('Velocidade do envelhecimento (k)')).not.toBeVisible()
+    expect(screen.getByTestId('resumo-simulacao')).toHaveTextContent('Velocidade 1,3, intensidade 0,6')
+    // o rótulo de simulação e o restaurar continuam à vista
+    expect(screen.getByTestId('rotulo-simulacao')).toBeInTheDocument()
+    fireEvent.click(titulo)
+    expect(screen.getByLabelText('Velocidade do envelhecimento (k)')).toBeVisible()
+  })
+
+  it('com o estado do App, segue o recolhido global e avisa o clique', () => {
+    const alternarRecolhido = vi.fn()
+    render(<PainelSimulacao simulacao={estado(PADRAO_SIMULACAO, { recolhido: true, alternarRecolhido })} />)
+    const titulo = screen.getByRole('button', { name: 'Parâmetros de simulação' })
+    expect(titulo).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('resumo-simulacao')).toHaveTextContent('Velocidade 1,0, intensidade 0,6')
+    fireEvent.click(titulo)
+    expect(alternarRecolhido).toHaveBeenCalledTimes(1)
+  })
+})

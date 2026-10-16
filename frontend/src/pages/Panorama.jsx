@@ -8,6 +8,7 @@ import LeituraAno from '../components/LeituraAno.jsx'
 import PainelSimulacao from '../components/PainelSimulacao.jsx'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarSerie } from '../services/api.js'
+import { FONTE_PANORAMA } from '../utils/fontes.js'
 import { comSinal, umaCasa } from '../utils/formato.js'
 import {
   INDICADORES,
@@ -18,12 +19,12 @@ import {
   serieDoIndicador,
   valorDoIndicador,
 } from '../utils/indicadores.js'
-import { RECORTES, SERIES, seriesComDado } from '../utils/series.js'
+import { RECORTES, rotuloDaSerie, SERIES, seriesComDado } from '../utils/series.js'
 import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 const definido = (v) => v !== null && v !== undefined
-const rotulo = (id) => SERIES.find((s) => s.id === id).rotulo.toLowerCase()
+const rotulo = (id) => rotuloDaSerie(id).toLowerCase()
 
 function comUnidade(v, indicador) {
   return `${umaCasa(v)}${indicador.sufixo ? indicador.sufixo : ` ${indicador.unidade}`}`
@@ -200,7 +201,7 @@ export default function Panorama({
           <div className="pf">
             <span>
               {dados?.simulacao && <b>Simulação. </b>}
-              Fonte: {dados?.fonte ?? 'POF 2017 a 2018 e Projeções da População (IBGE)'}, {nomeDosDados}.
+              Fonte: {dados?.fonte ?? FONTE_PANORAMA}, {nomeDosDados}.
               {typeof dados?.domicilios_amostra === 'number' &&
                 ` Amostra da POF: ${dados.domicilios_amostra.toLocaleString('pt-BR')} domicílios no recorte.`} Linha cheia até o ano
               selecionado; esmaecida depois dele.

@@ -134,3 +134,21 @@ describe('Domicilios: controles de simulação e localidade', () => {
     expect(screen.getByText(/\(São Paulo\)/)).toBeInTheDocument()
   })
 })
+
+describe('Domicilios: revisão no navegador', () => {
+  it('no erro, o rodapé cita as mesmas fontes do estado normal', async () => {
+    const { FONTE_COMPOSICAO } = await import('../../src/utils/fontes.js')
+    render(<Domicilios ano={2050} buscar={vi.fn().mockRejectedValue(new Error('A API respondeu com o código 503'))} />)
+    await screen.findByRole('alert')
+    expect(screen.getByText(`Fonte: ${FONTE_COMPOSICAO}`, { exact: false })).toBeInTheDocument()
+  })
+
+  it('a barra de filtros é a mesma das outras páginas: localidade, filtro de arranjos e simulação', () => {
+    render(<Domicilios ano={2050} buscar={buscar()} />)
+    const barra = screen.getByRole('group', { name: 'Filtros de Domicílios' })
+    expect(barra).toHaveClass('barra-filtros')
+    expect(within(barra).getByLabelText('Região')).toBeInTheDocument()
+    expect(within(barra).getByRole('group', { name: 'Filtrar arranjos' })).toBeInTheDocument()
+    expect(within(barra).getByRole('button', { name: 'Parâmetros de simulação' })).toBeInTheDocument()
+  })
+})
