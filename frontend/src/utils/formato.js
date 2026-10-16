@@ -20,3 +20,12 @@ export function comSinal(valor) {
 export function milhoes(valor) {
   return `${umaCasa(valor / 1e6)} milhões`
 }
+
+/* Número grande em escala curta para eixos (mil, mi, bi), com uma casa: só muda a escala */
+export function compacto(valor) {
+  const abs = Math.abs(valor)
+  if (abs >= 1e9) return `${umaCasa(valor / 1e9)} bi`
+  if (abs >= 1e6) return `${umaCasa(valor / 1e6)} mi`
+  if (abs >= 1e4) return `${umaCasa(valor / 1e3)} mil`
+  return Number.isInteger(valor) ? valor.toLocaleString('pt-BR') : umaCasa(valor)
+}

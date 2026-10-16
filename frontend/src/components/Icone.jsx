@@ -58,6 +58,13 @@ const TRACOS = {
   moon: <path d="M19.5 14.2A7.8 7.8 0 1 1 9.8 4.5a6.2 6.2 0 0 0 9.7 9.7z" />,
   x: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
   chev: <path d="M7 10l5 5 5-5" />,
+  cmp: (
+    <>
+      <path d="M3.5 19.5h17" />
+      <path d="M5 15.5 10 11l4 2.5 5.5-6" />
+      <path d="M5 17.5 10 15l4 .5 5.5-3" strokeDasharray="2 2.2" />
+    </>
+  ),
   target: (
     <>
       <circle cx="12" cy="12" r="8.5" />

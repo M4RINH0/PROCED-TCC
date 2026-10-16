@@ -18,11 +18,17 @@ describe('App', () => {
     ['Domicílios', 'Domicílios por arranjo'],
     ['Estrutura etária', 'Estrutura etária'],
     ['Simulador', 'Simulador de cenário'],
+    ['Comparar', 'Comparar grupos'],
   ])('navega para a aba %s', (aba, titulo) => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: aba }))
     expect(screen.getByRole('heading', { level: 1, name: titulo })).toBeInTheDocument()
     expect(window.location.hash).not.toBe('')
+  })
+
+  it('não mostra o selo nem qualquer menção a machine learning', () => {
+    render(<App />)
+    expect(document.body.textContent).not.toMatch(/machine learning|Random Forest|Gradient Boosting/i)
   })
 
   it('alterna o tema no elemento raiz', () => {

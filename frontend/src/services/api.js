@@ -36,6 +36,11 @@ export function buscarSimulacao({ ano, faixa, arranjo, base, localidade, intensi
   return apiGet('/simulador', { ano, faixa, arranjo, base, localidade, intensidade, k, recalcular }, opcoes)
 }
 
+/* Comparar: GET /comparacao?grupos=&indicador=&forma=&cenario= (RF12; RF02: intensidade e k) */
+export function buscarComparacao({ grupos, indicador, forma, cenario, localidade, intensidade, k }, opcoes) {
+  return apiGet('/comparacao', { grupos: grupos.join(','), indicador, forma, cenario, localidade, intensidade, k }, opcoes)
+}
+
 /* Gaveta Fontes: GET /fontes (RF10) */
 export function buscarFontes(opcoes) {
   return apiGet('/fontes', {}, opcoes)
@@ -48,4 +53,9 @@ export function buscarLocalidades(opcoes) {
 
 export function exportarDados({ formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes) {
   return apiBaixar('/exportar', { formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes)
+}
+
+/* Comparar: GET /exportar/comparacao, os mesmos parâmetros de /comparacao mais o formato (RF08, RF12) */
+export function exportarComparacao({ formato, grupos, indicador, forma, cenario, localidade, intensidade, k }, opcoes) {
+  return apiBaixar('/exportar/comparacao', { formato, grupos: grupos.join(','), indicador, forma, cenario, localidade, intensidade, k }, opcoes)
 }

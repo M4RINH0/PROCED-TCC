@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useConsulta } from '../hooks/useConsulta.js'
 import { buscarFontes, buscarProjecao, exportarDados } from '../services/api.js'
+import { salvarBlob } from '../utils/arquivo.js'
 import { umaCasa } from '../utils/formato.js'
 import { rotuloDaSerie } from '../utils/series.js'
 import { PADRAO_SIMULACAO } from '../utils/simulacao.js'
@@ -119,18 +120,6 @@ function Api({ ano, localidade, simulacao, avisar }) {
       </div>
     </>
   )
-}
-
-function salvarBlob(blob, nomeArquivo) {
-  const url = URL.createObjectURL?.(blob)
-  if (!url) return
-  const link = document.createElement('a')
-  link.href = url
-  link.download = nomeArquivo
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL?.(url)
 }
 
 function Exportar({ ano, localidade, simulacao, aoFechar, avisar, exportar = exportarDados }) {

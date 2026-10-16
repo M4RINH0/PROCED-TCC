@@ -8,3 +8,4 @@ export const FONTE_PIRAMIDE = 'Projeções da População (IBGE)'
 export const FONTE_CONSUMO_CHEFE = 'POF 2017 a 2018 (IBGE), média ponderada pelo peso amostral'
 export const FONTE_SIMULADOR =
   'POF 2017 a 2018 (média ponderada pelo peso amostral), tendência das POFs 2002 a 2003 e 2008 a 2009 e Projeções da População (IBGE)'
+export const FONTE_COMPARACAO = 'POF 2002 a 2003, 2008 a 2009 e 2017 a 2018 e Projeções da População (IBGE)'

@@ -4,6 +4,7 @@ falha, usa os textos de frontend/src/utils/fontes.js. Este teste garante que sã
 import re
 from pathlib import Path
 
+from app.schemas.comparacao import FONTE as FONTE_COMPARACAO
 from app.schemas.domicilios import FONTE_COMPOSICAO
 from app.schemas.estrutura_etaria import FONTE_CONSUMO, FONTE_PIRAMIDE
 from app.schemas.panorama import FONTE as FONTE_PANORAMA
@@ -25,4 +26,5 @@ def test_fontes_do_front_sao_iguais_as_da_api():
         "FONTE_PIRAMIDE": FONTE_PIRAMIDE,
         "FONTE_CONSUMO_CHEFE": FONTE_CONSUMO,
         "FONTE_SIMULADOR": FONTE_SIMULADOR,
+        "FONTE_COMPARACAO": FONTE_COMPARACAO,
     }
