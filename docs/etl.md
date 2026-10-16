@@ -39,9 +39,8 @@ O cálculo central para responder à hipótese do TCC foi o Consumo Médio Per C
 
 **Objetivo:** Gerar a tabela final `consumo_estimado`.
 
-- **Dedução da População Idosa:** Como a tabela de municípios do Censo 2022 fornece o `indice_envelhecimento`, aplicamos a fórmula matemática para extrair o valor absoluto de idosos:
-  $$População Idosa \approx População \times \left( \frac{Indice}{100 + Indice} \right)$$
-- **Aplicação dos Coeficientes:** Multiplicamos a população real recenseada em 2022 pelos coeficientes de consumo (kWh/pessoa) obtidos na Fase 2, segregando por UF e grupo etário (60+ vs Sub-60).
+- **Dedução da População Idosa:** Para obter a população idosa real por UF no ano-base de 2022, calcula-se a proporção exata de idosos (60+ anos) da distribuição etária oficial do IBGE (`projecoes_populacao_idade`) e multiplica-se pela população total recenseada pelo Censo 2022 em cada UF. (Nota metodológica: evita-se a aproximação pelo índice de envelhecimento municipal, que compara 60+ com 0–14 anos e superestimava os idosos ao omitir a faixa de 15 a 59 anos).
+- **Aplicação dos Coeficientes Ponderados:** Multiplica-se a população idosa e não idosa recenseada em 2022 pelos respectivos coeficientes de consumo per capita médio ponderados pelo fator de expansão amostral (`peso_final`) da POF 2017-2018 para cada UF.
 
 ### Fase 4: Projeções Populacionais e Migração para o Supabase
 

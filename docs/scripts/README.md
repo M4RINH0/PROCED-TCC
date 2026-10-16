@@ -20,6 +20,10 @@ Este diretório contém os scripts necessários para processar e estruturar os d
 - **O que faz:** Cria no Supabase (PostgreSQL) a tabela `fato_consumo_pof_historica` para receber os microdados harmonizados das POFs 2002-2003 e 2008-2009, utilizados na estimação da tendência dos arranjos domiciliares (Premissa P13).
 - **Ambiente:** Supabase (PostgreSQL).
 
-### 5. `migraDados.py` (Localizado na raiz do projeto)
+### 5. `ANALISE-bigquery-ai-ml.sql`
+- **O que faz:** Consultas avançadas prontas para uso no BigQuery baseadas na skill `bigquery-ai-ml`: exploração com `ML.DESCRIBE_DATA`, detecção automática de anomalias com `AI.DETECT_ANOMALIES`, identificação de variáveis determinantes do consumo com `AI.KEY_DRIVERS`, modelo `BOOSTED_TREE_REGRESSOR` nativo enriquecido com dados de habitação e renda, e previsão temporal com `AI.FORECAST` (TimesFM) e `AI.EVALUATE`.
+- **Ambiente:** Google BigQuery.
+
+### 6. `migraDados.py` (Localizado na raiz do projeto)
 - **O que faz:** Prepara os dados das projeções de idade fornecidas pelo IBGE até 2070, disponível em [www.ibge.gov.br](https://www.ibge.gov.br/estatisticas/sociais/populacao/9109-projecao-da-populacao.html). O script realiza a limpeza, renomeação de colunas e transformação da estrutura dos dados (unpivot/melt) para um formato longo, gerando o arquivo `projecoes_normalizadas_pronto.csv` para que a formatação da tabela (`projecoes_populacao_idade`) seja perfeitamente importável para o banco de dados PostgreSQL no Supabase.
 - **Ambiente:** Python (Local).

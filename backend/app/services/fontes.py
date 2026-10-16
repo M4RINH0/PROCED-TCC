@@ -26,8 +26,8 @@ CRITERIO_EXCLUSAO = (
 PREMISSAS = [
     Premissa(
         id="P2",
-        texto="Taxa de chefia de 2018 constante por faixa do chefe e arranjo. Congelar as taxas congela os "
-        "arranjos e não capta o aumento de idosos morando sozinhos.",
+        texto="Taxa de chefia total de 2018 constante por faixa de idade do chefe, combinada com a "
+        "tendência histórica de transição dos arranjos domiciliares estimada a partir das POFs.",
     ),
     Premissa(id="P8", texto="Domicílio repetido na POF fica só com a linha do chefe de maior idade."),
     Premissa(
