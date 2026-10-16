@@ -32,6 +32,40 @@ def test_fontes_criterio_cobertura_e_premissas():
     assert all(f["nome"] and f["uso"] for f in fontes.values())
     assert "kWh" in corpo["criterio_exclusao"]
     assert corpo["cobertura_pct"] == 50.0
-    assert [p["id"] for p in corpo["premissas"]] == ["P2", "P8", "P9", "P11", "P12"]
+    assert [p["id"] for p in corpo["premissas"]] == ["P2", "P8", "P9", "P10", "P11", "P12", "P13", "P14"]
     assert corpo["premissas_url"].endswith("docs/premissas.md")
     assert "oficial" not in r.text
+
+
+def test_fontes_incluem_as_pofs_da_tendencia_dos_arranjos():
+    from app.services.fontes import FONTES
+
+    historica = next(f for f in FONTES if f.id == "pof_historica")
+    assert historica.periodo == "2002 a 2003 e 2008 a 2009"
+    assert "P13" in historica.uso
+
+
+def test_p2_antiga_saiu_e_p13_e_p14_entraram():
+    from app.services.fontes import PREMISSAS
+
+    textos = {p.id: p.texto for p in PREMISSAS}
+    # a P2 antiga dizia que a taxa era constante por faixa e arranjo, o que congelava os arranjos
+    assert "congela os arranjos" not in textos["P2"] and "P13" in textos["P2"]
+    assert "0,6" in textos["P13"] and "2002 a 2003" in textos["P13"]
+    assert "k = 1" in textos["P14"]
+
+
+def test_premissas_da_gaveta_existem_em_docs_e_nao_estao_revogadas():
+    import re
+    from pathlib import Path
+
+    from app.services.fontes import PREMISSAS
+
+    doc = (Path(__file__).resolve().parents[2] / "docs" / "premissas.md").read_text(encoding="utf-8")
+    linhas = {m.group(1): m.group(0) for m in re.finditer(r"^\| (P\d+) \|.*$", doc, flags=re.M)}
+    for premissa in PREMISSAS:
+        assert premissa.id in linhas, premissa.id
+        assert "Revogada" not in linhas[premissa.id], premissa.id
+    # toda premissa em vigor que muda os resultados exibidos está na gaveta (P1 e P4 a P7 são de recorte e faixa)
+    em_vigor = {i for i, l in linhas.items() if "Revogada" not in l}
+    assert em_vigor - {p.id for p in PREMISSAS} == {"P1", "P4", "P5", "P6", "P7"}
