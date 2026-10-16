@@ -135,7 +135,11 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
               <span />
               <span>Arranjo</span>
               <span className="v">Domicílios</span>
-              <span className="v">kWh/mês</span>
+              <span className="v">
+                kWh/<wbr />
+                mês/<wbr />
+                pessoa
+              </span>
               <span className="hcell">Participação no tempo</span>
             </div>
             {categorias.map((c) => (
@@ -167,7 +171,7 @@ export default function Domicilios({ ano, versao = 0, buscar = buscarComposicao,
               <div className="row tot">
                 <span className="sw" style={{ background: 'linear-gradient(90deg,var(--teal) 50%,var(--teal-2) 50%)' }} />
                 <span className="nm">
-                  Recorte do estudo<small>Unipessoal 60+ e casal de idosos</small>
+                  Recorte do estudo<small>Unipessoal 60+ e casal ou dupla 60+</small>
                 </span>
                 <span className="v num" data-testid="total-recorte">
                   {indice >= 0 ? `${umaCasa(recorte.reduce((s, c) => s + c.participacao_pct[indice], 0))}%` : 'sem dado'}

@@ -152,3 +152,12 @@ describe('Domicilios: revisão no navegador', () => {
     expect(within(barra).getByRole('button', { name: 'Parâmetros de simulação' })).toBeInTheDocument()
   })
 })
+
+describe('Domicilios: cabeçalho da tabela', () => {
+  it('a coluna de consumo diz kWh/mês/pessoa e pode quebrar depois das barras, sem vazar da coluna estreita', () => {
+    const { container } = render(<Domicilios ano={2050} buscar={buscar()} />)
+    const celula = [...container.querySelectorAll('.row.hd .v')].find((e) => e.textContent === 'kWh/mês/pessoa')
+    expect(celula).toBeDefined()
+    expect(celula.querySelectorAll('wbr')).toHaveLength(2)
+  })
+})

@@ -35,8 +35,8 @@ CRITERIO_EXCLUSAO = (
 PREMISSAS = [
     Premissa(
         id="P2",
-        texto="Taxa de chefia total de 2018 constante por faixa do chefe; a divisão entre os arranjos segue a "
-        "tendência da P13.",
+        texto="Taxa de chefia total de 2018 constante por faixa de idade do chefe, combinada com a "
+        "tendência histórica de transição dos arranjos domiciliares estimada a partir das POFs (P13).",
     ),
     Premissa(id="P8", texto="Domicílio repetido na POF fica só com a linha do chefe de maior idade (provisória)."),
     Premissa(

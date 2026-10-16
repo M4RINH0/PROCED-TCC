@@ -150,7 +150,7 @@ Parâmetro opcional `arranjo`: `mononucleares` (padrão), `unipessoal`,
 O antigo parâmetro `taxa` saiu; o RF02 é atendido por `intensidade` e `k`.
 
 Resposta:
-- `valor`: TEC ponderada da célula (kWh/mês por pessoa), igual nos dois cenários (P6);
+- `valor`: TEC ponderada da célula (kWh/mês por pessoa), igual nos três cenários (P6);
 - `domicilios_projetados`, `participacao_pct` e `consumo_total_calibrado_kwh_mes`: a célula no ano e no cenário escolhidos;
 - `domicilios_amostra` e `baixa_confiabilidade`;
 - `motivo_sem_valor`, quando falta amostra ou projeção da população;
