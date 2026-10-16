@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.dim_coeficientes_consumo` AS
+CREATE OR REPLACE TABLE `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.dim_coeficiente_consumo` AS
 SELECT
     sigla_uf,
     arranjo_familiar,

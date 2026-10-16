@@ -133,7 +133,7 @@ export default function Simulador({
           <p className="bill-read">
             Um domicílio <b>{rotulo(ARRANJOS, form.arranjo).toLowerCase()}</b> com chefe na faixa de <b>{dados.faixa}</b> consome{' '}
             <b>{umaCasa(dados.valor)} kWh por mês por pessoa</b>, média ponderada de {dados.domicilios_amostra.toLocaleString('pt-BR')}{' '}
-            domicílios da POF. Esse valor fica nos níveis da POF nos dois cenários.
+            domicílios da POF. Esse valor fica nos níveis da POF nos três cenários.
             {dados.domicilios_projetados != null && (
               <>
                 {' '}

@@ -1,4 +1,4 @@
-CREATE OR REPLACE TABLE `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.censo_2022_consumo_estimado` AS
+CREATE OR REPLACE TABLE `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.consumo_estimado` AS
 
 WITH censo_municipios AS (
   -- 1. Extraímos os dados demográficos do Censo 2022 por município/UF
@@ -36,7 +36,7 @@ coeficientes_consumo AS (
     MAX(CASE WHEN is_60_mais = TRUE THEN media_consumo_per_capita_kwh END) as consumo_per_capita_60_mais,
     -- Consumo médio per capita para o grupo de controle (Sub-60)
     MAX(CASE WHEN is_60_mais = FALSE THEN media_consumo_per_capita_kwh END) as consumo_per_capita_sub_60
-  FROM `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.dim_coeficientes_consumo`
+  FROM `{NOME DO SEU PROJETO}.{NOME DO SEU DATASET}.dim_coeficiente_consumo`
   GROUP BY 1
 )
 

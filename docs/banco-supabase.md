@@ -12,10 +12,15 @@ Nada foi criado nem alterado.
 
 | Tabela | Linhas | Conteúdo |
 |---|---|---|
-| `fato_consumo_domiciliar` | 52.207 | Um domicílio por linha (POF): UF, moradores, arranjo, idade do chefe, `is_60_mais`, consumo total em kWh, gasto em R$, consumo per capita em kWh |
-| `dim_coeficiente_consumo` | 162 | Médias por UF, arranjo e `is_60_mais`: tamanho da amostra, consumo total, consumo per capita e gasto |
+| `fato_consumo_domiciliar` | 52.207 | Um domicílio por linha (POF 2017-2018): UF, moradores, arranjo, idade do chefe, `is_60_mais`, consumo total em kWh, gasto em R$, consumo per capita em kWh e `peso_final` |
+| `dim_coeficiente_consumo` | 162 | Médias simples por UF, arranjo e `is_60_mais`: tamanho da amostra, consumo total, consumo per capita e gasto |
 | `consumo_estimado` | 27 | Por UF, Censo 2022: população total e idosa, proporção de idosos, idade mediana, índice de envelhecimento, consumo estimado de idosos e não idosos |
 | `projecoes_populacao_idade` | 639.639 | Projeção populacional por localidade, sexo (`Homem`, `Mulher`, `Ambos`), idade (0 a 90) e ano (**2000 a 2070**) |
+| `fato_consumo_pof_historica` | 88.726 | Microdados harmonizados das POFs 2002-2003 (39.458) e 2008-2009 (49.268) para tendência dos arranjos (P13) |
+| `pof2017_domicilio` | 57.920 | Microdados brutos de domicílios da POF 2017-2018 (infraestrutura, cômodos, energia e pesos) |
+| `pof2017_morador` | 178.431 | Microdados brutos de moradores da POF 2017-2018 (idade, sexo, parentesco `V0306`, escolaridade, renda e pesos) |
+| `censo2022_municipio` | 5.570 | Indicadores demográficos municipais do Censo 2022 (população, domicílios, área, idade mediana e índice de envelhecimento) |
+| `censo2022_indice_envelhecimento` | 55.700 | Série municipal (2010 e 2022) de índice de envelhecimento, idade mediana e razão de sexo por cor/raça |
 
 Enumerações: `arranjo_familiar` = `Unipessoal (Mononuclear)`, `Casal ou Dupla`,
 `Multipessoal (3+)`; `localidade` = Brasil, as 5 regiões e as 27 UFs.

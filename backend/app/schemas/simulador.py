@@ -47,7 +47,7 @@ class SimulacaoResposta(Simulacao):
     faixa: str
     arranjo: ArranjoSim
     base: BaseSim
-    valor: float | None = Field(description="TEC ponderada da célula, kWh/mês por pessoa; igual nos dois cenários (P6)")
+    valor: float | None = Field(description="TEC ponderada da célula, kWh/mês por pessoa; igual nos três cenários (P6)")
     motivo_sem_valor: str | None
     domicilios_amostra: int
     baixa_confiabilidade: bool = Field(description="menos de 30 domicílios na amostra da POF")
