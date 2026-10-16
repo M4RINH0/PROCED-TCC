@@ -125,4 +125,12 @@ describe('Simulador', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restaurar parâmetros' }))
     expect(screen.getByLabelText('Ano de referência')).toHaveValue('2070')
   })
+
+  it('abre a gaveta de exportação pelo botão do demonstrativo', async () => {
+    const abrirGaveta = vi.fn()
+    render(<Simulador buscar={buscarOk()} abrirGaveta={abrirGaveta} />)
+    await screen.findByText('120,5 kWh por mês por pessoa')
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar resultado' }))
+    expect(abrirGaveta).toHaveBeenCalledWith('exportar')
+  })
 })

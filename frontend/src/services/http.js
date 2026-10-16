@@ -26,7 +26,7 @@ export function montarUrl(caminho, parametros = {}, base = BASE) {
   return url.toString()
 }
 
-export async function apiGet(caminho, parametros, { fetcher = fetch, base = BASE, signal } = {}) {
+async function requisitar(caminho, parametros, { fetcher = fetch, base = BASE, signal } = {}) {
   if (falhaSimulada) throw new ErroApi('Não foi possível conectar à API (falha simulada)', 0)
   let resposta
   try {
@@ -36,5 +36,20 @@ export async function apiGet(caminho, parametros, { fetcher = fetch, base = BASE
     throw new ErroApi('Não foi possível conectar à API', 0)
   }
   if (!resposta.ok) throw new ErroApi(`A API respondeu com o código ${resposta.status}`, resposta.status)
+  return resposta
+}
+
+export async function apiGet(caminho, parametros, opcoes = {}) {
+  const resposta = await requisitar(caminho, parametros, opcoes)
   return resposta.json()
+}
+
+export async function apiBaixar(caminho, parametros, opcoes = {}) {
+  const resposta = await requisitar(caminho, parametros, opcoes)
+  const cabecalho = resposta.headers?.get?.('content-disposition') ?? ''
+  const correspondencia = cabecalho.match(/filename="?([^";]+)"?/i)
+  return {
+    blob: await resposta.blob(),
+    nomeArquivo: correspondencia ? correspondencia[1] : null,
+  }
 }

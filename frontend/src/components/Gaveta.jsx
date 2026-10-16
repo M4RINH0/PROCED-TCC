@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useConsulta } from '../hooks/useConsulta.js'
-import { buscarFontes, buscarProjecao } from '../services/api.js'
+import { buscarFontes, buscarProjecao, exportarDados } from '../services/api.js'
 import { umaCasa } from '../utils/formato.js'
 import { PADRAO_SIMULACAO } from '../utils/simulacao.js'
 import Icone from './Icone.jsx'
+import { ANO_FINAL, ANO_INICIAL } from './LinhaDoTempo.jsx'
 
 function Cabecalho({ icone, titulo, aoFechar }) {
   return (
@@ -119,20 +120,58 @@ function Api({ ano, localidade, simulacao, avisar }) {
   )
 }
 
-function Exportar({ ano, aoFechar, avisar }) {
+function salvarBlob(blob, nomeArquivo) {
+  const url = URL.createObjectURL?.(blob)
+  if (!url) return
+  const link = document.createElement('a')
+  link.href = url
+  link.download = nomeArquivo
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL?.(url)
+}
+
+function Exportar({ ano, localidade, simulacao, aoFechar, avisar, exportar = exportarDados }) {
+  const [formato, setFormato] = useState('csv')
+  const [escopo, setEscopo] = useState('ano')
+  const [baixando, setBaixando] = useState(false)
+  const anoInteiro = Math.round(ano)
+
+  const confirmar = async () => {
+    setBaixando(true)
+    try {
+      const padrao = `proced_${localidade.replace(/\s+/g, '_')}_${escopo === 'ano' ? anoInteiro : `${ANO_INICIAL}_${ANO_FINAL}`}.${formato}`
+      const { blob, nomeArquivo } = await exportar({
+        formato,
+        escopo,
+        ano: anoInteiro,
+        localidade,
+        ...simulacao,
+      })
+      salvarBlob(blob, nomeArquivo || padrao)
+      aoFechar()
+      avisar(`Dados exportados em ${formato.toUpperCase()}`)
+    } catch {
+      avisar('Não foi possível exportar os dados')
+    } finally {
+      setBaixando(false)
+    }
+  }
+
   return (
     <>
       <div className="dr-b">
         <p className="lbl">Formato</p>
         <label className="opt">
-          <input type="radio" name="fmt" defaultChecked />
+          <input type="radio" name="fmt" value="csv" checked={formato === 'csv'} onChange={() => setFormato('csv')} />
           <span>
             <b>CSV</b>
             <small>Texto separado por vírgula</small>
           </span>
         </label>
         <label className="opt">
-          <input type="radio" name="fmt" />
+          <input type="radio" name="fmt" value="xlsx" checked={formato === 'xlsx'} onChange={() => setFormato('xlsx')} />
           <span>
             <b>XLSX</b>
             <small>Planilha</small>
@@ -140,32 +179,25 @@ function Exportar({ ano, aoFechar, avisar }) {
         </label>
         <p className="lbl">Escopo</p>
         <label className="opt">
-          <input type="radio" name="esc" defaultChecked />
+          <input type="radio" name="esc" value="ano" checked={escopo === 'ano'} onChange={() => setEscopo('ano')} />
           <span>
             <b>Ano selecionado</b>
-            <small>{Math.round(ano)}, todos os cenários</small>
+            <small>{anoInteiro}, todos os cenários</small>
           </span>
         </label>
         <label className="opt">
-          <input type="radio" name="esc" />
+          <input type="radio" name="esc" value="serie" checked={escopo === 'serie'} onChange={() => setEscopo('serie')} />
           <span>
             <b>Série completa</b>
             <small>2026 a 2070</small>
           </span>
         </label>
         <div className="note-box">
-          Cada valor sai acompanhado da coluna de origem. A exportação (RF08) ainda não tem endpoint na API.
+          Cada linha traz um cenário com os indicadores, a decomposição dos efeitos, os controles de simulação e a coluna de origem.
         </div>
       </div>
       <div className="dr-f">
-        <button
-          type="button"
-          className="btn pri wide"
-          onClick={() => {
-            aoFechar()
-            avisar('Exportação ainda não implementada (RF08)')
-          }}
-        >
+        <button type="button" className="btn pri wide" disabled={baixando} onClick={confirmar}>
           <Icone nome="down" />
           Exportar
         </button>
@@ -176,7 +208,7 @@ function Exportar({ ano, aoFechar, avisar }) {
 
 const TITULOS = { fontes: ['db', 'Fonte dos dados'], api: ['api', 'Contrato da API'], exportar: ['down', 'Exportar dados'] }
 
-export default function Gaveta({ tipo, ano, localidade = 'Brasil', simulacao = PADRAO_SIMULACAO, aoFechar, avisar }) {
+export default function Gaveta({ tipo, ano, localidade = 'Brasil', simulacao = PADRAO_SIMULACAO, aoFechar, avisar, exportar }) {
   const ref = useRef(null)
   const anterior = useRef(null)
   const fechar = useRef(aoFechar)
@@ -215,7 +247,9 @@ export default function Gaveta({ tipo, ano, localidade = 'Brasil', simulacao = P
         <Cabecalho icone={icone} titulo={titulo} aoFechar={aoFechar} />
         {tipo === 'fontes' && <Fontes />}
         {tipo === 'api' && <Api ano={ano} localidade={localidade} simulacao={simulacao} avisar={avisar} />}
-        {tipo === 'exportar' && <Exportar ano={ano} aoFechar={aoFechar} avisar={avisar} />}
+        {tipo === 'exportar' && (
+          <Exportar ano={ano} localidade={localidade} simulacao={simulacao} aoFechar={aoFechar} avisar={avisar} exportar={exportar} />
+        )}
       </aside>
     </>
   )

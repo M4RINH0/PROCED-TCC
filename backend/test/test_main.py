@@ -41,7 +41,7 @@ def test_documentacao_gerada_pelo_codigo():
     caminhos = _cliente().get("/openapi.json").json()["paths"]
     for caminho in ["/projecoes", "/projecoes/serie", "/arranjos", "/estrutura-etaria/piramide",
                     "/estrutura-etaria/consumo-chefe", "/fontes",
-                    "/arranjos/composicao", "/estrutura-etaria/piramides", "/simulador"]:
+                    "/arranjos/composicao", "/estrutura-etaria/piramides", "/simulador", "/exportar"]:
         assert caminho in caminhos
 
 

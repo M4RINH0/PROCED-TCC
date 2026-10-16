@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { apiGet, ErroApi, montarUrl } from '../../src/services/http.js'
+import { apiBaixar, apiGet, ErroApi, montarUrl } from '../../src/services/http.js'
 
 const BASE = 'http://api.teste'
 
@@ -34,5 +34,17 @@ describe('apiGet', () => {
     const abort = Object.assign(new Error('cancelado'), { name: 'AbortError' })
     const fetcher = vi.fn().mockRejectedValue(abort)
     await expect(apiGet('/x', {}, { fetcher, base: BASE })).rejects.toBe(abort)
+  })
+})
+
+describe('apiBaixar', () => {
+  it('devolve o blob e extrai o nome do arquivo do cabeçalho Content-Disposition', async () => {
+    const blob = new Blob(['a,b'])
+    const headers = new Headers({ 'content-disposition': 'attachment; filename="proced_Brasil_2050.csv"' })
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, headers, blob: () => Promise.resolve(blob) })
+    await expect(apiBaixar('/exportar', { formato: 'csv' }, { fetcher, base: BASE })).resolves.toEqual({
+      blob,
+      nomeArquivo: 'proced_Brasil_2050.csv',
+    })
   })
 })

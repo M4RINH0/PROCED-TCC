@@ -163,7 +163,19 @@ A persistência de cenários (RF09) ainda não existe.
 `cobertura_pct` (soma dos pesos da base sobre os 68,9 milhões de domicílios da POF,
 P9), `premissas` (P2, P8, P9, P11 e P12, com `id` e `texto`) e `premissas_url`.
 
+## `GET /exportar` (RF08)
+
+| Parâmetro | Regra |
+|---|---|
+| `formato` | `csv` (padrão) ou `xlsx` |
+| `escopo` | `ano` (padrão) ou `serie` (2026 a 2070) |
+| `ano` | 2026 a 2070 (padrão 2070; usado quando `escopo=ano`) |
+| `recorte` | opcional; sem ele, exporta os quatro recortes |
+| `localidade`, `intensidade`, `k` | filtro de localidade e controles de simulação (opcionais) |
+
+Devolve o arquivo para download (`Content-Disposition: attachment`) com uma linha por cenário, contendo os indicadores, a decomposição dos efeitos, os controles de simulação, a amostra e a coluna `fonte`.
+
 ## A definir em conjunto
 
-- Exportação (RF08) e persistência de cenários do simulador (RF09).
+- Persistência de cenários do simulador (RF09).
 - Cenários de machine learning (`ml_rf` e `ml_gb`): pausados.

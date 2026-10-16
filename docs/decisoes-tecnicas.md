@@ -46,7 +46,7 @@ porque o dado real é outro:
 - Simulador: o histograma mostra as faixas do chefe do arranjo escolhido.
 - Horizonte de 2026 a 2070, sem a área hachurada depois da projeção oficial; o selo do topo diz "Cenário do modelo pendente".
 - Controle da taxa de envelhecimento desativado até o cenário do modelo existir.
-- Exportar avisa que o RF08 está pendente.
+- Exportar baixa os dados reais pela rota `/exportar` em CSV ou XLSX (gerado com a biblioteca padrão do Python, sem nova dependência).
 
 ## Desempenho da API (RNF02)
 

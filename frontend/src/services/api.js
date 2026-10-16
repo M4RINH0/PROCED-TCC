@@ -1,5 +1,5 @@
 /* Todas as chamadas do front-end à API do PROCED, uma função por endpoint */
-import { apiGet } from './http.js'
+import { apiBaixar, apiGet } from './http.js'
 
 /* Panorama: GET /projecoes/serie?recorte= (RF01, RF02, RF11); intensidade e k são os controles de simulação */
 export function buscarSerie({ recorte, localidade, intensidade, k }, opcoes) {
@@ -44,4 +44,8 @@ export function buscarFontes(opcoes) {
 /* Filtros: GET /localidades, regiões e estados de cada uma */
 export function buscarLocalidades(opcoes) {
   return apiGet('/localidades', {}, opcoes)
+}
+
+export function exportarDados({ formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes) {
+  return apiBaixar('/exportar', { formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes)
 }

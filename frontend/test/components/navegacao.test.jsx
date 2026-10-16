@@ -70,14 +70,59 @@ describe('Gaveta', () => {
     expect(fetch.mock.calls[0][0]).toContain('/projecoes?ano=2050&recorte=todos_domicilios&localidade=Brasil&intensidade=0.6&k=1')
   })
 
-  it('fecha com Esc e avisa que a exportação está pendente', () => {
+  it('exporta os dados em CSV ou XLSX com o escopo escolhido e fecha com Esc', async () => {
     const aoFechar = vi.fn()
     const avisar = vi.fn()
-    render(<Gaveta tipo="exportar" ano={2050} aoFechar={aoFechar} avisar={avisar} />)
+    const exportar = vi.fn().mockResolvedValue({ blob: new Blob(['a,b']), nomeArquivo: 'proced_SP_2050.csv' })
+    render(
+      <Gaveta
+        tipo="exportar"
+        ano={2050.4}
+        localidade="SP"
+        simulacao={{ intensidade: 1.1, k: 1.2 }}
+        aoFechar={aoFechar}
+        avisar={avisar}
+        exportar={exportar}
+      />,
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
-    expect(avisar).toHaveBeenCalledWith('Exportação ainda não implementada (RF08)')
+    expect(exportar).toHaveBeenCalledWith({
+      formato: 'csv',
+      escopo: 'ano',
+      ano: 2050,
+      localidade: 'SP',
+      intensidade: 1.1,
+      k: 1.2,
+    })
+    await screen.findByRole('button', { name: 'Exportar' })
+    expect(avisar).toHaveBeenCalledWith('Dados exportados em CSV')
+    expect(aoFechar).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByLabelText(/XLSX/))
+    fireEvent.click(screen.getByLabelText(/Série completa/))
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    expect(exportar).toHaveBeenLastCalledWith({
+      formato: 'xlsx',
+      escopo: 'serie',
+      ano: 2050,
+      localidade: 'SP',
+      intensidade: 1.1,
+      k: 1.2,
+    })
+    await screen.findByRole('button', { name: 'Exportar' })
+    expect(avisar).toHaveBeenLastCalledWith('Dados exportados em XLSX')
+
     fireEvent.keyDown(document, { key: 'Escape' })
-    expect(aoFechar).toHaveBeenCalledTimes(2)
+    expect(aoFechar).toHaveBeenCalledTimes(3)
+  })
+
+  it('avisa quando a exportação falha', async () => {
+    const avisar = vi.fn()
+    const exportar = vi.fn().mockRejectedValue(new Error('falha'))
+    render(<Gaveta tipo="exportar" ano={2050} aoFechar={() => {}} avisar={avisar} exportar={exportar} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    await screen.findByRole('button', { name: 'Exportar' })
+    expect(avisar).toHaveBeenCalledWith('Não foi possível exportar os dados')
   })
 })
 

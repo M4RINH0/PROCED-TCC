@@ -72,7 +72,13 @@ function HistoricoFaixas({ porFaixa, faixa }) {
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
 
-export default function Simulador({ versao = 0, avisar = () => {}, buscar = buscarSimulacao, local = LOCAL_PADRAO, simulacao = SIMULACAO_PADRAO }) {
+export default function Simulador({
+  versao = 0,
+  abrirGaveta = () => {},
+  buscar = buscarSimulacao,
+  local = LOCAL_PADRAO,
+  simulacao = SIMULACAO_PADRAO,
+}) {
   const [form, setForm] = useState(PADRAO)
   const { intensidade, k } = simulacao.aplicados
   const params = { ano: Number(form.ano), faixa: form.faixa, arranjo: form.arranjo, base: form.base, localidade: local.valor, intensidade, k }
@@ -151,7 +157,7 @@ export default function Simulador({ versao = 0, avisar = () => {}, buscar = busc
             <span>Calculado a partir da POF; salvar cenários (RF09) ainda não foi implementado</span>
           </span>
           <span>Fonte: {dados.fonte}</span>
-          <button type="button" className="btn" onClick={() => avisar('Exportação ainda não implementada (RF08)')}>
+          <button type="button" className="btn" onClick={() => abrirGaveta('exportar')}>
             <Icone nome="down" />
             Exportar resultado
           </button>
