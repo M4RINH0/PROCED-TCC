@@ -80,9 +80,6 @@ svg{display:block}
   background:var(--energy);transform:scaleX(0);transition:transform .24s var(--ease)}
 .tab[aria-current="page"]::after{transform:scaleX(1)}
 .acts{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-.illus{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2);
-  background:var(--energy-soft);padding:6px 11px;border-radius:100px;white-space:nowrap}
-.illus svg{width:13px;height:13px}
 .ib{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 11px;border:1px solid transparent;
   border-radius:var(--r-ctl);background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2);
   transition:background .18s var(--ease),transform .12s var(--ease)}
@@ -145,8 +142,7 @@ main.nodock{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .ln{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .ln.fade{opacity:.28}
 .s-taxas{stroke:var(--teal)} .s-taxas_arranjos_fixos{stroke:var(--teal);stroke-dasharray:7 5} .s-contrafactual{stroke:var(--orange);stroke-dasharray:7 5}
-.s-ml_rf{stroke:var(--cobalt);stroke-dasharray:7 5} .s-ml_gb{stroke:var(--cobalt);stroke-dasharray:1.5 6;stroke-width:2.8}
-.t-taxas,.t-taxas_arranjos_fixos{fill:var(--teal)} .t-contrafactual{fill:var(--orange)} .t-ml_rf,.t-ml_gb{fill:var(--cobalt)}
+.t-taxas,.t-taxas_arranjos_fixos{fill:var(--teal)} .t-contrafactual{fill:var(--orange)}
 .aviso-amostra{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--ink-2);
   background:var(--energy-soft);border-radius:8px;padding:8px 10px;margin:8px 0}
 .aviso-amostra svg{width:15px;height:15px;flex:none;margin-top:1px}
@@ -486,7 +482,6 @@ main.nodock~.toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
   .top{position:sticky;top:0;z-index:30;height:auto;flex-wrap:wrap;gap:0;padding:0}
   .brand{padding:12px 14px}
   .acts{margin-left:auto;padding-right:8px}
-  .illus{display:none}
   .tabs{order:3;flex:1 1 100%;height:46px;overflow-x:auto;border-top:1px solid var(--rule);scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab span{display:inline}
@@ -536,7 +531,6 @@ main.nodock~.toast{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .barra-v.on{background:var(--teal)}
 .sem{font-size:13px;font-weight:600;color:var(--muted)}
 .tx:disabled{opacity:.45;cursor:not-allowed}
-.illus.ok{background:var(--teal-soft)}
 /* A linha do tempo anda de ano em ano. A transição liga o valor de um ano ao do seguinte
    (0,12 s, o tempo de um ano no play), sem criar dado intermediário. */
 .plot svg rect.p60,.plot svg rect.plo{transition:x .12s linear,width .12s linear}

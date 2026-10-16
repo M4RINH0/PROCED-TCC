@@ -25,7 +25,7 @@ const serie = {
   baixa_confiabilidade: false,
   pontos: Array.from({ length: 45 }, (_, i) => ({
     ano: 2026 + i,
-    cenarios: [cenario('taxas', 78.5), cenario('taxas_arranjos_fixos', 74.9), cenario('ml_rf', null), cenario('ml_gb', null), cenario('contrafactual', 71.5)],
+    cenarios: [cenario('taxas', 78.5), cenario('taxas_arranjos_fixos', 74.9), cenario('contrafactual', 71.5)],
   })),
 }
 

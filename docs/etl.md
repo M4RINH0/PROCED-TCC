@@ -75,7 +75,7 @@ O processo de ETL resulta nas tabelas disponibilizadas no banco, cada uma com um
 
 ## 5. Projeções de 2026 a 2070 (`backend/etl`)
 
-Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a partir das tabelas do Supabase. O código está em `backend/etl/modelagem.py`; as fórmulas, em `backend/app/calculo.py`.
+Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a partir das tabelas do Supabase. A orquestração está em `backend/etl/projecao.py` (leitura, chamada das funções e montagem das tabelas); as fórmulas, em `backend/app/calculo.py`.
 
 **Leitura e conferência**
 - A REST do Supabase devolve no máximo mil linhas por requisição. O cliente pagina e confere o total pelo cabeçalho `Content-Range` (contagem exata): se faltar linha, a leitura falha em vez de seguir pela metade. A auditoria registra as linhas lidas de cada tabela contra o count do banco.
@@ -87,8 +87,17 @@ Gerado por `.venv/Scripts/python -m etl.pipeline` (na pasta `backend/`), a parti
 3. Ponte comum (premissa P2): taxa de chefia por faixa e arranjo com os pesos de 2018; domicílios projetados por ano.
 4. Tendência dos arranjos (premissa P13), gravada em `saida/tendencia_arranjos.json`: proporções por edição, inclinações, validação fora do tempo e proporções projetadas para 2026, 2050 e 2070 com intensidade 1 e 0,5. Depois, método das taxas (`taxas`), só o envelhecimento com os arranjos de 2026 (`taxas_arranjos_fixos`), contrafactual (`contrafactual`: o total de domicílios segue a projeção e a distribuição entre as células fica na de 2026, premissa P10) e a validação da ponte contra o Censo 2022. A projeção é a mesma da API (`app.calculo.Projecao`).
 5. Calibração (premissa P12): `consumo_total_calibrado_kwh_mes` = consumo por pessoa vezes a população do IBGE no ano. O consumo total bruto (`consumo_total_kwh_mes`) fica só como diagnóstico.
-6. Método de machine learning (`ml_rf` e `ml_gb`): validação cruzada, métricas (`metricas_modelos.json`) e importância das variáveis (`importancia_variaveis.csv`). A projeção por reponderação está pausada (`projetar_ml=False`).
-7. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.
+6. Análise de sensibilidade da cobertura (premissa P9): saída separada, nunca misturada ao resultado principal.
+
+**Experimento de machine learning (fora do pipeline padrão)**
+
+O machine learning ficou fora do escopo das projeções em 16/10/2026, por três motivos: baixo poder explicativo (R² perto do da linha de base), ausência de série temporal (a POF é um retrato de um único momento) e equivalência com o método das taxas sob reponderação. O experimento citado no TCC continua em `backend/etl/modelagem.py`, com comando próprio:
+
+```bash
+.venv/Scripts/python -m etl.modelagem
+```
+
+Ele regrava `saida/metricas_modelos.json` (validação cruzada KFold com 5 partes, semente 42, métricas ponderadas) e `saida/importancia_variaveis.csv` (importância por permutação). O `etl.pipeline` não roda o experimento.
 
 ## 6. POFs anteriores: 2002 a 2003 e 2008 a 2009 (`fato_consumo_pof_historica`)
 

@@ -12,8 +12,6 @@ UNIDADE = "kWh/mes/pessoa"
 class CenarioId(str, Enum):
     taxas = "taxas"  # método das taxas com a tendência dos arranjos (P13)
     taxas_arranjos_fixos = "taxas_arranjos_fixos"  # só o envelhecimento: arranjos congelados em 2026
-    ml_rf = "ml_rf"  # Random Forest (pausado: sempre null)
-    ml_gb = "ml_gb"  # Gradient Boosting (pausado: sempre null)
     contrafactual = "contrafactual"  # composição de domicílios de 2026 congelada (P10)
 
 

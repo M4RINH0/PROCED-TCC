@@ -17,8 +17,8 @@ const contrafactual = {
     { ano: 2070, valor: 97.9 },
   ],
 }
-const vazio = { id: 'ml_rf', pontos: [{ ano: 2026, valor: null }] }
-const todas = { taxas: true, taxas_arranjos_fixos: true, ml_rf: true, ml_gb: true, contrafactual: true }
+const vazio = { id: 'contrafactual', pontos: [{ ano: 2026, valor: null }] }
+const todas = { taxas: true, taxas_arranjos_fixos: true, contrafactual: true }
 
 describe('dominioY', () => {
   it('dá folga de 1 kWh e arredonda para múltiplos de 10', () => {
@@ -51,7 +51,7 @@ describe('GraficoSerie', () => {
   it('desenha só as séries com dados e rotula o fim direto na linha', () => {
     render(<GraficoSerie series={[taxas, vazio]} visiveis={todas} ano={2050} aoMudarAno={() => {}} />)
     expect(screen.getByTestId('linha-taxas')).toBeInTheDocument()
-    expect(screen.getByTestId('linha-ml_rf').getAttribute('d')).toBe('')
+    expect(screen.getByTestId('linha-contrafactual').getAttribute('d')).toBe('')
     expect(screen.getByText('98,1 em 2070')).toBeInTheDocument()
     expect(screen.getByText('Envelhecimento e arranjos')).toBeInTheDocument()
   })

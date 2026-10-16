@@ -27,10 +27,6 @@ def test_entrada_valida_segue_o_contrato():
          "participacao_consumo_pct": 29.7, "variacao_kwh": None, "variacao_pct": None},
         {"id": "taxas_arranjos_fixos", "valor": 153.3, "consumo_por_pessoa_kwh": 153.3,
          "consumo_total_calibrado_kwh_mes": 794545, "participacao_consumo_pct": 29.7, "variacao_kwh": None, "variacao_pct": None},
-        {"id": "ml_rf", "valor": None, "consumo_por_pessoa_kwh": None, "consumo_total_calibrado_kwh_mes": None,
-         "participacao_consumo_pct": None, "variacao_kwh": None, "variacao_pct": None},
-        {"id": "ml_gb", "valor": None, "consumo_por_pessoa_kwh": None, "consumo_total_calibrado_kwh_mes": None,
-         "participacao_consumo_pct": None, "variacao_kwh": None, "variacao_pct": None},
         {"id": "contrafactual", "valor": 142.5, "consumo_por_pessoa_kwh": 142.5,
          "consumo_total_calibrado_kwh_mes": 676875, "participacao_consumo_pct": 32.59, "variacao_kwh": None, "variacao_pct": None},
     ]

@@ -50,7 +50,7 @@ describe('textos da interface', () => {
       baixa_confiabilidade: false,
       pontos: Array.from({ length: 45 }, (_, i) => ({
         ano: 2026 + i,
-        cenarios: [cenario('taxas', 98), cenario('ml_rf', null), cenario('ml_gb', null), cenario('contrafactual', 97.9)],
+        cenarios: [cenario('taxas', 98), cenario('contrafactual', 97.9)],
         participacao_60_mais_pct: 30,
         efeito_envelhecimento_kwh: 0.1,
         efeito_envelhecimento_total_kwh_mes: 1.2e9,

@@ -20,7 +20,7 @@ Toda premissa adotada onde faltar dado entra aqui, com fonte citável.
 | P14 | Velocidade do envelhecimento (controle de simulação k, de 0,5 a 1,5, padrão 1): a participação de cada grupo de idade no ano s passa a ser `part(2026) + k * (part(s) - part(2026))`, com piso em zero, renormalizada e aplicada à população total do IBGE no ano. Os grupos são as faixas do chefe mais o grupo de 0 a 11 anos, que não chefia domicílio, para a população total fechar. k = 1 reproduz a projeção do IBGE. Na pirâmide, a mesma regra é aplicada a cada idade e sexo; como ela é linear, a participação de cada faixa (e a de 60 anos ou mais) é a mesma dos grupos da projeção enquanto o piso em zero não age. | Projeções da População (IBGE) | `backend/app/calculo.py` (`ajustar_envelhecimento`) |
 
 Pendências de confirmação:
-- O RF02 passou a ter dois controles de simulação: a intensidade da tendência dos arranjos (P13) e a velocidade do envelhecimento k (P14). Os cenários são `taxas`, `taxas_arranjos_fixos`, `ml_rf`, `ml_gb` (pausados, sempre `null`) e `contrafactual`.
+- O RF02 passou a ter dois controles de simulação: a intensidade da tendência dos arranjos (P13) e a velocidade do envelhecimento k (P14). Os cenários são `taxas`, `taxas_arranjos_fixos` e `contrafactual`; os de machine learning saíram do escopo em 16/10/2026.
 - P8 e P10 são provisórias.
 
 ### Pendências Resolvidas

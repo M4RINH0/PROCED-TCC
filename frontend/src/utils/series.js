@@ -1,7 +1,7 @@
 /* Significado fixo das séries: cor, traço e rótulo (nunca só a cor). Os rótulos da interface são simples;
    o texto do TCC mantém os termos técnicos (taxas, taxas_arranjos_fixos, contrafactual).
    Verde-petróleo: método das taxas (cheio com a tendência dos arranjos, tracejado só com o envelhecimento);
-   laranja: contrafactual; azul-cobalto: machine learning. */
+   laranja: contrafactual. O machine learning saiu do escopo das projeções (CLAUDE.md). */
 export const SERIES = [
   { id: 'taxas', rotulo: 'Envelhecimento e arranjos', curto: 'Envelhecimento e arranjos', cor: 'teal', traco: 'solid' },
   {
@@ -11,8 +11,6 @@ export const SERIES = [
     cor: 'teal',
     traco: 'dashed',
   },
-  { id: 'ml_rf', rotulo: 'Machine learning (Random Forest)', curto: 'Random Forest', cor: 'cobalt', traco: 'dashed' },
-  { id: 'ml_gb', rotulo: 'Machine learning (Gradient Boosting)', curto: 'Gradient Boosting', cor: 'cobalt', traco: 'dotted' },
   { id: 'contrafactual', rotulo: 'Sem mudanças desde 2026', curto: 'Sem mudanças desde 2026', cor: 'orange', traco: 'dashed' },
 ]
 

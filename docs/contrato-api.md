@@ -56,8 +56,6 @@ Exemplo real (Brasil, todos os domicílios, consulta de 14/10/2026):
   "cenarios": [
     {"id": "taxas", "valor": 81.3, "consumo_por_pessoa_kwh": 70.1, "consumo_total_calibrado_kwh_mes": 15300389004},
     {"id": "taxas_arranjos_fixos", "valor": 75.8, "consumo_por_pessoa_kwh": 64.0, "consumo_total_calibrado_kwh_mes": 13965888940},
-    {"id": "ml_rf", "valor": null, "consumo_por_pessoa_kwh": null, "consumo_total_calibrado_kwh_mes": null},
-    {"id": "ml_gb", "valor": null, "consumo_por_pessoa_kwh": null, "consumo_total_calibrado_kwh_mes": null},
     {"id": "contrafactual", "valor": 72.4, "consumo_por_pessoa_kwh": 61.3, "consumo_total_calibrado_kwh_mes": 13386430798} ],
   "efeito_envelhecimento_kwh": 8.9, "efeito_idade_kwh": 3.4, "efeito_arranjos_kwh": 5.5,
   "efeito_envelhecimento_total_kwh_mes": 1913958206,
@@ -74,7 +72,7 @@ Exemplo real (Brasil, todos os domicílios, consulta de 14/10/2026):
 - `taxas`: método das taxas com a taxa de chefia total da faixa constante (P2) e a tendência dos arranjos (P13).
 - `taxas_arranjos_fixos`: só o envelhecimento, com as proporções de arranjo congeladas nas de 2026.
 - `contrafactual`: a distribuição dos domicílios entre as células congelada na de `taxas` em 2026; o total de domicílios segue a projeção (P10).
-- `ml_rf` e `ml_gb`: machine learning, pausado; sempre `null`.
+- Os cenários de machine learning (`ml_rf` e `ml_gb`) saíram da API em 16/10/2026: o machine learning ficou fora do escopo das projeções (baixo poder explicativo, ausência de série temporal e equivalência com o método das taxas sob reponderação). O experimento continua em `backend/etl/modelagem.py`, fora do pipeline padrão.
 - Os três cenários do método das taxas coincidem em 2026.
 - `valor`: TBC padronizada, a média por domicílio do consumo per capita (kWh/mês por pessoa).
 - `consumo_por_pessoa_kwh`: consumo total do recorte dividido pelos moradores projetados (P11).
@@ -179,4 +177,3 @@ Devolve o arquivo para download (`Content-Disposition: attachment`) com uma linh
 
 ## A definir em conjunto
 
-- Cenários de machine learning (`ml_rf` e `ml_gb`): pausados.

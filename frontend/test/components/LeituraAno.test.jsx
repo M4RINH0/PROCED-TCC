@@ -5,7 +5,7 @@ import { porId } from '../../src/utils/indicadores.js'
 import { SERIES } from '../../src/utils/series.js'
 
 const comDado = SERIES.filter((s) => ['taxas', 'taxas_arranjos_fixos', 'contrafactual'].includes(s.id))
-const todas = { taxas: true, taxas_arranjos_fixos: true, ml_rf: true, ml_gb: true, contrafactual: true }
+const todas = { taxas: true, taxas_arranjos_fixos: true, contrafactual: true }
 
 /* Valores reais da API, todos os domicílios, Brasil, 2050, controles no padrão */
 const ponto = (taxas, extra = {}) => ({
@@ -20,8 +20,6 @@ const ponto = (taxas, extra = {}) => ({
       variacao_pct: taxas === null ? null : 9.8,
     },
     { id: 'taxas_arranjos_fixos', valor: 74.9, consumo_total_calibrado_kwh_mes: 13790804959, participacao_consumo_pct: 100, variacao_kwh: 3.4, variacao_pct: 4.8 },
-    { id: 'ml_rf', valor: null },
-    { id: 'ml_gb', valor: null },
     { id: 'contrafactual', valor: 71.5, consumo_total_calibrado_kwh_mes: 13228815250, participacao_consumo_pct: 100, variacao_kwh: 0, variacao_pct: 0 },
   ],
   participacao_60_mais_pct: 25.37,
@@ -72,9 +70,10 @@ describe('LeituraAno', () => {
   })
 
   it('só mostra as séries recebidas, sem as que não têm dado', () => {
-    render(<LeituraAno ponto={ponto(78.5)} ano={2050} series={comDado} visiveis={todas} />)
-    expect(screen.queryByTestId('reg-ml_rf')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('reg-ml_gb')).not.toBeInTheDocument()
+    const semArranjosFixos = comDado.filter((s) => s.id !== 'taxas_arranjos_fixos')
+    render(<LeituraAno ponto={ponto(78.5)} ano={2050} series={semArranjosFixos} visiveis={todas} />)
+    expect(screen.getByTestId('reg-taxas')).toBeInTheDocument()
+    expect(screen.queryByTestId('reg-taxas_arranjos_fixos')).not.toBeInTheDocument()
   })
 
   it('avisa a falta do valor do ano em vez de mostrar um traço', () => {

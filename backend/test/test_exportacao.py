@@ -42,7 +42,9 @@ def test_exporta_csv_do_ano_selecionado_com_coluna_de_origem():
     assert r.headers["content-type"].startswith("text/csv")
     assert r.headers["content-disposition"] == 'attachment; filename="proced_Brasil_2030.csv"'
     linhas = _ler_csv(r.content)
-    assert len(linhas) == 20
+    # quatro recortes e três cenários (taxas, só o envelhecimento e contrafactual), sem machine learning
+    assert len(linhas) == 12
+    assert {l["cenario"] for l in linhas} == {"taxas", "taxas_arranjos_fixos", "contrafactual"}
     assert tuple(linhas[0].keys()) == COLUNAS
     taxas_mono = next(l for l in linhas if l["recorte"] == "chefe_60_mais" and l["cenario"] == "taxas")
     assert taxas_mono["ano"] == "2030"
@@ -60,7 +62,7 @@ def test_exporta_serie_completa_em_csv_para_um_recorte():
     assert r.status_code == 200
     assert r.headers["content-disposition"] == 'attachment; filename="proced_SP_2026_2070.csv"'
     linhas = _ler_csv(r.content)
-    assert len(linhas) == 45 * 5
+    assert len(linhas) == 45 * 3
     assert {l["recorte"] for l in linhas} == {"chefe_60_mais"}
     assert {l["localidade"] for l in linhas} == {"SP"}
     assert linhas[0]["ano"] == "2026" and linhas[-1]["ano"] == "2070"
@@ -74,7 +76,7 @@ def test_exporta_xlsx_valido_com_cabecalho_e_dados():
     assert r.headers["content-disposition"] == 'attachment; filename="proced_Brasil_2030.xlsx"'
     linhas = _ler_xlsx(r.content)
     assert tuple(linhas[0]) == COLUNAS
-    assert len(linhas) == 6
+    assert len(linhas) == 4  # cabeçalho e os três cenários
     assert "153.3" in linhas[1]
     assert any("POF 2002 a 2003" in v for v in linhas[1])
 

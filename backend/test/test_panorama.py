@@ -135,8 +135,6 @@ def test_obter_projecao_segue_o_contrato():
     assert _valores(r) == {
         CenarioId.taxas: 153.3,
         CenarioId.taxas_arranjos_fixos: 153.3,
-        CenarioId.ml_rf: None,
-        CenarioId.ml_gb: None,
         CenarioId.contrafactual: 142.5,
     }
     taxas = r.cenarios[0]
@@ -162,7 +160,8 @@ def test_obter_serie_cobre_2026_a_2070():
     por_ano = {p.ano: _valores(p)[CenarioId.taxas] for p in s.pontos}
     assert por_ano[2030] == 153.3 and por_ano[2026] == 142.5
     assert por_ano[2070] is not None
-    assert all(_valores(p)[CenarioId.ml_rf] is None and _valores(p)[CenarioId.ml_gb] is None for p in s.pontos)
+    # só os três cenários do método das taxas: o machine learning saiu do escopo das projeções
+    assert all([c.id for c in p.cenarios] == [CenarioId.taxas, CenarioId.taxas_arranjos_fixos, CenarioId.contrafactual] for p in s.pontos)
 
 
 def test_serie_traz_variacao_e_efeito_do_envelhecimento():
@@ -196,11 +195,11 @@ def test_decomposicao_sem_um_dos_cenarios():
 
 
 def test_com_variacao_em_relacao_a_2026():
-    base = [Cenario(id=CenarioId.taxas, valor=100.0), Cenario(id=CenarioId.ml_rf, valor=None)]
-    atual = [Cenario(id=CenarioId.taxas, valor=110.0), Cenario(id=CenarioId.ml_rf, valor=None)]
-    taxas, ml = com_variacao(atual, base)
+    base = [Cenario(id=CenarioId.taxas, valor=100.0), Cenario(id=CenarioId.contrafactual, valor=None)]
+    atual = [Cenario(id=CenarioId.taxas, valor=110.0), Cenario(id=CenarioId.contrafactual, valor=None)]
+    taxas, contrafactual = com_variacao(atual, base)
     assert (taxas.variacao_kwh, taxas.variacao_pct) == (10.0, 10.0)
-    assert ml.variacao_kwh is None and ml.variacao_pct is None
+    assert contrafactual.variacao_kwh is None and contrafactual.variacao_pct is None
 
 
 def test_participacao_60_mais():

@@ -14,8 +14,6 @@ população do IBGE (P12).
 
 Controles de simulação (RF02): intensidade da tendência dos arranjos e velocidade
 do envelhecimento k. Os padrões (1 e 1) reproduzem o cenário principal.
-
-Os cenários de machine learning (ml_rf e ml_gb) estão pausados e saem como null.
 """
 
 from collections.abc import Iterable
@@ -142,8 +140,6 @@ def _cenarios(parametros: ParametrosRecorte, ano: int) -> list[Cenario]:
     return [
         _cenario(CenarioId.taxas, parametros.resumo(ano, TAXAS)),
         _cenario(CenarioId.taxas_arranjos_fixos, parametros.resumo(ano, TAXAS_ARRANJOS_FIXOS)),
-        Cenario(id=CenarioId.ml_rf, valor=None),
-        Cenario(id=CenarioId.ml_gb, valor=None),
         _cenario(CenarioId.contrafactual, parametros.resumo(ano, CONTRAFACTUAL)),
     ]
 

@@ -3,18 +3,18 @@ import { RECORTES, SERIES, seriesComDado, valoresDoCenario } from '../../src/uti
 
 const ponto = (ano, valores) => ({ ano, cenarios: Object.entries(valores).map(([id, valor]) => ({ id, valor })) })
 const pontos = [
-  ponto(2026, { taxas: 97.9, ml_rf: null, ml_gb: null, contrafactual: 97.9 }),
-  ponto(2027, { taxas: null, ml_rf: null, ml_gb: null, contrafactual: 97.9 }),
+  ponto(2026, { taxas: 97.9, taxas_arranjos_fixos: null, contrafactual: 97.9 }),
+  ponto(2027, { taxas: null, taxas_arranjos_fixos: null, contrafactual: 97.9 }),
 ]
 
 describe('SERIES', () => {
-  it('tem os cinco cenários da API na ordem do contrato', () => {
-    expect(SERIES.map((s) => s.id)).toEqual(['taxas', 'taxas_arranjos_fixos', 'ml_rf', 'ml_gb', 'contrafactual'])
+  it('tem os três cenários da API na ordem do contrato, sem machine learning', () => {
+    expect(SERIES.map((s) => s.id)).toEqual(['taxas', 'taxas_arranjos_fixos', 'contrafactual'])
   })
 
-  it('usa verde-petróleo para as taxas, laranja para o contrafactual e cobalto para o ML', () => {
+  it('usa verde-petróleo para as taxas e laranja para o contrafactual', () => {
     const cor = Object.fromEntries(SERIES.map((s) => [s.id, s.cor]))
-    expect(cor).toEqual({ taxas: 'teal', taxas_arranjos_fixos: 'teal', ml_rf: 'cobalt', ml_gb: 'cobalt', contrafactual: 'orange' })
+    expect(cor).toEqual({ taxas: 'teal', taxas_arranjos_fixos: 'teal', contrafactual: 'orange' })
   })
 
   it('usa os rótulos simples na interface', () => {

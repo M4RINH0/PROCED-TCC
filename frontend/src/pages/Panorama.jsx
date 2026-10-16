@@ -75,7 +75,7 @@ export default function Panorama({
   const id = useId()
   const [recorte, setRecorte] = useState(RECORTES[0].id)
   const [idIndicador, setIdIndicador] = useState(indicadorPadrao(RECORTES[0].id))
-  const [visiveis, setVisiveis] = useState({ taxas: true, taxas_arranjos_fixos: true, ml_rf: true, ml_gb: true, contrafactual: true })
+  const [visiveis, setVisiveis] = useState({ taxas: true, taxas_arranjos_fixos: true, contrafactual: true })
   const { intensidade, k } = simulacao.aplicados
   const { status, dados, erro, recarregar } = useConsulta(
     (o) => buscar({ recorte, localidade: local.valor, intensidade, k }, o),

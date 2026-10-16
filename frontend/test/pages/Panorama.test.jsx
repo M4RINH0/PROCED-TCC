@@ -31,8 +31,6 @@ const serie = (recorte, { baixa = false, localidade = 'Brasil', simulacao = fals
       cenarios: [
         { id: 'taxas', valor: taxas, consumo_por_pessoa_kwh: 67.4, consumo_total_calibrado_kwh_mes: 14565989146, participacao_consumo_pct: recorte === 'todos_domicilios' ? 100 : 43.6, variacao_kwh: 7.0, variacao_pct: 9.8 },
         { id: 'taxas_arranjos_fixos', valor: 74.9, consumo_por_pessoa_kwh: 63.9, consumo_total_calibrado_kwh_mes: 13790804959, participacao_consumo_pct: recorte === 'todos_domicilios' ? 100 : 33.3, variacao_kwh: 3.4, variacao_pct: 4.8 },
-        vazio('ml_rf'),
-        vazio('ml_gb'),
         { id: 'contrafactual', valor: 71.5, consumo_por_pessoa_kwh: 61.0, consumo_total_calibrado_kwh_mes: 13228815250, participacao_consumo_pct: recorte === 'todos_domicilios' ? 100 : 19.3, variacao_kwh: 0, variacao_pct: 0 },
       ],
       participacao_60_mais_pct: 30,
@@ -90,15 +88,12 @@ describe('Panorama', () => {
     expect(frase).toHaveTextContent('Em relação ao cenário sem mudanças desde 2026, o envelhecimento soma +7,0 kWh por pessoa: +3,4 da idade e +3,6 da mudança de arranjos')
   })
 
-  it('desenha taxas, arranjos fixos e contrafactual e esconde as séries null em todos os anos', async () => {
+  it('desenha só os três cenários do método das taxas, sem séries de machine learning', async () => {
     render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscarOk()} />)
     await screen.findByTestId('linha-taxas')
     expect(screen.getByTestId('linha-taxas_arranjos_fixos')).toBeInTheDocument()
     expect(screen.getByTestId('linha-contrafactual')).toBeInTheDocument()
-    for (const id of ['ml_rf', 'ml_gb']) {
-      expect(screen.queryByTestId(`linha-${id}`)).not.toBeInTheDocument()
-      expect(screen.queryByTestId(`reg-${id}`)).not.toBeInTheDocument()
-    }
+    expect(document.querySelectorAll('[data-testid^="linha-"]')).toHaveLength(3)
     const legenda = screen.getByRole('group', { name: 'Séries exibidas' })
     expect(within(legenda).getAllByRole('button').map((b) => b.textContent)).toEqual(['Envelhecimento e arranjos', 'Só o envelhecimento', 'Sem mudanças desde 2026'])
   })

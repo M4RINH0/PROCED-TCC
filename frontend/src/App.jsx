@@ -112,10 +112,6 @@ export default function App() {
           ))}
         </nav>
         <div className="acts">
-          <span className="illus">
-            <Icone nome="info" />
-            Machine learning pausado
-          </span>
           <button type="button" className="ib" aria-label="Fonte dos dados" onClick={() => setGaveta('fontes')}>
             <Icone nome="db" />
             <span>Fontes</span>
