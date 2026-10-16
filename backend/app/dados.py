@@ -11,7 +11,6 @@ import json
 import threading
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
 
 from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL, SEXO_AMBOS, UFS, sem_repeticao, ufs_explicitas
 from app.supabase import ClienteSupabase, obter_cliente
@@ -50,33 +49,45 @@ class Dados:
     """Acesso às tabelas usadas pela API. Nos testes, qualquer objeto com os mesmos
     métodos serve no lugar desta classe."""
 
-    def __init__(self, cliente: ClienteSupabase, arquivo_cenarios: Path | None = None):
+    def __init__(self, cliente: ClienteSupabase):
         self._cliente = cliente
         self._trava = threading.Lock()
         self._travas: dict[str, threading.Lock] = {}
         self._cache: dict[str, object] = {}
-        self._arquivo_cenarios = arquivo_cenarios
-        self._cenarios: dict[str, dict] = self._ler_arquivo_cenarios()
+        self._cenarios: dict[tuple[str, str], dict] = {}  # cópia em memória do que já foi lido ou gravado
 
-    def _ler_arquivo_cenarios(self) -> dict[str, dict]:
-        if not self._arquivo_cenarios or not self._arquivo_cenarios.exists():
-            return {}
-        return json.loads(self._arquivo_cenarios.read_text(encoding="utf-8"))
+    # ---------- cenários salvos do Simulador (RF09), tabela cenario_salvo ----------
 
-    def obter_cenario(self, chave: str) -> dict | None:
-        with self._trava:
-            salvo = self._cenarios.get(chave)
-            return None if salvo is None else dict(salvo)
+    @staticmethod
+    def _chave_cenario(parametros: dict, versao_modelo: str) -> tuple[str, str]:
+        return json.dumps(parametros, sort_keys=True, ensure_ascii=False), versao_modelo
 
-    def salvar_cenario(self, chave: str, cenario: dict) -> None:
-        with self._trava:
-            self._cenarios[chave] = dict(cenario)
-            if self._arquivo_cenarios:
-                self._arquivo_cenarios.parent.mkdir(parents=True, exist_ok=True)
-                self._arquivo_cenarios.write_text(
-                    json.dumps(self._cenarios, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
+    def obter_cenario(self, parametros: dict, versao_modelo: str) -> dict | None:
+        """Resultado salvo para os mesmos parâmetros e a mesma versão do modelo; None se não houver.
+
+        A busca filtra pela versão: cenário de versão antiga nunca é devolvido.
+        """
+        chave = self._chave_cenario(parametros, versao_modelo)
+        if chave in self._cenarios:
+            return dict(self._cenarios[chave])
+        linhas = self._cliente.selecionar(
+            "cenario_salvo",
+            "resultado",
+            {"parametros": f"eq.{json.dumps(parametros, ensure_ascii=False)}", "versao_modelo": f"eq.{versao_modelo}"},
+        )
+        if not linhas:
+            return None
+        self._cenarios[chave] = linhas[0]["resultado"]
+        return dict(linhas[0]["resultado"])
+
+    def salvar_cenario(self, parametros: dict, versao_modelo: str, resultado: dict) -> None:
+        """Grava (ou atualiza, se já existir) o cenário com a versão atual do modelo."""
+        self._cliente.gravar(
+            "cenario_salvo",
+            [{"parametros": parametros, "versao_modelo": versao_modelo, "resultado": resultado}],
+            conflito="parametros,versao_modelo",
+        )
+        self._cenarios[self._chave_cenario(parametros, versao_modelo)] = dict(resultado)
 
     def _uma_vez(self, chave: str, carregar):
         """Carrega uma vez por chave. Cada chave tem a sua trava: uma leitura longa não

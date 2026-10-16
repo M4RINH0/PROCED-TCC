@@ -151,3 +151,24 @@ def test_paralelo_pede_cada_pagina_uma_vez_so():
     ClienteSupabase("https://x.supabase.co", "k", http=http, tamanho_pagina=4).selecionar("t", "v")
     # a primeira página vem com 3 linhas (limite do servidor): as demais são pedidas de 3 em 3
     assert sorted(pedidos) == sorted(["0-3", "3-5", "6-8", "9-11"])
+
+
+def test_gravar_faz_upsert_com_a_chave_de_conflito():
+    pedidos = []
+
+    def manipulador(req):
+        pedidos.append(req)
+        return httpx.Response(201)
+
+    import json
+
+    _cliente(manipulador).gravar("cenario_salvo", [{"parametros": {"ano": 2050}, "versao_modelo": "v1"}], "parametros,versao_modelo")
+    assert pedidos[0].method == "POST" and pedidos[0].url.path == "/rest/v1/cenario_salvo"
+    assert pedidos[0].url.params["on_conflict"] == "parametros,versao_modelo"
+    assert "merge-duplicates" in pedidos[0].headers["Prefer"]
+    assert json.loads(pedidos[0].content) == [{"parametros": {"ano": 2050}, "versao_modelo": "v1"}]
+
+
+def test_gravar_com_erro_vira_erro_de_fonte():
+    with pytest.raises(ErroFonteDados, match="ao gravar"):
+        _cliente(lambda req: httpx.Response(409, json={})).gravar("t", [{}], "id")

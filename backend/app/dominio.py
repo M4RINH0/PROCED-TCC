@@ -342,6 +342,21 @@ def montar_projecao(
 # ---------- cache do que não depende dos controles (RNF02) ----------
 
 
+LOCALIDADES = (BRASIL, *REGIOES, *UFS)  # as 33 localidades do filtro
+
+
+def preparar_localidades(dados, localidades=LOCALIDADES) -> int:
+    """Deixa em cache, para cada localidade, a base da projeção e as somas de população
+    (por idade e por sexo), para a primeira consulta de qualquer região ou UF já ser rápida.
+    Devolve quantas localidades foram preparadas."""
+    for localidade in localidades:
+        base_da_localidade(dados, localidade)
+        anos = getattr(dados, "anos_piramide", None)
+        if anos:
+            anos(localidade)
+    return len(localidades)
+
+
 def memorizado(fonte, chave: str, calcular):
     """Guarda `calcular()` no cache da fonte de dados (Dados.derivado); fontes sem cache,
     como as dos testes, calculam na hora."""

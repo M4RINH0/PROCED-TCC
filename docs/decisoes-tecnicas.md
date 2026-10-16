@@ -119,3 +119,8 @@ mesmo tempo foi testado e piorou (cerca de 93 s), porque elas disputam as mesmas
 - Layout conferido num Chrome de verdade (headless, protocolo DevTools) em 1920x1080, 1600x900 e
   1366x768: sem sobreposição dos rótulos do fim das linhas, sem rolagem no painel "Leitura do
   ano" e sem controle escondido.
+
+**Cache por localidade (16/10/2026).** A pré-carga também prepara as 33 localidades (Brasil, 5
+regiões e 27 UFs): base da projeção e somas de população por idade e por sexo. Medição: a
+primeira consulta de uma região ou UF depois da pré-carga leva de 0,002 a 0,034 s (série,
+pirâmide e composição).

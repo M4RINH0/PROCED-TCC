@@ -157,6 +157,8 @@ Resposta:
 - `por_faixa`, para o histograma;
 - `recuperado`: `false` quando o cenário foi calculado na consulta e salvo; `true` quando foi recuperado de cenário já calculado (RF09).
 
+Os cenários ficam na tabela `cenario_salvo`, identificados pelos parâmetros da consulta e pela versão do modelo (`VERSAO_MODELO`). Cenário de versão antiga não volta como `recuperado`: é recalculado e gravado com a versão nova. Se o banco falhar ao ler ou gravar, a consulta é calculada e respondida mesmo assim.
+
 ## `GET /fontes` (RF10)
 
 `fontes` (com `nome`, `periodo` e `uso`), `criterio_exclusao` (domicílios sem kWh),

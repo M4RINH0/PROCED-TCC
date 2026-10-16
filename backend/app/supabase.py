@@ -79,6 +79,19 @@ class ClienteSupabase:
             linhas.extend(pagina)
         return linhas
 
+    def gravar(self, tabela: str, linhas: list[dict], conflito: str) -> None:
+        """Upsert pela REST: grava ou, se a chave `conflito` já existir, atualiza (RF09).
+
+        Só os cenários salvos são gravados pela API; as tabelas de dados continuam só de leitura.
+        """
+        cabecalhos = {**self._cabecalhos, "Prefer": "resolution=merge-duplicates,return=minimal"}
+        try:
+            resposta = self._http.post(f"{self._base}/{tabela}", params={"on_conflict": conflito}, json=linhas, headers=cabecalhos)
+        except httpx.HTTPError as erro:
+            raise ErroFonteDados(f"falha ao gravar em {tabela}") from erro
+        if resposta.status_code >= 400:
+            raise ErroFonteDados(f"{tabela} respondeu com o código {resposta.status_code} ao gravar")
+
     def contar(self, tabela: str, filtros: dict[str, str] | None = None) -> int:
         """Número de linhas que a consulta devolveria (count exato no banco)."""
         resposta = self._get(tabela, {"select": "*", **(filtros or {})}, {"Range": "0-0", "Prefer": "count=exact"})

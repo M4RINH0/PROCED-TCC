@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import DOTENV, Configuracao, ErroConfiguracao, ErroFonteDados, carregar_configuracao
-from app.dominio import BRASIL, base_da_localidade, tendencia_dos_dados
+from app.dominio import BRASIL, base_da_localidade, preparar_localidades, tendencia_dos_dados
 from app.dados import obter_dados
 from app.routes import domicilios, estrutura_etaria, exportacao, fontes, localidades, panorama, simulador
 
@@ -47,6 +47,7 @@ def _cargas_iniciais() -> list[Callable[[], object]]:
         lambda: tendencia_dos_dados(dados),
         lambda: base_da_localidade(dados, BRASIL),
         dados.anos_piramide,
+        lambda: preparar_localidades(dados),  # as 33 localidades, depois do Brasil
     ]
 
 

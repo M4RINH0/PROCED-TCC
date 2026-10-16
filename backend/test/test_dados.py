@@ -1,3 +1,5 @@
+import json
+
 from app.dados import Dados, Domicilio
 from app.dominio import UFS
 
@@ -118,12 +120,47 @@ def test_memorizado_sem_cache_calcula_na_hora():
     assert memorizado(repo, "x", lambda: 1) == 1 and memorizado(repo, "x", lambda: 2) == 1
 
 
-def test_persiste_e_recupera_cenarios_em_memoria_e_arquivo(tmp_path):
-    arquivo = tmp_path / "cenarios.json"
-    repo = Dados(ClienteFalso(), arquivo_cenarios=arquivo)
-    assert repo.obter_cenario("Brasil:2050") is None
-    repo.salvar_cenario("Brasil:2050", {"ano": 2050, "valor": 120.5})
-    assert repo.obter_cenario("Brasil:2050") == {"ano": 2050, "valor": 120.5}
+class BancoDeCenarios:
+    """Imita a tabela cenario_salvo: chave única por parâmetros (sem depender da ordem) e versão."""
 
-    reaberto = Dados(ClienteFalso(), arquivo_cenarios=arquivo)
-    assert reaberto.obter_cenario("Brasil:2050") == {"ano": 2050, "valor": 120.5}
+    def __init__(self):
+        self.linhas = {}
+        self.leituras = 0
+
+    def selecionar(self, tabela, colunas, filtros=None):
+        assert tabela == "cenario_salvo"
+        self.leituras += 1
+        parametros = json.loads(filtros["parametros"].removeprefix("eq."))
+        chave = (json.dumps(parametros, sort_keys=True), filtros["versao_modelo"].removeprefix("eq."))
+        return [{"resultado": self.linhas[chave]}] if chave in self.linhas else []
+
+    def gravar(self, tabela, linhas, conflito):
+        assert tabela == "cenario_salvo" and conflito == "parametros,versao_modelo"
+        for l in linhas:
+            self.linhas[(json.dumps(l["parametros"], sort_keys=True), l["versao_modelo"])] = l["resultado"]
+
+
+def test_salva_e_recupera_cenario_pela_tabela():
+    banco = BancoDeCenarios()
+    repo = Dados(banco)
+    parametros = {"ano": 2050, "faixa": "70_79", "localidade": "Brasil"}
+    assert repo.obter_cenario(parametros, "v1") is None
+    repo.salvar_cenario(parametros, "v1", {"ano": 2050, "valor": 120.5})
+    # outra instância (API reiniciada) lê do banco, com as chaves em outra ordem
+    reaberto = Dados(banco)
+    assert reaberto.obter_cenario({"localidade": "Brasil", "faixa": "70_79", "ano": 2050}, "v1") == {"ano": 2050, "valor": 120.5}
+
+
+def test_cenario_de_versao_antiga_nao_e_devolvido():
+    banco = BancoDeCenarios()
+    Dados(banco).salvar_cenario({"ano": 2050}, "v1", {"valor": 1})
+    assert Dados(banco).obter_cenario({"ano": 2050}, "v2") is None
+
+
+def test_cenario_lido_fica_em_memoria():
+    banco = BancoDeCenarios()
+    Dados(banco).salvar_cenario({"ano": 2050}, "v1", {"valor": 1})
+    repo = Dados(banco)
+    repo.obter_cenario({"ano": 2050}, "v1")
+    repo.obter_cenario({"ano": 2050}, "v1")
+    assert banco.leituras == 1

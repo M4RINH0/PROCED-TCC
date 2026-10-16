@@ -27,8 +27,19 @@ POPULACAO = {2018: POP_REF, 2026: POP_REF, 2050: {75: 2000, 35: 500, 5: 3000}}
 
 
 class RepositorioFalso:
+    """Dados de teste com a persistência de cenários em memória, como a tabela cenario_salvo."""
+
+    def __init__(self):
+        self.cenarios = {}
+
     def domicilios(self):
         return DOMICILIOS
+
+    def obter_cenario(self, parametros, versao_modelo):
+        return self.cenarios.get((tuple(sorted(parametros.items())), versao_modelo))
+
+    def salvar_cenario(self, parametros, versao_modelo, resultado):
+        self.cenarios[(tuple(sorted(parametros.items())), versao_modelo)] = resultado
 
     def domicilios_historicos(self):
         return []  # sem as POFs anteriores não há tendência: os arranjos ficam congelados
@@ -128,3 +139,48 @@ def test_endpoint_controle_fora_do_limite_retorna_422(cliente, campo, valor):
 def test_endpoint_aceita_os_controles(cliente):
     r = cliente.get("/simulador", params={**PARAMS, "base": "taxas_arranjos_fixos", "intensidade": 0.5, "k": 1.5})
     assert r.status_code == 200 and r.json()["simulacao"] is True
+
+
+def test_cenario_salvo_com_a_versao_do_modelo_e_sem_o_campo_recuperado():
+    from app.dominio import VERSAO_MODELO
+
+    repo = RepositorioFalso()
+    simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, repo)
+    (chave, versao), = repo.cenarios.keys()
+    assert versao == VERSAO_MODELO
+    assert dict(chave) == {"ano": 2050, "faixa": "70_79", "arranjo": "unipessoal", "base": "taxas",
+                           "localidade": "Brasil", "intensidade": 0.6, "k": 1.0}
+    assert "recuperado" not in next(iter(repo.cenarios.values()))
+
+
+def test_cenario_de_versao_antiga_e_recalculado(monkeypatch):
+    import app.services.simulador as servico
+
+    repo = RepositorioFalso()
+    simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, repo)
+    monkeypatch.setattr(servico, "VERSAO_MODELO", "versao-nova")
+    r = simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, repo)
+    assert r.recuperado is False
+    # o cenário antigo continua na tabela, e o novo é gravado com a versão nova
+    assert len(repo.cenarios) == 2 and "versao-nova" in {versao for _, versao in repo.cenarios}
+    assert simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, repo).recuperado is True
+
+
+def test_falha_do_banco_nao_impede_a_consulta():
+    from app.config import ErroFonteDados
+
+    class BancoFora(RepositorioFalso):
+        def obter_cenario(self, parametros, versao_modelo):
+            raise ErroFonteDados("fora do ar")
+
+        def salvar_cenario(self, parametros, versao_modelo, resultado):
+            raise ErroFonteDados("fora do ar")
+
+    r = simular(2050, FaixaSim.de_70_a_79, ArranjoSim.unipessoal, BaseSim.taxas, BancoFora())
+    assert r.valor == 120.0 and r.recuperado is False
+
+
+def test_combinacao_sem_valor_nao_e_salva():
+    repo = RepositorioFalso()
+    simular(2050, FaixaSim.de_30_a_39, ArranjoSim.casal_ou_dupla, BaseSim.taxas, repo)
+    assert repo.cenarios == {}

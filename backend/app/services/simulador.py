@@ -9,11 +9,16 @@ consumo total calibrado (P12):
 - contrafactual: o total de domicílios segue a projeção, e a distribuição entre as
   células fica congelada na de 2026 (P10).
 Os controles de simulação (RF02) valem aqui como no Panorama.
-Cada combinação válida consultada é persistida (RF09) e recuperada nas consultas seguintes.
+Cada combinação válida consultada é gravada na tabela cenario_salvo (RF09), com a versão do
+modelo, e recuperada nas consultas seguintes; cenário de versão antiga é recalculado.
 """
 
+import logging
+
+from app.config import ErroFonteDados
 from app.dominio import (
     BRASIL,
+    VERSAO_MODELO,
     CASAL_OU_DUPLA,
     INTENSIDADE_PADRAO,
     K_PADRAO,
@@ -31,6 +36,8 @@ from app.dominio import (
 from app.schemas.simulador import ROTULO_FAIXA, ArranjoSim, BaseSim, FaixaSim, SimulacaoResposta
 from app.services.estrutura_etaria import consumo_por_faixa
 
+log = logging.getLogger(__name__)
+
 NOME_ARRANJO = {
     ArranjoSim.unipessoal: UNIPESSOAL,
     ArranjoSim.casal_ou_dupla: CASAL_OU_DUPLA,
@@ -38,7 +45,7 @@ NOME_ARRANJO = {
 }
 
 
-def _chave_cenario(
+def parametros_do_cenario(
     ano: int,
     faixa: FaixaSim,
     arranjo: ArranjoSim,
@@ -46,32 +53,39 @@ def _chave_cenario(
     localidade: str,
     intensidade: float,
     k: float,
-) -> str:
-    return f"{localidade}:{ano}:{faixa.value}:{arranjo.value}:{base.value}:{round(intensidade, 4)}:{round(k, 4)}"
+) -> dict:
+    """Parâmetros da consulta, já validados, que identificam o cenário salvo (com a versão do modelo)."""
+    return {
+        "ano": ano,
+        "faixa": faixa.value,
+        "arranjo": arranjo.value,
+        "base": base.value,
+        "localidade": localidade,
+        "intensidade": round(intensidade, 4),
+        "k": round(k, 4),
+    }
 
 
-def _obter_salvo(dados, chave: str) -> SimulacaoResposta | None:
-    obter = getattr(dados, "obter_cenario", None)
-    if obter is not None:
-        registro = obter(chave)
-        return None if registro is None else SimulacaoResposta(**registro)
-    memoria = getattr(dados, "_cenarios_memoria", None)
-    if memoria is None or chave not in memoria:
+def _obter_salvo(dados, parametros: dict) -> SimulacaoResposta | None:
+    obter = getattr(dados, "obter_cenario", None)  # fontes sem persistência (testes) calculam sempre
+    if obter is None:
         return None
-    return SimulacaoResposta(**memoria[chave])
+    try:
+        registro = obter(parametros, VERSAO_MODELO)
+    except ErroFonteDados as erro:
+        log.warning("cenário salvo não lido, será calculado: %s", erro)
+        return None
+    return None if registro is None else SimulacaoResposta(**registro)
 
 
-def _salvar(dados, chave: str, resposta: SimulacaoResposta) -> None:
-    registro = resposta.model_dump()
+def _salvar(dados, parametros: dict, resposta: SimulacaoResposta) -> None:
     salvar = getattr(dados, "salvar_cenario", None)
-    if salvar is not None:
-        salvar(chave, registro)
+    if salvar is None:
         return
-    memoria = getattr(dados, "_cenarios_memoria", None)
-    if memoria is None:
-        memoria = {}
-        setattr(dados, "_cenarios_memoria", memoria)
-    memoria[chave] = registro
+    try:
+        salvar(parametros, VERSAO_MODELO, resposta.model_dump(mode="json", exclude={"recuperado"}))
+    except ErroFonteDados as erro:
+        log.warning("cenário calculado, mas não salvo: %s", erro)  # a resposta vale mesmo sem salvar
 
 
 def simular(
@@ -85,9 +99,9 @@ def simular(
     k: float = K_PADRAO,
     recalcular: bool = False,
 ) -> SimulacaoResposta:
-    chave = _chave_cenario(ano, faixa, arranjo, base, localidade, intensidade, k)
+    parametros = parametros_do_cenario(ano, faixa, arranjo, base, localidade, intensidade, k)
     if not recalcular:
-        salvo = _obter_salvo(dados, chave)
+        salvo = _obter_salvo(dados, parametros)
         if salvo is not None:
             return salvo.model_copy(update={"recuperado": True})
 
@@ -134,5 +148,5 @@ def simular(
         simulacao=em_simulacao(intensidade, k),
     )
     if motivo is None:
-        _salvar(dados, chave, resposta)
+        _salvar(dados, parametros, resposta)
     return resposta

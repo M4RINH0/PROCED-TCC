@@ -215,3 +215,36 @@ def test_montar_projecao_com_k_mantem_a_populacao_total():
     assert lento.populacao_por_faixa[2050]["60 a 69"] == pytest.approx(0.5125 * 320)
     assert lento.populacao_total[2050] == 320
     assert lento.populacao_por_faixa[2018] == normal.populacao_por_faixa[2018]
+
+
+def test_preparar_localidades_monta_a_base_de_cada_uma_uma_vez():
+    from app.dados import Domicilio
+    from app.dominio import LOCALIDADES, preparar_localidades
+
+    class Fonte:
+        def __init__(self):
+            self.cache, self.populacoes, self.piramides = {}, [], []
+
+        def derivado(self, chave, calcular):
+            if chave not in self.cache:
+                self.cache[chave] = calcular()
+            return self.cache[chave]
+
+        def domicilios(self):
+            return [Domicilio("Unipessoal (Mononuclear)", 65, 100.0, "DF")]
+
+        def populacao_por_idade(self, localidade):
+            self.populacoes.append(localidade)
+            return {2018: {65: 10}, 2026: {65: 10}}
+
+        def anos_piramide(self, localidade):
+            self.piramides.append(localidade)
+            return [2026]
+
+    fonte = Fonte()
+    assert len(LOCALIDADES) == 33
+    assert preparar_localidades(fonte) == 33
+    assert fonte.cache["base:DF"] is not None and fonte.cache["base:SP"] is None  # SP sem domicílio na fonte
+    assert len(fonte.piramides) == 33
+    preparar_localidades(fonte)
+    assert len(fonte.populacoes) == len(set(fonte.populacoes))  # a base de cada localidade é montada uma vez

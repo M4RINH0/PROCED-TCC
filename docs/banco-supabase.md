@@ -59,3 +59,13 @@ Para cumprir a Premissa P3, a tabela `fato_consumo_domiciliar` foi atualizada pa
 
 - **Protótipo:** `prototipo/proced.html` ainda mostra 7 arranjos e a fronteira de 2060;
   é só referência visual.
+
+## Tabelas criadas pela equipe depois do levantamento
+
+| Tabela | Script | Uso |
+|---|---|---|
+| `fato_consumo_pof_historica` | `docs/scripts/CREATE-pof-historica.sql` | POFs 2002 a 2003 e 2008 a 2009 (88.726 domicílios), tendência dos arranjos (P13) |
+| `cenario_salvo` | `docs/scripts/CREATE-cenario-salvo.sql` | Cenários do Simulador já calculados (RF09): parâmetros e resultado em `jsonb`, versão do modelo, data de criação e de atualização; chave única por parâmetros e versão |
+
+As duas têm Row Level Security ligado e nenhuma política: o acesso anônimo é negado e só a
+chave secreta do back-end lê e grava. `cenario_salvo` é a única tabela em que a API grava.
