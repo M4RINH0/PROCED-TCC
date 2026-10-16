@@ -604,3 +604,63 @@ circle.dot{transition:cy .12s linear}
 }
 .opt.recomendado{border-color:var(--teal)}
 .selo-rec{display:inline-block;margin-left:6px;font-size:11px;font-weight:650;color:var(--teal);background:var(--teal-soft);border-radius:999px;padding:1px 8px;vertical-align:1px}
+
+/* ═════════ responsividade (celular, tablet e notebook) ═════════ */
+/* o indicador mais longo ("Participação no consumo residencial") cabe inteiro */
+.barra-filtros>.fl.fl-indicador{flex:0 0 auto;min-width:276px}
+/* a explicação do recorte acompanha o recuo do painel */
+.pan>.recorte-explica{margin:6px 16px 0}
+@media (max-width:1180px){
+  .barra-filtros>.fl{flex:1 1 220px}
+  .barra-filtros>.fl.fl-indicador{flex:1 0 276px}
+  .barra-filtros .sim-painel{flex:2 1 380px}
+}
+@media (max-width:760px){
+  /* abas: ícone sobre o rótulo, as quatro sempre visíveis */
+  .tabs{height:auto;overflow:visible}
+  .tab{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:6px 2px;
+    font-size:11.5px;white-space:normal;text-align:center;line-height:1.15}
+  .tab::after{left:18%;right:18%}
+  /* filtros empilhados, um por linha */
+  .barra-filtros{flex-direction:column;align-items:stretch;gap:12px}
+  .barra-filtros>*,.barra-filtros>.fl,.barra-filtros>.fl.fl-indicador,.barra-filtros .sim-painel{flex:1 1 auto;min-width:0;max-width:none}
+  .barra-filtros .filtro-local select{min-width:0}
+  .barra-filtros .sim-ctrls .help{display:block}
+  /* controle segmentado quebra em linhas em vez de vazar */
+  .seg{display:flex;flex-wrap:wrap;max-width:100%}
+  .seg button{flex:1 1 auto}
+  /* filtro de região e estado ocupa a largura toda */
+  .vh-lado,.vh-lado>*,.filtro-local{flex:1 1 100%;width:100%}
+  /* tabelas: cabeçalho quebra em linhas; rolagem lateral só como segurança */
+  .twrap{overflow-x:auto}
+  .tbl th{white-space:normal;vertical-align:bottom}
+  .tbl th,.tbl td{padding:7px 8px}
+}
+/* toque: alvos de pelo menos 44 px (WCAG 2.5.5) */
+@media (pointer:coarse){
+  .ib{height:44px;min-width:44px;justify-content:center}
+  .lt{height:44px}
+  .seg button{height:44px}
+  .recorte-sel,.filtro-local select,.form select{height:44px;font-size:16px}
+  input[type=range].tx{height:44px}
+  .lnk{display:inline-flex;align-items:center;min-height:44px}
+  .btn{min-height:44px}
+  .barra-filtros>.fl.fl-indicador{min-width:310px}
+  .tl input{top:-5px;height:44px}
+  .tl input::-webkit-slider-runnable-track{height:44px}
+  .tl input::-moz-range-track{height:44px}
+}
+/* tablet: a página rola, o gráfico ganha altura fixa e as abas ganham linha própria com rótulo */
+@media (min-width:761px) and (max-width:1080px){
+  body{overflow:auto;display:block;height:auto}
+  .top{position:sticky;top:0;z-index:30;height:auto;flex-wrap:wrap;gap:0 16px;padding:0 22px}
+  .brand,.acts{height:56px}
+  .acts{margin-left:auto}
+  .tabs{order:3;flex:1 1 100%;height:48px;margin:0 -22px;padding:0 10px;border-top:1px solid var(--rule)}
+  .tab span{display:inline}
+  .tab{padding:0 14px}
+  main{display:block}
+  .body{min-height:0}
+  .pan{overflow:visible}
+  .plot,.iso{height:360px;flex:none}
+}

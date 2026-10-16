@@ -220,6 +220,14 @@ describe('Panorama: indicador do gráfico', () => {
     expect(participacao.textContent).toContain('sempre 100%')
   })
 
+  it('o campo do indicador tem largura própria para o rótulo mais longo não ser cortado', async () => {
+    render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscarOk()} />)
+    await screen.findByTestId('reg-taxas')
+    const campo = screen.getByLabelText('Indicador do gráfico').closest('.fl')
+    expect(campo).toHaveClass('fl-indicador')
+    expect(campo.parentElement).toHaveClass('barra-filtros')
+  })
+
   it('os outros recortes abrem na participação, e o gráfico e a leitura seguem o indicador', async () => {
     render(<Panorama ano={2050} aoMudarAno={() => {}} buscar={buscarOk()} />)
     await screen.findByTestId('reg-taxas')

@@ -131,7 +131,7 @@ export default function Panorama({
             ))}
           </select>
         </div>
-        <div className="fl">
+        <div className="fl fl-indicador">
           <label htmlFor={`${id}-indicador`}>Indicador do gráfico</label>
           <select id={`${id}-indicador`} className="recorte-sel" value={idIndicador} onChange={(e) => setIdIndicador(e.target.value)}>
             {INDICADORES.map((i) => (
