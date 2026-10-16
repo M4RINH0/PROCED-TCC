@@ -5,8 +5,8 @@
       "no_banco": 88726
     },
     "fato_consumo_domiciliar": {
-      "lidas": 52207,
-      "no_banco": 52207
+      "lidas": 52102,
+      "no_banco": 52102
     },
     "projecoes_populacao_idade (27 UFs, Ambos, 2018 a 2070)": {
       "lidas": 130221,
@@ -19,9 +19,9 @@
   },
   "peso_final_ausente_ou_nao_positivo": 0,
   "p8_domicilios_repetidos": {
-    "domicilios_repetidos": 99,
-    "linhas_dos_repetidos": 204,
-    "linhas_removidas": 105
+    "domicilios_repetidos": 0,
+    "linhas_dos_repetidos": 0,
+    "linhas_removidas": 0
   },
   "linhas_depois_da_p8": 52102,
   "chefes_com_menos_de_18_anos": 47,
@@ -265,27 +265,22 @@
       "etapa": "derivacao",
       "fonte": "base limpa da POF 2017 a 2018",
       "transformacao": "arranjo por número de moradores (1, 2, 3 ou mais); is_60_mais com chefe de 60 anos ou mais; faixa etária do chefe; consumo per capita = consumo total / moradores",
-      "linhas": 52207
+      "linhas": 52102
     },
     {
       "etapa": "preparacao (P8)",
       "fonte": "fato_consumo_domiciliar (POF 2017 a 2018)",
       "transformacao": "id_domicilio repetido fica só com o chefe de maior idade; faixa etária do chefe e célula (faixa, arranjo); consumo per capita = consumo total / moradores",
-      "linhas_entrada": 52207,
-      "domicilios_repetidos": 99,
-      "linhas_dos_repetidos": 204,
-      "linhas_removidas": 105,
+      "linhas_entrada": 52102,
+      "domicilios_repetidos": 0,
+      "linhas_dos_repetidos": 0,
+      "linhas_removidas": 0,
       "linhas": 52102
     },
     {
       "etapa": "ponte e método das taxas",
       "fonte": "fato_consumo_domiciliar e projecoes_populacao_idade (27 UFs, Ambos)",
       "transformacao": "taxa de chefia de 2018 por faixa (P2) e tendência dos arranjos (P13); padronização direta com a TEC ponderada (P6); arranjos fixos em 2026; contrafactual com a composição de 2026 congelada (P10); consumo total calibrado pela população do IBGE (P12)"
-    },
-    {
-      "etapa": "avaliação do machine learning",
-      "fonte": "fato_consumo_domiciliar (POF 2017 a 2018)",
-      "transformacao": "KFold com 5 partes e semente 42; alvo em log1p com correção de Duan; métricas ponderadas e importância por permutação"
     },
     {
       "etapa": "sensibilidade da cobertura",

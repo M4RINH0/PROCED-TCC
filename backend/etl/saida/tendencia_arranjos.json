@@ -113,82 +113,82 @@
     }
   },
   "inclinacoes_por_ano": {
-    "60 a 69": {
-      "unipessoal_sobre_multipessoal": 0.033652393360224804,
-      "casal_sobre_multipessoal": 0.041031250484527694
-    },
-    "até 29": {
-      "unipessoal_sobre_multipessoal": 0.02979880818745881,
-      "casal_sobre_multipessoal": 0.026975599292904363
-    },
-    "80+": {
-      "unipessoal_sobre_multipessoal": 0.020970989053481704,
-      "casal_sobre_multipessoal": 0.033737186247945375
-    },
-    "70 a 79": {
-      "unipessoal_sobre_multipessoal": 0.02893563228972343,
-      "casal_sobre_multipessoal": 0.028942960536123892
+    "40 a 49": {
+      "unipessoal_sobre_multipessoal": 0.0281047628333883,
+      "casal_sobre_multipessoal": 0.04039955065560001
     },
     "30 a 39": {
       "unipessoal_sobre_multipessoal": 0.01639593477163899,
       "casal_sobre_multipessoal": 0.02041665769376415
     },
-    "40 a 49": {
-      "unipessoal_sobre_multipessoal": 0.0281047628333883,
-      "casal_sobre_multipessoal": 0.04039955065560001
+    "70 a 79": {
+      "unipessoal_sobre_multipessoal": 0.02893563228972343,
+      "casal_sobre_multipessoal": 0.028942960536123892
+    },
+    "60 a 69": {
+      "unipessoal_sobre_multipessoal": 0.033652393360224804,
+      "casal_sobre_multipessoal": 0.041031250484527694
+    },
+    "80+": {
+      "unipessoal_sobre_multipessoal": 0.020970989053481704,
+      "casal_sobre_multipessoal": 0.033737186247945375
     },
     "50 a 59": {
       "unipessoal_sobre_multipessoal": 0.034325505899434366,
       "casal_sobre_multipessoal": 0.048066613463627915
+    },
+    "até 29": {
+      "unipessoal_sobre_multipessoal": 0.02979880818745881,
+      "casal_sobre_multipessoal": 0.026975599292904363
     }
   },
   "validacao_fora_do_tempo_pp": {
-    "60 a 69": {
-      "Unipessoal (Mononuclear)": -1.560047403225426,
-      "Casal ou Dupla": 2.7201067119301703,
-      "Multipessoal (3+)": -1.1600593087047306
-    },
-    "até 29": {
-      "Unipessoal (Mononuclear)": 2.018666044016003,
-      "Casal ou Dupla": 4.660521487801344,
-      "Multipessoal (3+)": -6.679187531817354
-    },
-    "80+": {
-      "Unipessoal (Mononuclear)": -6.148331603245722,
-      "Casal ou Dupla": 4.491352174684438,
-      "Multipessoal (3+)": 1.6569794285612727
-    },
-    "70 a 79": {
-      "Unipessoal (Mononuclear)": -0.33327572809793704,
-      "Casal ou Dupla": -2.107531918485994,
-      "Multipessoal (3+)": 2.4408076465839255
+    "40 a 49": {
+      "Unipessoal (Mononuclear)": 1.371742856795194,
+      "Casal ou Dupla": 2.6429855027531395,
+      "Multipessoal (3+)": -4.014728359548336
     },
     "30 a 39": {
       "Unipessoal (Mononuclear)": 1.3373559441730216,
       "Casal ou Dupla": 1.3555703845834572,
       "Multipessoal (3+)": -2.692926328756473
     },
-    "40 a 49": {
-      "Unipessoal (Mononuclear)": 1.371742856795194,
-      "Casal ou Dupla": 2.6429855027531395,
-      "Multipessoal (3+)": -4.014728359548336
+    "70 a 79": {
+      "Unipessoal (Mononuclear)": -0.33327572809793704,
+      "Casal ou Dupla": -2.107531918485994,
+      "Multipessoal (3+)": 2.4408076465839255
+    },
+    "60 a 69": {
+      "Unipessoal (Mononuclear)": -1.560047403225426,
+      "Casal ou Dupla": 2.7201067119301703,
+      "Multipessoal (3+)": -1.1600593087047306
+    },
+    "80+": {
+      "Unipessoal (Mononuclear)": -6.148331603245722,
+      "Casal ou Dupla": 4.491352174684438,
+      "Multipessoal (3+)": 1.6569794285612727
     },
     "50 a 59": {
       "Unipessoal (Mononuclear)": -3.3361310087427722,
       "Casal ou Dupla": 9.497956328541878,
       "Multipessoal (3+)": -6.161825319799108
+    },
+    "até 29": {
+      "Unipessoal (Mononuclear)": 2.018666044016003,
+      "Casal ou Dupla": 4.660521487801344,
+      "Multipessoal (3+)": -6.679187531817354
     }
   },
   "calibracao_da_intensidade": {
     "intensidade_otima": 0.56,
     "intensidade_padrao": 0.6,
     "erro_medio_absoluto_pp": {
-      "0.0": 3.671097693861175,
-      "0.5": 1.472782742348452,
-      "0.56": 1.3956106824146577,
-      "0.6": 1.456822529420364,
-      "1.0": 3.2452302027313062,
-      "1.5": 6.159578219733216
+      "0.0": 3.671097693861174,
+      "0.5": 1.4727827423484516,
+      "0.56": 1.3956106824146564,
+      "0.6": 1.456822529420363,
+      "1.0": 3.245230202731304,
+      "1.5": 6.159578219733212
     },
     "regra": "erro médio absoluto da previsão de 2017 (inclinação de 2002 e 2008, ancorada em 2008), cada faixa pesando pelos seus domicílios ponderados de 2017"
   },
