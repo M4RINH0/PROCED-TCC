@@ -1,3 +1,4 @@
+import codecs
 import csv
 import io
 import xml.etree.ElementTree as ET
@@ -17,7 +18,7 @@ cliente = TestClient(app)
 
 
 def _ler_csv(conteudo: bytes) -> list[dict[str, str]]:
-    return list(csv.DictReader(io.StringIO(conteudo.decode("utf-8"))))
+    return list(csv.DictReader(io.StringIO(conteudo.decode("utf-8-sig"))))  # o arquivo tem BOM
 
 
 def _ler_xlsx(conteudo: bytes) -> list[list[str]]:
@@ -92,3 +93,32 @@ def test_exporta_xlsx_valido_com_cabecalho_e_dados():
 )
 def test_parametros_invalidos_retornam_422(params):
     assert cliente.get("/exportar", params=params).status_code == 422
+
+
+def test_csv_tem_bom_utf8_para_o_excel_em_portugues():
+    r = cliente.get("/exportar", params={"formato": "csv", "recorte": "chefe_60_mais"})
+    assert r.content.startswith(codecs.BOM_UTF8)
+    assert "Projeções".encode("utf-8") in r.content  # acento em UTF-8 depois do BOM
+
+
+def test_os_dois_formatos_trazem_versao_do_modelo_e_data_de_geracao():
+    from datetime import datetime
+
+    from app.dominio import VERSAO_MODELO
+
+    csv_ = _ler_csv(cliente.get("/exportar", params={"formato": "csv", "recorte": "chefe_60_mais"}).content)
+    assert {l["versao_modelo"] for l in csv_} == {VERSAO_MODELO}
+    assert len({l["gerado_em"] for l in csv_}) == 1  # a mesma data em todas as linhas
+    assert datetime.fromisoformat(csv_[0]["gerado_em"]).tzinfo is not None
+    xlsx = _ler_xlsx(cliente.get("/exportar", params={"formato": "xlsx", "recorte": "chefe_60_mais"}).content)
+    cabecalho = xlsx[0]
+    assert cabecalho[-2:] == ["versao_modelo", "gerado_em"]
+    assert xlsx[1][cabecalho.index("versao_modelo")] == VERSAO_MODELO
+    datetime.fromisoformat(xlsx[1][cabecalho.index("gerado_em")])
+
+
+def test_data_de_geracao_pode_ser_fixada():
+    from app.services.exportacao import montar_linhas
+
+    linhas = montar_linhas(RepositorioFalso(), recorte=None, gerado_em="2026-10-16T10:00:00-03:00")
+    assert {l["gerado_em"] for l in linhas} == {"2026-10-16T10:00:00-03:00"}

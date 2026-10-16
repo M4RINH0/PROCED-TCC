@@ -2,9 +2,10 @@ import csv
 import io
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from xml.sax.saxutils import escape
 
-from app.dominio import ANO_FINAL, ANO_INICIAL, BRASIL, INTENSIDADE_PADRAO, K_PADRAO, Recorte
+from app.dominio import ANO_FINAL, ANO_INICIAL, BRASIL, INTENSIDADE_PADRAO, K_PADRAO, VERSAO_MODELO, Recorte
 from app.schemas.exportacao import EscopoExportacao, FormatoExportacao
 from app.schemas.panorama import Cenario, PontoSerie, SerieResposta
 from app.services.panorama import obter_serie
@@ -37,6 +38,8 @@ COLUNAS = (
     "domicilios_amostra",
     "baixa_confiabilidade",
     "fonte",
+    "versao_modelo",
+    "gerado_em",
 )
 
 TIPOS_MIDIA = {
@@ -121,6 +124,7 @@ def _linha_cenario(serie: SerieResposta, ponto: PontoSerie, cenario: Cenario) ->
         "domicilios_amostra": serie.domicilios_amostra,
         "baixa_confiabilidade": serie.baixa_confiabilidade,
         "fonte": serie.fonte,
+        "versao_modelo": VERSAO_MODELO,
     }
 
 
@@ -132,7 +136,10 @@ def montar_linhas(
     localidade: str = BRASIL,
     intensidade: float = INTENSIDADE_PADRAO,
     k: float = K_PADRAO,
+    gerado_em: str | None = None,
 ) -> list[dict[str, object]]:
+    """`gerado_em` é a data e hora da geração (ISO 8601 com fuso), igual em todas as linhas."""
+    gerado_em = gerado_em or datetime.now().astimezone().isoformat(timespec="seconds")
     recortes = [recorte] if recorte is not None else list(Recorte)
     linhas: list[dict[str, object]] = []
     for item in recortes:
@@ -140,16 +147,17 @@ def montar_linhas(
         pontos = [p for p in serie.pontos if p.ano == ano] if escopo == EscopoExportacao.ano else serie.pontos
         for ponto in pontos:
             for cenario in ponto.cenarios:
-                linhas.append(_linha_cenario(serie, ponto, cenario))
+                linhas.append({**_linha_cenario(serie, ponto, cenario), "gerado_em": gerado_em})
     return linhas
 
 
 def gerar_csv(linhas: list[dict[str, object]]) -> bytes:
+    """UTF-8 com BOM: o Excel em português só reconhece os acentos com ele."""
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=COLUNAS, lineterminator="\n")
     escritor.writeheader()
     escritor.writerows(linhas)
-    return buffer.getvalue().encode("utf-8")
+    return buffer.getvalue().encode("utf-8-sig")
 
 
 def _letra_coluna(indice: int) -> str:
@@ -213,8 +221,9 @@ def exportar_dados(
     localidade: str = BRASIL,
     intensidade: float = INTENSIDADE_PADRAO,
     k: float = K_PADRAO,
+    gerado_em: str | None = None,
 ) -> ArquivoExportado:
-    linhas = montar_linhas(dados, escopo, ano, recorte, localidade, intensidade, k)
+    linhas = montar_linhas(dados, escopo, ano, recorte, localidade, intensidade, k, gerado_em)
     conteudo = gerar_csv(linhas) if formato == FormatoExportacao.csv else gerar_xlsx(linhas)
     return ArquivoExportado(
         conteudo=conteudo,

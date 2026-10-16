@@ -87,7 +87,7 @@ describe('Gaveta', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
     expect(exportar).toHaveBeenCalledWith({
-      formato: 'csv',
+      formato: 'xlsx',
       escopo: 'ano',
       ano: 2050,
       localidade: 'SP',
@@ -95,14 +95,14 @@ describe('Gaveta', () => {
       k: 1.2,
     })
     await screen.findByRole('button', { name: 'Exportar' })
-    expect(avisar).toHaveBeenCalledWith('Dados exportados em CSV')
+    expect(avisar).toHaveBeenCalledWith('Dados exportados em XLSX')
     expect(aoFechar).toHaveBeenCalledOnce()
 
-    fireEvent.click(screen.getByLabelText(/XLSX/))
+    fireEvent.click(screen.getByLabelText(/CSV/))
     fireEvent.click(screen.getByLabelText(/Série completa/))
     fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
     expect(exportar).toHaveBeenLastCalledWith({
-      formato: 'xlsx',
+      formato: 'csv',
       escopo: 'serie',
       ano: 2050,
       localidade: 'SP',
@@ -110,10 +110,19 @@ describe('Gaveta', () => {
       k: 1.2,
     })
     await screen.findByRole('button', { name: 'Exportar' })
-    expect(avisar).toHaveBeenLastCalledWith('Dados exportados em XLSX')
+    expect(avisar).toHaveBeenLastCalledWith('Dados exportados em CSV')
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(aoFechar).toHaveBeenCalledTimes(3)
+  })
+
+  it('destaca o XLSX como recomendado para planilha e o deixa marcado', () => {
+    render(<Gaveta tipo="exportar" ano={2050} aoFechar={() => {}} avisar={() => {}} exportar={vi.fn()} />)
+    const opcoes = screen.getAllByRole('radio', { name: /XLSX|CSV/ })
+    expect(opcoes.map((o) => o.value)).toEqual(['xlsx', 'csv'])
+    expect(screen.getByLabelText(/XLSX/)).toBeChecked()
+    expect(screen.getByText('Recomendado para planilha')).toBeInTheDocument()
+    expect(screen.getByText(/UTF-8 com BOM/)).toBeInTheDocument()
   })
 
   it('avisa quando a exportação falha', async () => {

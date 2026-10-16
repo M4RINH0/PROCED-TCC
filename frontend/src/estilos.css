@@ -602,3 +602,5 @@ circle.dot{transition:cy .12s linear}
   .readout .cmp div{padding:3px 0}
   .vh p{font-size:13px}
 }
+.opt.recomendado{border-color:var(--teal)}
+.selo-rec{display:inline-block;margin-left:6px;font-size:11px;font-weight:650;color:var(--teal);background:var(--teal-soft);border-radius:999px;padding:1px 8px;vertical-align:1px}

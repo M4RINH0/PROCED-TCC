@@ -221,6 +221,11 @@ def populacao_total(populacao: dict[int, dict[int, int]]) -> dict[int, int]:
 
 # ---------- controles de simulação (RF02) e tendência dos arranjos (P13) ----------
 
+# Versão do modelo: muda sempre que o cálculo ou as premissas mudarem. Vai em toda exportação
+# (RF08) e na chave dos cenários salvos (RF09): cenário de versão antiga não volta como recuperado.
+# Formato: data da mudança e o que mudou por último.
+VERSAO_MODELO = "2026-10-15.participacao-consumo"
+
 # Intensidade padrão calibrada pela validação fora do tempo (P13): o mínimo do erro médio absoluto da
 # previsão de 2017 é 0,56, arredondado a 0,6; 0,5 e 1 ficam como faixa de sensibilidade.
 INTENSIDADE_PADRAO, INTENSIDADE_MINIMA, INTENSIDADE_MAXIMA = 0.6, 0.0, 1.5  # 0 congela os arranjos a partir de 2026

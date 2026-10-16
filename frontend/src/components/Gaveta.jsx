@@ -133,7 +133,7 @@ function salvarBlob(blob, nomeArquivo) {
 }
 
 function Exportar({ ano, localidade, simulacao, aoFechar, avisar, exportar = exportarDados }) {
-  const [formato, setFormato] = useState('csv')
+  const [formato, setFormato] = useState('xlsx')  // recomendado para planilha
   const [escopo, setEscopo] = useState('ano')
   const [baixando, setBaixando] = useState(false)
   const anoInteiro = Math.round(ano)
@@ -163,18 +163,20 @@ function Exportar({ ano, localidade, simulacao, aoFechar, avisar, exportar = exp
     <>
       <div className="dr-b">
         <p className="lbl">Formato</p>
+        <label className="opt recomendado">
+          <input type="radio" name="fmt" value="xlsx" checked={formato === 'xlsx'} onChange={() => setFormato('xlsx')} />
+          <span>
+            <b>
+              XLSX <span className="selo-rec">Recomendado para planilha</span>
+            </b>
+            <small>Abre no Excel e no LibreOffice com números e acentos certos</small>
+          </span>
+        </label>
         <label className="opt">
           <input type="radio" name="fmt" value="csv" checked={formato === 'csv'} onChange={() => setFormato('csv')} />
           <span>
             <b>CSV</b>
-            <small>Texto separado por vírgula</small>
-          </span>
-        </label>
-        <label className="opt">
-          <input type="radio" name="fmt" value="xlsx" checked={formato === 'xlsx'} onChange={() => setFormato('xlsx')} />
-          <span>
-            <b>XLSX</b>
-            <small>Planilha</small>
+            <small>Texto separado por vírgula, em UTF-8 com BOM, para outros programas</small>
           </span>
         </label>
         <p className="lbl">Escopo</p>

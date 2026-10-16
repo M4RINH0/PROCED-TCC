@@ -44,7 +44,7 @@ porque o dado real é outro:
 - Estrutura etária: o consumo por faixa do chefe é um gráfico de barras, não de linhas,
   pelo mesmo motivo.
 - Simulador: o histograma mostra as faixas do chefe do arranjo escolhido.
-- Horizonte de 2026 a 2070, sem a área hachurada depois da projeção oficial; o selo do topo diz "Cenário do modelo pendente".
+- Horizonte de 2026 a 2070, sem a área hachurada depois da projeção oficial; o selo do topo diz "Machine learning pausado".
 - Controle da taxa de envelhecimento desativado até o cenário do modelo existir.
 - Exportar baixa os dados reais pela rota `/exportar` em CSV ou XLSX (gerado com a biblioteca padrão do Python, sem nova dependência).
 
