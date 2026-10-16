@@ -136,7 +136,7 @@ Parâmetro opcional `arranjo`: `mononucleares` (padrão), `unipessoal`,
 `domicilios_amostra`, `baixa_confiabilidade` e `consumo_per_capita_kwh` (TEC ponderada;
 `null` sem amostra).
 
-## `GET /simulador` (RF02, RF07)
+## `GET /simulador` (RF02, RF07, RF09)
 
 | Parâmetro | Regra |
 |---|---|
@@ -145,6 +145,7 @@ Parâmetro opcional `arranjo`: `mononucleares` (padrão), `unipessoal`,
 | `arranjo` | `unipessoal`, `casal_ou_dupla`, `multipessoal` |
 | `base` | `taxas`, `taxas_arranjos_fixos` ou `contrafactual` |
 | `intensidade`, `k` | controles de simulação (opcionais) |
+| `recalcular` | booleano opcional (padrão `false`); força novo cálculo e atualiza o cenário salvo |
 
 O antigo parâmetro `taxa` saiu; o RF02 é atendido por `intensidade` e `k`.
 
@@ -153,9 +154,8 @@ Resposta:
 - `domicilios_projetados`, `participacao_pct` e `consumo_total_calibrado_kwh_mes`: a célula no ano e no cenário escolhidos;
 - `domicilios_amostra` e `baixa_confiabilidade`;
 - `motivo_sem_valor`, quando falta amostra ou projeção da população;
-- `por_faixa`, para o histograma.
-
-A persistência de cenários (RF09) ainda não existe.
+- `por_faixa`, para o histograma;
+- `recuperado`: `false` quando o cenário foi calculado na consulta e salvo; `true` quando foi recuperado de cenário já calculado (RF09).
 
 ## `GET /fontes` (RF10)
 
@@ -177,5 +177,4 @@ Devolve o arquivo para download (`Content-Disposition: attachment`) com uma linh
 
 ## A definir em conjunto
 
-- Persistência de cenários do simulador (RF09).
 - Cenários de machine learning (`ml_rf` e `ml_gb`): pausados.

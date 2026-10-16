@@ -152,9 +152,11 @@ export default function Simulador({
         <AvisoAmostra ativo={dados.baixa_confiabilidade} />
         <HistoricoFaixas porFaixa={dados.por_faixa} faixa={form.faixa} />
         <div className="bill-f">
-          <span className="chip">
+          <span className={dados.recuperado ? 'chip' : 'chip calc'} data-testid="chip-cenario">
             <i />
-            <span>Calculado a partir da POF; salvar cenários (RF09) ainda não foi implementado</span>
+            <span>
+              {dados.recuperado ? 'Recuperado de cenário já calculado' : 'Calculado agora e salvo para as próximas consultas'}
+            </span>
           </span>
           <span>Fonte: {dados.fonte}</span>
           <button type="button" className="btn" onClick={() => abrirGaveta('exportar')}>

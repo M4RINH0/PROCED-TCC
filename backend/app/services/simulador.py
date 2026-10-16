@@ -1,4 +1,4 @@
-"""Regras do Simulador: consulta combinada de ano, arranjo e faixa etária do chefe (RF02, RF07).
+"""Regras do Simulador: consulta combinada de ano, arranjo e faixa etária do chefe (RF02, RF07, RF09).
 
 A TEC de cada célula (faixa do chefe, arranjo) fica nos níveis da POF (premissa P6),
 então o consumo por pessoa da célula não depende do ano nem do cenário. O ano e o
@@ -9,7 +9,7 @@ consumo total calibrado (P12):
 - contrafactual: o total de domicílios segue a projeção, e a distribuição entre as
   células fica congelada na de 2026 (P10).
 Os controles de simulação (RF02) valem aqui como no Panorama.
-A persistência de cenários (RF09) ainda não foi implementada.
+Cada combinação válida consultada é persistida (RF09) e recuperada nas consultas seguintes.
 """
 
 from app.dominio import (
@@ -38,6 +38,42 @@ NOME_ARRANJO = {
 }
 
 
+def _chave_cenario(
+    ano: int,
+    faixa: FaixaSim,
+    arranjo: ArranjoSim,
+    base: BaseSim,
+    localidade: str,
+    intensidade: float,
+    k: float,
+) -> str:
+    return f"{localidade}:{ano}:{faixa.value}:{arranjo.value}:{base.value}:{round(intensidade, 4)}:{round(k, 4)}"
+
+
+def _obter_salvo(dados, chave: str) -> SimulacaoResposta | None:
+    obter = getattr(dados, "obter_cenario", None)
+    if obter is not None:
+        registro = obter(chave)
+        return None if registro is None else SimulacaoResposta(**registro)
+    memoria = getattr(dados, "_cenarios_memoria", None)
+    if memoria is None or chave not in memoria:
+        return None
+    return SimulacaoResposta(**memoria[chave])
+
+
+def _salvar(dados, chave: str, resposta: SimulacaoResposta) -> None:
+    registro = resposta.model_dump()
+    salvar = getattr(dados, "salvar_cenario", None)
+    if salvar is not None:
+        salvar(chave, registro)
+        return
+    memoria = getattr(dados, "_cenarios_memoria", None)
+    if memoria is None:
+        memoria = {}
+        setattr(dados, "_cenarios_memoria", memoria)
+    memoria[chave] = registro
+
+
 def simular(
     ano: int,
     faixa: FaixaSim,
@@ -47,7 +83,14 @@ def simular(
     localidade: str = BRASIL,
     intensidade: float = INTENSIDADE_PADRAO,
     k: float = K_PADRAO,
+    recalcular: bool = False,
 ) -> SimulacaoResposta:
+    chave = _chave_cenario(ano, faixa, arranjo, base, localidade, intensidade, k)
+    if not recalcular:
+        salvo = _obter_salvo(dados, chave)
+        if salvo is not None:
+            return salvo.model_copy(update={"recuperado": True})
+
     populacao = dados.populacao_por_idade(localidade)
     filtro = FiltroArranjo(arranjo.value)
     por_faixa = memorizado(
@@ -71,7 +114,7 @@ def simular(
         participacao = round(todos[celula] / sum(todos.values()) * 100, 2)
         calibrado = None if resumo.consumo_total_calibrado is None else round(resumo.consumo_total_calibrado)
 
-    return SimulacaoResposta(
+    resposta = SimulacaoResposta(
         ano=ano,
         faixa=rotulo,
         arranjo=arranjo,
@@ -84,8 +127,12 @@ def simular(
         participacao_pct=participacao,
         consumo_total_calibrado_kwh_mes=calibrado,
         por_faixa=por_faixa,
+        recuperado=False,
         localidade=localidade,
         intensidade=intensidade,
         k=k,
         simulacao=em_simulacao(intensidade, k),
     )
+    if motivo is None:
+        _salvar(dados, chave, resposta)
+    return resposta

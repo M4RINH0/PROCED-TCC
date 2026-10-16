@@ -133,4 +133,19 @@ describe('Simulador', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Exportar resultado' }))
     expect(abrirGaveta).toHaveBeenCalledWith('exportar')
   })
+
+  it('indica quando o cenário foi calculado agora ou recuperado de cenário salvo (RF09)', async () => {
+    const buscar = vi
+      .fn()
+      .mockImplementationOnce((p) => Promise.resolve(resposta(p, { recuperado: false })))
+      .mockImplementationOnce((p) => Promise.resolve(resposta(p, { recuperado: true })))
+    render(<Simulador buscar={buscar} />)
+    const chip = await screen.findByTestId('chip-cenario')
+    expect(chip).toHaveClass('chip', 'calc')
+    expect(chip).toHaveTextContent('Calculado agora e salvo para as próximas consultas')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar cenário' }))
+    await waitFor(() => expect(screen.getByTestId('chip-cenario')).toHaveTextContent('Recuperado de cenário já calculado'))
+    expect(screen.getByTestId('chip-cenario')).not.toHaveClass('calc')
+  })
 })

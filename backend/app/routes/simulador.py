@@ -1,4 +1,4 @@
-"""Rotas da página Simulador (RF02, RF07)."""
+"""Rotas da página Simulador (RF02, RF07, RF09)."""
 
 from typing import Annotated
 
@@ -34,7 +34,6 @@ ParamK = Annotated[
 ]
 
 
-
 @router.get("", response_model=SimulacaoResposta, summary="Consumo projetado de um tipo de domicílio num ano")
 def consultar_simulacao(
     ano: Annotated[int, Query(ge=ANO_INICIAL, le=ANO_FINAL, description="Ano de 2026 a 2070")],
@@ -45,5 +44,6 @@ def consultar_simulacao(
     localidade: Annotated[Localidade, Query(description="Brasil, região ou sigla da UF")] = Localidade.Brasil,
     intensidade: ParamIntensidade = INTENSIDADE_PADRAO,
     k: ParamK = K_PADRAO,
+    recalcular: Annotated[bool, Query(description="Força novo cálculo e atualiza o cenário salvo (RF09)")] = False,
 ) -> SimulacaoResposta:
-    return simular(ano, faixa, arranjo, base, dados, localidade.value, intensidade, k)
+    return simular(ano, faixa, arranjo, base, dados, localidade.value, intensidade, k, recalcular=recalcular)

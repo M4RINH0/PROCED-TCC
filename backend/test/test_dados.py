@@ -116,3 +116,14 @@ def test_memorizado_sem_cache_calcula_na_hora():
     assert memorizado(SemCache(), "x", lambda: 42) == 42
     repo = Dados(ClienteFalso())
     assert memorizado(repo, "x", lambda: 1) == 1 and memorizado(repo, "x", lambda: 2) == 1
+
+
+def test_persiste_e_recupera_cenarios_em_memoria_e_arquivo(tmp_path):
+    arquivo = tmp_path / "cenarios.json"
+    repo = Dados(ClienteFalso(), arquivo_cenarios=arquivo)
+    assert repo.obter_cenario("Brasil:2050") is None
+    repo.salvar_cenario("Brasil:2050", {"ano": 2050, "valor": 120.5})
+    assert repo.obter_cenario("Brasil:2050") == {"ano": 2050, "valor": 120.5}
+
+    reaberto = Dados(ClienteFalso(), arquivo_cenarios=arquivo)
+    assert reaberto.obter_cenario("Brasil:2050") == {"ano": 2050, "valor": 120.5}

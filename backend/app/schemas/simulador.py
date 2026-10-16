@@ -57,6 +57,10 @@ class SimulacaoResposta(Simulacao):
         default=None, description="consumo total da célula calibrado pela população do IBGE (P12), kWh/mês"
     )
     por_faixa: list[FaixaConsumo]
+    recuperado: bool = Field(
+        default=False,
+        description="true quando o resultado veio de um cenário já calculado e salvo (RF09); false quando foi calculado agora",
+    )
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     fonte: str = FONTE
     localidade: str = "Brasil"

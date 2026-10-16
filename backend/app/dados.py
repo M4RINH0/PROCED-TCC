@@ -7,9 +7,11 @@ que deriva só dos dados (`derivado`), como a tendência dos arranjos e a base d
 de cada localidade; só a parte que depende dos controles de simulação é recalculada.
 """
 
+import json
 import threading
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 
 from app.dominio import ANO_INICIAL, ANO_REFERENCIA_POF, BRASIL, SEXO_AMBOS, UFS, sem_repeticao, ufs_explicitas
 from app.supabase import ClienteSupabase, obter_cliente
@@ -48,11 +50,33 @@ class Dados:
     """Acesso às tabelas usadas pela API. Nos testes, qualquer objeto com os mesmos
     métodos serve no lugar desta classe."""
 
-    def __init__(self, cliente: ClienteSupabase):
+    def __init__(self, cliente: ClienteSupabase, arquivo_cenarios: Path | None = None):
         self._cliente = cliente
         self._trava = threading.Lock()
         self._travas: dict[str, threading.Lock] = {}
         self._cache: dict[str, object] = {}
+        self._arquivo_cenarios = arquivo_cenarios
+        self._cenarios: dict[str, dict] = self._ler_arquivo_cenarios()
+
+    def _ler_arquivo_cenarios(self) -> dict[str, dict]:
+        if not self._arquivo_cenarios or not self._arquivo_cenarios.exists():
+            return {}
+        return json.loads(self._arquivo_cenarios.read_text(encoding="utf-8"))
+
+    def obter_cenario(self, chave: str) -> dict | None:
+        with self._trava:
+            salvo = self._cenarios.get(chave)
+            return None if salvo is None else dict(salvo)
+
+    def salvar_cenario(self, chave: str, cenario: dict) -> None:
+        with self._trava:
+            self._cenarios[chave] = dict(cenario)
+            if self._arquivo_cenarios:
+                self._arquivo_cenarios.parent.mkdir(parents=True, exist_ok=True)
+                self._arquivo_cenarios.write_text(
+                    json.dumps(self._cenarios, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
 
     def _uma_vez(self, chave: str, carregar):
         """Carrega uma vez por chave. Cada chave tem a sua trava: uma leitura longa não

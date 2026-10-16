@@ -71,7 +71,8 @@ def test_ano_sem_projecao_da_populacao():
 @pytest.fixture
 def cliente():
     app = criar_app()
-    app.dependency_overrides[obter_dados] = RepositorioFalso
+    repo = RepositorioFalso()
+    app.dependency_overrides[obter_dados] = lambda: repo
     return TestClient(app)
 
 
@@ -83,7 +84,18 @@ def test_endpoint_entrada_valida(cliente):
     assert r.status_code == 200
     corpo = r.json()
     assert corpo["valor"] == 120.0 and corpo["base"] == "taxas" and "taxa" not in corpo
+    assert corpo["recuperado"] is False
     assert cliente.get("/simulador", params={**PARAMS, "base": "contrafactual"}).status_code == 200
+
+
+def test_persiste_cenario_e_recupera_nas_consultas_seguintes(cliente):
+    primeira = cliente.get("/simulador", params=PARAMS).json()
+    segunda = cliente.get("/simulador", params=PARAMS).json()
+    recalculada = cliente.get("/simulador", params={**PARAMS, "recalcular": True}).json()
+    assert primeira["recuperado"] is False
+    assert segunda["recuperado"] is True
+    assert segunda["domicilios_projetados"] == primeira["domicilios_projetados"]
+    assert recalculada["recuperado"] is False
 
 
 @pytest.mark.parametrize(
