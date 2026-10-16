@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from etl import modelagem
+from etl import projecao
 from etl.derivacao import derivar
 
 Etapa = Callable[[pd.DataFrame | None], tuple[pd.DataFrame, dict]]
@@ -36,7 +36,6 @@ def executar(entrada: pd.DataFrame | None, etapas: Sequence[Etapa] = ETAPAS) -> 
 # ---------- projeções de 2026 a 2070: python -m etl.pipeline ----------
 
 PASTA_SAIDA = Path(__file__).parent / "saida"
-CENARIOS = ("taxas", "ml_rf", "ml_gb", "contrafactual")
 
 
 def _json(caminho: Path, conteudo) -> None:
@@ -58,28 +57,26 @@ def projetar(
     leitura: dict,
     historica: pd.DataFrame | None,
     pasta: Path,
-    avaliar_ml: bool = True,
-    projetar_ml: bool = False,
 ) -> dict:
     """Gera as saídas em `pasta` e devolve um resumo. Sem banco: recebe o que carregar() leu.
 
-    O ML está pausado: por padrão, os modelos são avaliados (métricas e importância
-    das variáveis), mas não entram nas projeções.
+    Só o método das taxas e o contrafactual. O experimento de machine learning, fora do escopo
+    das projeções, tem comando próprio (python -m etl.modelagem).
     """
     pasta.mkdir(parents=True, exist_ok=True)
     derivado, rastro = executar(fato_bruto)
-    fato, registro = modelagem.preparar(derivado)
+    fato, registro = projecao.preparar(derivado)
     rastro.append(registro)
 
-    pop_faixa = modelagem.populacao_por_faixa(pop)
-    historica = historica if historica is not None else pd.DataFrame(columns=modelagem.COLUNAS_HISTORICA.split(","))
-    tendencia = modelagem.tendencia_arranjos(historica, fato)
+    pop_faixa = projecao.populacao_por_faixa(pop)
+    historica = historica if historica is not None else pd.DataFrame(columns=projecao.COLUNAS_HISTORICA.split(","))
+    tendencia = projecao.tendencia_arranjos(historica, fato)
     _json(pasta / "tendencia_arranjos.json", tendencia)
     inclinacoes = {f: (b["unipessoal_sobre_multipessoal"], b["casal_sobre_multipessoal"]) for f, b in tendencia["inclinacoes_por_ano"].items()}
-    ponte = modelagem.Ponte(fato, pop_faixa, tendencia=inclinacoes)  # intensidade padrão (P13)
-    modelagem.sensibilidade_intensidade(fato, pop_faixa, inclinacoes, pop).to_csv(pasta / "sensibilidade_intensidade.csv", index=False)
-    auditoria = modelagem.auditar(fato_bruto, fato, registro, pop, pop_brasil, leitura)
-    auditoria["ponte"] = modelagem.validar_ponte(ponte, pop)
+    ponte = projecao.Ponte(fato, pop_faixa, tendencia=inclinacoes)  # intensidade padrão (P13)
+    projecao.sensibilidade_intensidade(fato, pop_faixa, inclinacoes, pop).to_csv(pasta / "sensibilidade_intensidade.csv", index=False)
+    auditoria = projecao.auditar(fato_bruto, fato, registro, pop, pop_brasil, leitura)
+    auditoria["ponte"] = projecao.validar_ponte(ponte, pop)
     rastro.append(
         {
             "etapa": "ponte e método das taxas",
@@ -90,36 +87,12 @@ def projetar(
         }
     )
 
-    projecoes = [modelagem.projetar_taxas(ponte), modelagem.projetar_arranjos_fixos(ponte)]
-    if avaliar_ml:
-        avaliacao = modelagem.avaliar(fato)
-        _json(pasta / "metricas_modelos.json", avaliacao)
-        modelagem.importancia_tabela(avaliacao).to_csv(pasta / "importancia_variaveis.csv", index=False)
-        rastro.append(
-            {
-                "etapa": "avaliação do machine learning",
-                "fonte": "fato_consumo_domiciliar (POF 2017 a 2018)",
-                "transformacao": "KFold com 5 partes e semente 42; alvo em log1p com correção de Duan; métricas "
-                "ponderadas e importância por permutação",
-            }
-        )
-    if projetar_ml:
-        for nome in ("ml_rf", "ml_gb"):
-            total, per_capita = modelagem.ajustar_e_prever(fato, nome)
-            projecoes.append(modelagem.projetar_reponderacao(fato, total, per_capita, ponte, nome))
-        rastro.append(
-            {
-                "etapa": "projeção do machine learning",
-                "fonte": "modelos ajustados em toda a amostra",
-                "transformacao": "reponderação da amostra para os domicílios projetados de cada célula",
-            }
-        )
-    projecoes.append(modelagem.projetar_contrafactual(ponte))
-    resultado = modelagem.calibrar(pd.concat(projecoes, ignore_index=True), pop)
+    projecoes = [projecao.projetar_taxas(ponte), projecao.projetar_arranjos_fixos(ponte), projecao.projetar_contrafactual(ponte)]
+    resultado = projecao.calibrar(pd.concat(projecoes, ignore_index=True), pop)
     resultado.to_csv(pasta / "projecoes_2026_2070.csv", index=False)
 
-    fator = modelagem.fator_cobertura(fato)
-    modelagem.sensibilidade_cobertura(resultado, fator).to_csv(pasta / "sensibilidade_cobertura.csv", index=False)
+    fator = projecao.fator_cobertura(fato)
+    projecao.sensibilidade_cobertura(resultado, fator).to_csv(pasta / "sensibilidade_cobertura.csv", index=False)
     rastro.append(
         {
             "etapa": "sensibilidade da cobertura",
@@ -137,7 +110,7 @@ def main() -> None:
     from app.supabase import criar_cliente
 
     cliente = criar_cliente(carregar_configuracao(dotenv=DOTENV))
-    projetar(*modelagem.carregar(cliente), pasta=PASTA_SAIDA)
+    projetar(*projecao.carregar(cliente), pasta=PASTA_SAIDA)
     print(f"saídas gravadas em {PASTA_SAIDA}")
 
 

@@ -14,13 +14,12 @@ from app.dominio import (
     ANO_INICIAL,
     ANO_REFERENCIA_POF,
     ARRANJOS,
+    CATEGORIAS,
     BRASIL,
-    CASAL_OU_DUPLA,
     FAIXAS_CHEFE,
     IDADE_IDOSO,
     MONONUCLEARES,
     MULTIPESSOAL,
-    UNIPESSOAL,
     baixa_confiabilidade,
     celula_do_domicilio,
     INTENSIDADE_PADRAO,
@@ -138,16 +137,6 @@ class EstruturaDomicilios:
 
 FAIXAS_60 = [f.rotulo for f in FAIXAS_CHEFE if f.minima >= 60]
 FAIXAS_ABAIXO_60 = [f.rotulo for f in FAIXAS_CHEFE if f.minima < 60]
-
-# ordem da grade: o recorte do estudo ocupa as primeiras casas
-CATEGORIAS = (
-    ("uni_60", UNIPESSOAL, True),
-    ("cas_60", CASAL_OU_DUPLA, True),
-    ("uni_59", UNIPESSOAL, False),
-    ("cas_59", CASAL_OU_DUPLA, False),
-    ("mul_60", MULTIPESSOAL, True),
-    ("mul_59", MULTIPESSOAL, False),
-)
 
 
 def maior_resto(valores: list[float], total: int = 100) -> list[int]:

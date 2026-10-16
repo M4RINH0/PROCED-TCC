@@ -200,6 +200,31 @@ CELULAS_DO_RECORTE = {
 }
 
 
+# Categorias da composição (Domicílios), das saídas do ETL e da comparação de grupos (RF12):
+# arranjo e chefe com 60 anos ou mais (True) ou abaixo de 60 (False). A ordem é a da grade de casas.
+CATEGORIAS = (
+    ("uni_60", UNIPESSOAL, True),
+    ("cas_60", CASAL_OU_DUPLA, True),
+    ("uni_59", UNIPESSOAL, False),
+    ("cas_59", CASAL_OU_DUPLA, False),
+    ("mul_60", MULTIPESSOAL, True),
+    ("mul_59", MULTIPESSOAL, False),
+)
+FAIXAS_60 = tuple(f for f in FAIXAS_CHEFE if f.minima >= IDADE_IDOSO)
+FAIXAS_ABAIXO_60 = tuple(f for f in FAIXAS_CHEFE if f.minima < IDADE_IDOSO)
+
+
+def faixas_da_idade(chefe_60_mais: bool) -> tuple[Faixa, ...]:
+    return FAIXAS_60 if chefe_60_mais else FAIXAS_ABAIXO_60
+
+
+def categoria_da_celula(celula: tuple[str, str]) -> str:
+    """Identificador da categoria (uni_60, cas_59...) de uma célula (faixa do chefe, arranjo)."""
+    faixa, arranjo = celula
+    idoso = next(f for f in FAIXAS_CHEFE if f.rotulo == faixa).minima >= IDADE_IDOSO
+    return next(i for i, a, v in CATEGORIAS if a == arranjo and v == idoso)
+
+
 def baixa_confiabilidade(amostra: int) -> bool:
     return amostra < MINIMO_AMOSTRA
 

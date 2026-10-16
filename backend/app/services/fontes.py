@@ -1,5 +1,6 @@
 """Fontes, período de referência, critério de exclusão e premissas principais (RF10)."""
 
+from app.calculo import fator_cobertura
 from app.dominio import TOTAL_DOMICILIOS_POF, memorizado
 from app.schemas.fontes import Fonte, FontesResposta, Premissa
 
@@ -74,9 +75,8 @@ PREMISSAS_URL = "https://github.com/M4RINH0/PROCED-TCC/blob/main/docs/premissas.
 
 
 def cobertura(soma_pesos: float, total: float = TOTAL_DOMICILIOS_POF) -> float:
-    if total <= 0:
-        raise ValueError("o total de domicílios precisa ser maior que zero")
-    return round(soma_pesos / total * 100, 1)
+    """Soma dos pesos sobre o total de domicílios da POF, em %: o inverso do fator de cobertura (P9)."""
+    return round(100 / fator_cobertura(soma_pesos, total), 1)
 
 
 def obter_fontes(dados) -> FontesResposta:

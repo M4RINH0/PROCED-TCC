@@ -248,3 +248,16 @@ def test_preparar_localidades_monta_a_base_de_cada_uma_uma_vez():
     assert len(fonte.piramides) == 33
     preparar_localidades(fonte)
     assert len(fonte.populacoes) == len(set(fonte.populacoes))  # a base de cada localidade é montada uma vez
+
+
+def test_categoria_da_celula_e_faixas_da_idade():
+    from app.dominio import CASAL_OU_DUPLA, CATEGORIAS, MULTIPESSOAL, UNIPESSOAL, categoria_da_celula, faixas_da_idade
+
+    assert categoria_da_celula(("60 a 69", UNIPESSOAL)) == "uni_60"
+    assert categoria_da_celula(("80+", CASAL_OU_DUPLA)) == "cas_60"
+    assert categoria_da_celula(("50 a 59", MULTIPESSOAL)) == "mul_59"
+    assert categoria_da_celula(("até 29", CASAL_OU_DUPLA)) == "cas_59"
+    assert [f.rotulo for f in faixas_da_idade(True)] == ["60 a 69", "70 a 79", "80+"]
+    assert [f.rotulo for f in faixas_da_idade(False)] == ["até 29", "30 a 39", "40 a 49", "50 a 59"]
+    # seis categorias, cada combinação de arranjo e idade uma vez
+    assert len({(a, v) for _, a, v in CATEGORIAS}) == 6

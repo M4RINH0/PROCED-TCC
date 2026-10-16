@@ -158,6 +158,35 @@ def fator_calibracao(populacao: float, moradores: float) -> float:
     return populacao / moradores
 
 
+def consumo_calibrado(consumo: float, populacao: float, moradores_todos: float) -> float:
+    """Premissa P12: consumo total (de um recorte ou de todos) vezes o fator único de calibração,
+    calculado com os moradores de todas as células."""
+    return consumo * fator_calibracao(populacao, moradores_todos)
+
+
+def diferenca_percentual(valor: float, referencia: float) -> float:
+    """(valor / referência - 1) * 100; por exemplo, moradores projetados contra a população do IBGE (P11)."""
+    if referencia <= 0:
+        raise ValueError("a referência precisa ser maior que zero")
+    return (valor / referencia - 1) * 100
+
+
+def fator_cobertura(soma_pesos: float, total: float) -> float:
+    """Premissa P9, só como análise de sensibilidade: fator único que leva a soma dos pesos ao total
+    de domicílios estimado pela POF."""
+    if soma_pesos <= 0 or total <= 0:
+        raise ValueError("a soma dos pesos e o total precisam ser maiores que zero")
+    return total / soma_pesos
+
+
+def anos_de_tendencia(ano: float, ano_base: float, ano_tendencia: float, intensidade: float, intensidade_ate_base: float) -> float:
+    """Anos de tendência dos arranjos (P13) já ponderados pela intensidade de cada trecho:
+
+        intensidade_ate_base * (min(ano, ano_base) - ano_tendencia) + intensidade * max(0, ano - ano_base)
+    """
+    return intensidade_ate_base * (min(ano, ano_base) - ano_tendencia) + intensidade * max(0.0, ano - ano_base)
+
+
 # ---------- projeção por células (método das taxas e contrafactual) ----------
 
 
@@ -271,9 +300,7 @@ class Projecao:
     def anos_de_tendencia(self, ano: float) -> float:
         """Anos de tendência já ponderados pela intensidade de cada trecho:
         intensidade_ate_base * (até o ano-base) + intensidade * (depois dele)."""
-        ate_base = min(ano, self.ano_base) - self.ano_tendencia
-        depois = max(0.0, ano - self.ano_base)
-        return self.intensidade_ate_base * ate_base + self.intensidade * depois
+        return anos_de_tendencia(ano, self.ano_base, self.ano_tendencia, self.intensidade, self.intensidade_ate_base)
 
     def proporcoes(self, ano: float) -> dict[str, dict[str, float]]:
         """Proporção de cada arranjo em cada faixa no ano (P13)."""
@@ -323,7 +350,7 @@ class Projecao:
         calibrado = None
         if ano in self.populacao_total:
             moradores_todos = moradores_projetados(todos, {c: self.celulas[c].moradores for c in todos})
-            calibrado = consumo * fator_calibracao(self.populacao_total[ano], moradores_todos)
+            calibrado = consumo_calibrado(consumo, self.populacao_total[ano], moradores_todos)
         # o fator de calibração é o mesmo para todas as células, então a participação não depende dele
         consumo_todos = consumo_total(todos, {c: self.celulas[c].consumo_domicilio for c in todos})
         return Resumo(

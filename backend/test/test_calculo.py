@@ -626,3 +626,52 @@ def test_participacao_do_recorte_no_consumo_de_todos_os_domicilios():
     # com o fator de calibração (2), a participação é a mesma: 1320 / 2420
     r = p.resumo(2050, TAXAS, [C1])
     assert r.consumo_total_calibrado / p.resumo(2050).consumo_total_calibrado == pytest.approx(r.participacao_consumo)
+
+
+# ---------- fórmulas que saíram do ETL ----------
+
+
+def test_consumo_calibrado_usa_o_fator_unico_da_p12():
+    from app.calculo import consumo_calibrado
+
+    # fator = 1.000 pessoas / 800 moradores = 1,25; 400 kWh * 1,25 = 500
+    assert consumo_calibrado(400, 1000, 800) == pytest.approx(500)
+    with pytest.raises(ValueError):
+        consumo_calibrado(400, 1000, 0)
+
+
+def test_diferenca_percentual_calculada_a_mao():
+    from app.calculo import diferenca_percentual
+
+    # 1.022 moradores contra 1.000 pessoas: 2,2% acima; 950 contra 1.000: 5% abaixo
+    assert diferenca_percentual(1022, 1000) == pytest.approx(2.2)
+    assert diferenca_percentual(950, 1000) == pytest.approx(-5.0)
+    with pytest.raises(ValueError):
+        diferenca_percentual(1, 0)
+
+
+def test_fator_de_cobertura_da_p9():
+    from app.calculo import fator_cobertura
+
+    # 68,9 milhões / 63,68 milhões = 1,0820
+    assert fator_cobertura(63_680_000, 68_900_000) == pytest.approx(1.08197, rel=1e-5)
+    for soma, total in ((0, 10), (10, 0), (-1, 10)):
+        with pytest.raises(ValueError):
+            fator_cobertura(soma, total)
+
+
+@pytest.mark.parametrize(
+    "ano, esperado",
+    [
+        # antes do ano-base vale só a intensidade até a base: 0,6 * (2020 - 2017,5) = 1,5
+        (2020, 1.5),
+        # no ano-base: 0,6 * 8,5 = 5,1
+        (2026, 5.1),
+        # depois: 5,1 + 1,2 * (2050 - 2026) = 5,1 + 28,8 = 33,9
+        (2050, 33.9),
+    ],
+)
+def test_anos_de_tendencia_por_trecho(ano, esperado):
+    from app.calculo import anos_de_tendencia
+
+    assert anos_de_tendencia(ano, 2026, 2017.5, 1.2, 0.6) == pytest.approx(esperado)
