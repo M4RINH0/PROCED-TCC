@@ -175,7 +175,7 @@ P9), `premissas` (P2, P8, P9, P11 e P12, com `id` e `texto`) e `premissas_url`.
 | `recorte` | opcional; sem ele, exporta os quatro recortes |
 | `localidade`, `intensidade`, `k` | filtro de localidade e controles de simulação (opcionais) |
 
-Devolve o arquivo para download (`Content-Disposition: attachment`) com uma linha por cenário, contendo os indicadores, a decomposição dos efeitos, os controles de simulação, a amostra, a coluna `fonte`, a versão do modelo (`versao_modelo`) e a data e hora da geração (`gerado_em`, ISO 8601 com fuso), nos dois formatos. O CSV sai em UTF-8 com BOM, para o Excel em português reconhecer os acentos; para planilha, o XLSX é o recomendado.
+Devolve o arquivo para download (`Content-Disposition: attachment`) com uma linha por cenário, contendo os indicadores, a decomposição dos efeitos, os controles de simulação, a amostra, a coluna `fonte`, a versão do modelo (`versao_modelo`) e a data e hora da geração (`gerado_em`, ISO 8601 com fuso), nos dois formatos. O CSV sai em UTF-8 com BOM, para o Excel em português reconhecer os acentos; para planilha, o XLSX é o recomendado. Os valores lógicos (`simulacao` e `baixa_confiabilidade`) saem como `true` e `false`, em minúsculas, nos dois formatos; no XLSX ficam como texto, para o Excel em português não trocá-los por VERDADEIRO e FALSO.
 
 ## A definir em conjunto
 

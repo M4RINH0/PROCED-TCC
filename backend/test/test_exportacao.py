@@ -64,7 +64,7 @@ def test_exporta_serie_completa_em_csv_para_um_recorte():
     assert {l["recorte"] for l in linhas} == {"chefe_60_mais"}
     assert {l["localidade"] for l in linhas} == {"SP"}
     assert linhas[0]["ano"] == "2026" and linhas[-1]["ano"] == "2070"
-    assert linhas[0]["intensidade"] == "1.1" and linhas[0]["k"] == "1.2" and linhas[0]["simulacao"] == "True"
+    assert linhas[0]["intensidade"] == "1.1" and linhas[0]["k"] == "1.2" and linhas[0]["simulacao"] == "true"
 
 
 def test_exporta_xlsx_valido_com_cabecalho_e_dados():
@@ -122,3 +122,28 @@ def test_data_de_geracao_pode_ser_fixada():
 
     linhas = montar_linhas(RepositorioFalso(), recorte=None, gerado_em="2026-10-16T10:00:00-03:00")
     assert {l["gerado_em"] for l in linhas} == {"2026-10-16T10:00:00-03:00"}
+
+
+@pytest.mark.parametrize("valor, esperado", [(True, "true"), (False, "false"), (0, 0), (1, 1), (None, None), ("x", "x")])
+def test_logico_escreve_true_e_false_em_minusculas_e_preserva_o_resto(valor, esperado):
+    from app.services.exportacao import logico
+
+    resultado = logico(valor)
+    assert resultado == esperado and type(resultado) is type(esperado)
+
+
+def test_valores_logicos_saem_em_minusculas_no_csv_e_no_xlsx():
+    from app.services.exportacao import gerar_csv, gerar_xlsx
+
+    linha = {c: None for c in COLUNAS} | {"ano": 2050, "simulacao": True, "baixa_confiabilidade": False}
+    csv_lido = _ler_csv(gerar_csv([linha]))[0]
+    assert csv_lido["simulacao"] == "true" and csv_lido["baixa_confiabilidade"] == "false"
+    with zipfile.ZipFile(io.BytesIO(gerar_xlsx([linha]))) as arquivo:
+        planilha = arquivo.read("xl/worksheets/sheet1.xml").decode("utf-8")
+    assert 't="b"' not in planilha
+    col = lambda nome: COLUNAS.index(nome) + 1  # noqa: E731
+    from app.services.exportacao import _letra_coluna
+
+    assert f'<c r="{_letra_coluna(col("simulacao"))}2" t="inlineStr"><is><t>true</t></is></c>' in planilha
+    assert f'<c r="{_letra_coluna(col("baixa_confiabilidade"))}2" t="inlineStr"><is><t>false</t></is></c>' in planilha
+    assert f'<c r="A2"><v>2050</v></c>' in planilha  # número continua número

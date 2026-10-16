@@ -151,12 +151,18 @@ def montar_linhas(
     return linhas
 
 
+def logico(valor: object) -> object:
+    """Valor lógico como texto `true` ou `false`, igual no CSV e no XLSX (o Python escreveria True e
+    False, e o Excel em português mostraria VERDADEIRO e FALSO). Os demais valores passam sem mudança."""
+    return ("true" if valor else "false") if isinstance(valor, bool) else valor
+
+
 def gerar_csv(linhas: list[dict[str, object]]) -> bytes:
     """UTF-8 com BOM: o Excel em português só reconhece os acentos com ele."""
     buffer = io.StringIO()
     escritor = csv.DictWriter(buffer, fieldnames=COLUNAS, lineterminator="\n")
     escritor.writeheader()
-    escritor.writerows(linhas)
+    escritor.writerows({coluna: logico(valor) for coluna, valor in linha.items()} for linha in linhas)
     return buffer.getvalue().encode("utf-8-sig")
 
 
@@ -172,8 +178,7 @@ def _celula_xml(linha: int, coluna: int, valor: object) -> str:
     if valor is None:
         return ""
     ref = f"{_letra_coluna(coluna)}{linha}"
-    if isinstance(valor, bool):
-        return f'<c r="{ref}" t="b"><v>{1 if valor else 0}</v></c>'
+    valor = logico(valor)
     if isinstance(valor, (int, float)):
         return f'<c r="{ref}"><v>{valor}</v></c>'
     return f'<c r="{ref}" t="inlineStr"><is><t>{escape(str(valor))}</t></is></c>'
