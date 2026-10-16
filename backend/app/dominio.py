@@ -225,6 +225,62 @@ def categoria_da_celula(celula: tuple[str, str]) -> str:
     return next(i for i, a, v in CATEGORIAS if a == arranjo and v == idoso)
 
 
+# ---------- comparação de grupos (RF12) ----------
+
+
+class GrupoId(str, Enum):
+    """As seis células da composição e quatro agregados."""
+
+    uni_60 = "uni_60"
+    cas_60 = "cas_60"
+    mul_60 = "mul_60"
+    uni_59 = "uni_59"
+    cas_59 = "cas_59"
+    mul_59 = "mul_59"
+    mono_60 = "mono_60"
+    mono_59 = "mono_59"
+    todos_60 = "todos_60"
+    todos_59 = "todos_59"
+
+
+@dataclass(frozen=True)
+class Grupo:
+    rotulo: str
+    arranjos: tuple[str, ...]
+    chefe_60_mais: bool
+
+    @property
+    def agregado(self) -> bool:
+        return len(self.arranjos) > 1
+
+
+GRUPOS = {
+    GrupoId.uni_60: Grupo("Unipessoal 60+", (UNIPESSOAL,), True),
+    GrupoId.cas_60: Grupo("Casal ou dupla 60+", (CASAL_OU_DUPLA,), True),
+    GrupoId.mul_60: Grupo("Multipessoal 60+", (MULTIPESSOAL,), True),
+    GrupoId.uni_59: Grupo("Unipessoal abaixo de 60", (UNIPESSOAL,), False),
+    GrupoId.cas_59: Grupo("Casal ou dupla abaixo de 60", (CASAL_OU_DUPLA,), False),
+    GrupoId.mul_59: Grupo("Multipessoal abaixo de 60", (MULTIPESSOAL,), False),
+    GrupoId.mono_60: Grupo("Mononuclear 60+", MONONUCLEARES, True),
+    GrupoId.mono_59: Grupo("Mononuclear abaixo de 60", MONONUCLEARES, False),
+    GrupoId.todos_60: Grupo("Todos 60+", ARRANJOS, True),
+    GrupoId.todos_59: Grupo("Todos abaixo de 60", ARRANJOS, False),
+}
+MINIMO_GRUPOS, MAXIMO_GRUPOS = 2, 6
+
+# Agregados da comparação que equivalem a recortes do Panorama (as mesmas células)
+RECORTE_DO_GRUPO = {
+    GrupoId.mono_60: Recorte.chefe_60_mais,
+    GrupoId.mono_59: Recorte.mononuclear_abaixo_60,
+    GrupoId.todos_60: Recorte.chefe_60_mais_todos,
+}
+
+
+def celulas_do_grupo(grupo: GrupoId) -> tuple[tuple[str, str], ...]:
+    g = GRUPOS[grupo]
+    return tuple((f.rotulo, a) for f in faixas_da_idade(g.chefe_60_mais) for a in g.arranjos)
+
+
 def baixa_confiabilidade(amostra: int) -> bool:
     return amostra < MINIMO_AMOSTRA
 

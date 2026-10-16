@@ -157,6 +157,42 @@ Resposta:
 
 Os cenários ficam na tabela `cenario_salvo`, identificados pelos parâmetros da consulta e pela versão do modelo (`VERSAO_MODELO`). Cenário de versão antiga não volta como `recuperado`: é recalculado e gravado com a versão nova. Se o banco falhar ao ler ou gravar, a consulta é calculada e respondida mesmo assim.
 
+## `GET /comparacao` (RF12, RF02)
+
+Compara de 2 a 6 grupos de domicílios de 2026 a 2070, no mesmo indicador e cenário.
+
+| Parâmetro | Valores |
+|---|---|
+| `grupos` | obrigatório; de 2 a 6, separados por vírgula, sem repetição: as seis células `uni_60`, `cas_60`, `mul_60`, `uni_59`, `cas_59`, `mul_59` e os agregados `mono_60`, `mono_59`, `todos_60`, `todos_59` |
+| `indicador` | `domicilios` (padrão), `consumo_total` (calibrado, P12), `participacao` (no consumo residencial da localidade) ou `consumo_por_pessoa` (só agregados) |
+| `forma` | `indice` (padrão, 2026 = 100) ou `absoluto` |
+| `cenario` | `taxas` (padrão), `taxas_arranjos_fixos` ou `contrafactual` |
+| `localidade`, `intensidade`, `k` | filtro de localidade e controles de simulação (opcionais) |
+
+Grupo inválido, repetido ou fora de 2 a 6 devolve 422. Os agregados usam as mesmas células dos
+recortes do Panorama: `mono_60` = `chefe_60_mais`, `mono_59` = `mononuclear_abaixo_60` e
+`todos_60` = `chefe_60_mais_todos`; os valores são os mesmos, com o mesmo arredondamento.
+
+Resposta: `indicador`, `forma`, `cenario`, `unidade` do valor absoluto, `localidade`, os controles
+de simulação, `fonte` e:
+- `grupos`: para cada grupo, `id`, `rotulo`, `agregado`, `chefe_60_mais`, `arranjo` (null nos
+  agregados), `domicilios_amostra`, `baixa_confiabilidade`, `motivo_sem_valor` e os `pontos` de
+  2026 a 2070 com `valor` (na forma pedida), `valor_absoluto` e `indice`;
+- `tabela`: por grupo, os valores de 2026, 2050 e 2070, `variacao_absoluta`, `variacao_pct` e
+  `ordem` (1 para o que mais cresce em %).
+
+O consumo por pessoa de uma célula isolada fica nos níveis da POF e não muda com o tempo (P6):
+nas células, ele sai `null` com `motivo_sem_valor`. Grupo sem amostra da POF em alguma faixa da
+localidade também sai `null`, como no Panorama.
+
+## `GET /exportar/comparacao` (RF08, RF12)
+
+Os mesmos parâmetros de `/comparacao`, mais `formato` (`csv` ou `xlsx`). Uma linha por ano e
+grupo, com as colunas `ano`, `localidade`, `cenario`, `grupo`, `grupo_rotulo`, `indicador`,
+`unidade`, `forma`, `valor`, `valor_absoluto`, `indice`, `domicilios_amostra`,
+`baixa_confiabilidade`, `intensidade`, `k`, `simulacao`, `fonte`, `versao_modelo` e `gerado_em`.
+Os valores são os mesmos da API. CSV com BOM e valores lógicos em minúsculas, como em `/exportar`.
+
 ## `GET /fontes` (RF10)
 
 `fontes` (com `nome`, `periodo` e `uso`), `criterio_exclusao` (domicílios sem kWh),

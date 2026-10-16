@@ -7,6 +7,7 @@ from xml.sax.saxutils import escape
 
 from app.dominio import ANO_FINAL, ANO_INICIAL, BRASIL, INTENSIDADE_PADRAO, K_PADRAO, VERSAO_MODELO, Recorte
 from app.schemas.exportacao import EscopoExportacao, FormatoExportacao
+from app.schemas.comparacao import ComparacaoResposta
 from app.schemas.panorama import Cenario, PontoSerie, SerieResposta
 from app.services.panorama import obter_serie
 
@@ -37,6 +38,29 @@ COLUNAS = (
     "simulacao",
     "domicilios_amostra",
     "baixa_confiabilidade",
+    "fonte",
+    "versao_modelo",
+    "gerado_em",
+)
+
+# Comparação de grupos (RF12): uma linha por ano e grupo
+COLUNAS_COMPARACAO = (
+    "ano",
+    "localidade",
+    "cenario",
+    "grupo",
+    "grupo_rotulo",
+    "indicador",
+    "unidade",
+    "forma",
+    "valor",
+    "valor_absoluto",
+    "indice",
+    "domicilios_amostra",
+    "baixa_confiabilidade",
+    "intensidade",
+    "k",
+    "simulacao",
     "fonte",
     "versao_modelo",
     "gerado_em",
@@ -157,10 +181,10 @@ def logico(valor: object) -> object:
     return ("true" if valor else "false") if isinstance(valor, bool) else valor
 
 
-def gerar_csv(linhas: list[dict[str, object]]) -> bytes:
+def gerar_csv(linhas: list[dict[str, object]], colunas: tuple[str, ...] = COLUNAS) -> bytes:
     """UTF-8 com BOM: o Excel em português só reconhece os acentos com ele."""
     buffer = io.StringIO()
-    escritor = csv.DictWriter(buffer, fieldnames=COLUNAS, lineterminator="\n")
+    escritor = csv.DictWriter(buffer, fieldnames=colunas, lineterminator="\n")
     escritor.writeheader()
     escritor.writerows({coluna: logico(valor) for coluna, valor in linha.items()} for linha in linhas)
     return buffer.getvalue().encode("utf-8-sig")
@@ -184,8 +208,8 @@ def _celula_xml(linha: int, coluna: int, valor: object) -> str:
     return f'<c r="{ref}" t="inlineStr"><is><t>{escape(str(valor))}</t></is></c>'
 
 
-def _planilha_xml(linhas: list[dict[str, object]]) -> str:
-    todas = [COLUNAS, *([linha.get(c) for c in COLUNAS] for linha in linhas)]
+def _planilha_xml(linhas: list[dict[str, object]], colunas: tuple[str, ...] = COLUNAS) -> str:
+    todas = [colunas, *([linha.get(c) for c in colunas] for linha in linhas)]
     linhas_xml = []
     for indice_linha, valores in enumerate(todas, start=1):
         celulas = "".join(_celula_xml(indice_linha, indice_col, v) for indice_col, v in enumerate(valores, start=1))
@@ -199,7 +223,7 @@ def _planilha_xml(linhas: list[dict[str, object]]) -> str:
     )
 
 
-def gerar_xlsx(linhas: list[dict[str, object]]) -> bytes:
+def gerar_xlsx(linhas: list[dict[str, object]], colunas: tuple[str, ...] = COLUNAS) -> bytes:
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as arquivo:
         arquivo.writestr("[Content_Types].xml", CONTENT_TYPES_XML)
@@ -207,7 +231,7 @@ def gerar_xlsx(linhas: list[dict[str, object]]) -> bytes:
         arquivo.writestr("xl/workbook.xml", WORKBOOK_XML)
         arquivo.writestr("xl/_rels/workbook.xml.rels", WORKBOOK_RELS_XML)
         arquivo.writestr("xl/styles.xml", STYLES_XML)
-        arquivo.writestr("xl/worksheets/sheet1.xml", _planilha_xml(linhas))
+        arquivo.writestr("xl/worksheets/sheet1.xml", _planilha_xml(linhas, colunas))
     return buffer.getvalue()
 
 
@@ -234,4 +258,55 @@ def exportar_dados(
         conteudo=conteudo,
         media_type=TIPOS_MIDIA[formato],
         nome_arquivo=nome_arquivo(formato, escopo, ano, localidade),
+    )
+
+
+# ---------- comparação de grupos (RF12) ----------
+
+
+def linhas_da_comparacao(resposta: ComparacaoResposta, gerado_em: str | None = None) -> list[dict[str, object]]:
+    """Uma linha por ano e grupo, com os mesmos valores que a API devolve em /comparacao."""
+    gerado_em = gerado_em or datetime.now().astimezone().isoformat(timespec="seconds")
+    linhas = []
+    for grupo in resposta.grupos:
+        for ponto in grupo.pontos:
+            linhas.append(
+                {
+                    "ano": ponto.ano,
+                    "localidade": resposta.localidade,
+                    "cenario": resposta.cenario.value,
+                    "grupo": grupo.id.value,
+                    "grupo_rotulo": grupo.rotulo,
+                    "indicador": resposta.indicador.value,
+                    "unidade": resposta.unidade,
+                    "forma": resposta.forma.value,
+                    "valor": ponto.valor,
+                    "valor_absoluto": ponto.valor_absoluto,
+                    "indice": ponto.indice,
+                    "domicilios_amostra": grupo.domicilios_amostra,
+                    "baixa_confiabilidade": grupo.baixa_confiabilidade,
+                    "intensidade": resposta.intensidade,
+                    "k": resposta.k,
+                    "simulacao": resposta.simulacao,
+                    "fonte": resposta.fonte,
+                    "versao_modelo": VERSAO_MODELO,
+                    "gerado_em": gerado_em,
+                }
+            )
+    return linhas
+
+
+def exportar_comparacao(
+    resposta: ComparacaoResposta, formato: FormatoExportacao = FormatoExportacao.csv, gerado_em: str | None = None
+) -> ArquivoExportado:
+    linhas = linhas_da_comparacao(resposta, gerado_em)
+    if formato == FormatoExportacao.csv:
+        conteudo = gerar_csv(linhas, COLUNAS_COMPARACAO)
+    else:
+        conteudo = gerar_xlsx(linhas, COLUNAS_COMPARACAO)
+    local_limpo = resposta.localidade.replace(" ", "_")
+    return ArquivoExportado(
+        conteudo=conteudo,
+        media_type=TIPOS_MIDIA[formato],
+        nome_arquivo=f"proced_comparacao_{local_limpo}_{ANO_INICIAL}_{ANO_FINAL}.{formato.value}",
     )

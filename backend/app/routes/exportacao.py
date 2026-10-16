@@ -15,8 +15,12 @@ from app.dominio import (
     Localidade,
     Recorte,
 )
+from app.routes.comparacao import ler_grupos
+from app.schemas.comparacao import FormaComparacao, IndicadorComparacao
 from app.schemas.exportacao import EscopoExportacao, FormatoExportacao
-from app.services.exportacao import exportar_dados
+from app.schemas.panorama import CenarioId
+from app.services.comparacao import obter_comparacao
+from app.services.exportacao import ArquivoExportado, exportar_comparacao, exportar_dados
 
 router = APIRouter(prefix="/exportar", tags=["exportacao"])
 
@@ -32,7 +36,26 @@ def baixar_exportacao(
     intensidade: Annotated[float, Query(ge=INTENSIDADE_MINIMA, le=INTENSIDADE_MAXIMA)] = INTENSIDADE_PADRAO,
     k: Annotated[float, Query(ge=K_MINIMO, le=K_MAXIMO)] = K_PADRAO,
 ) -> Response:
-    arquivo = exportar_dados(dados, formato, escopo, ano, recorte, localidade.value, intensidade, k)
+    return _download(exportar_dados(dados, formato, escopo, ano, recorte, localidade.value, intensidade, k))
+
+
+@router.get("/comparacao", summary="Exporta a comparação de grupos em CSV ou XLSX (RF08 e RF12)")
+def baixar_comparacao(
+    grupos: Annotated[str, Query(description="Os mesmos grupos de /comparacao, separados por vírgula")],
+    dados: Annotated[Dados, Depends(obter_dados)],
+    formato: Annotated[FormatoExportacao, Query(description="csv ou xlsx")] = FormatoExportacao.csv,
+    indicador: Annotated[IndicadorComparacao, Query()] = IndicadorComparacao.domicilios,
+    forma: Annotated[FormaComparacao, Query()] = FormaComparacao.indice,
+    cenario: Annotated[CenarioId, Query()] = CenarioId.taxas,
+    localidade: Annotated[Localidade, Query(description="Brasil, região ou sigla da UF")] = Localidade.Brasil,
+    intensidade: Annotated[float, Query(ge=INTENSIDADE_MINIMA, le=INTENSIDADE_MAXIMA)] = INTENSIDADE_PADRAO,
+    k: Annotated[float, Query(ge=K_MINIMO, le=K_MAXIMO)] = K_PADRAO,
+) -> Response:
+    resposta = obter_comparacao(ler_grupos(grupos), dados, indicador, forma, cenario, localidade.value, intensidade, k)
+    return _download(exportar_comparacao(resposta, formato))
+
+
+def _download(arquivo: ArquivoExportado) -> Response:
     return Response(
         content=arquivo.conteudo,
         media_type=arquivo.media_type,

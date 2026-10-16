@@ -179,6 +179,20 @@ def fator_cobertura(soma_pesos: float, total: float) -> float:
     return total / soma_pesos
 
 
+def indice(valor: float | None, base: float | None) -> float | None:
+    """Índice com a base = 100: valor / base * 100; None sem valor ou sem base positiva."""
+    if valor is None or base is None or base <= 0:
+        return None
+    return valor / base * 100
+
+
+def variacao(inicio: float | None, fim: float | None) -> tuple[float | None, float | None]:
+    """(fim menos início, (fim / início - 1) * 100); None quando falta um dos dois ou o início é zero."""
+    if inicio is None or fim is None:
+        return None, None
+    return fim - inicio, (None if inicio == 0 else (fim / inicio - 1) * 100)
+
+
 def anos_de_tendencia(ano: float, ano_base: float, ano_tendencia: float, intensidade: float, intensidade_ate_base: float) -> float:
     """Anos de tendência dos arranjos (P13) já ponderados pela intensidade de cada trecho:
 
