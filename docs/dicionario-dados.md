@@ -15,6 +15,86 @@ Este dicionário mapeia integralmente as **9 tabelas** presentes no banco de dad
 | 7 | `pof2017_morador` | 178.431 | Microdados brutos de moradores da POF 2017-2018 (perfil sociodemográfico e rendimentos). |
 | 8 | `censo2022_municipio` | 5.570 | Indicadores demográficos municipais consolidados do Censo 2022 (5.570 municípios). |
 | 9 | `censo2022_indice_envelhecimento` | 55.700 | Série municipal (2010 e 2022) de índice de envelhecimento, idade mediana e razão de sexo por cor/raça. |
+| 10 | `cenario_salvo` | Dinâmico | Tabela de persistência e lookup dos cenários já simulados da API (RF09). |
+
+### Diagrama Entidade-Relacionamento Conceitual (ERD)
+
+```mermaid
+erDiagram
+    fato_consumo_domiciliar {
+        string sigla_uf
+        float id_domicilio PK
+        int qtd_moradores
+        string arranjo_familiar
+        int idade_chefe
+        boolean is_60_mais
+        float consumo_total_kwh
+        float gasto_total_rs
+        float consumo_per_capita_kwh
+        float peso_final
+    }
+
+    fato_consumo_pof_historica {
+        int ano_pof PK
+        string sigla_uf
+        string id_domicilio PK
+        int qtd_moradores
+        string arranjo_familiar
+        int idade_chefe
+        boolean is_60_mais
+        float consumo_total_kwh
+        float consumo_per_capita_kwh
+        float peso_final
+        boolean energia_rede_geral
+    }
+
+    projecoes_populacao_idade {
+        bigint id PK
+        string localidade
+        string sexo
+        int idade
+        int ano
+        int populacao
+    }
+
+    cenario_salvo {
+        uuid id PK
+        jsonb parametros
+        jsonb resultado
+        string versao_modelo
+        timestamp criado_em
+    }
+
+    dim_coeficiente_consumo {
+        int id PK
+        string sigla_uf
+        string arranjo_familiar
+        boolean is_60_mais
+        float media_consumo_total_kwh
+        float media_consumo_per_capita_kwh
+    }
+
+    consumo_estimado {
+        int id PK
+        string sigla_uf
+        bigint populacao_total_uf
+        bigint populacao_idosa_total_uf
+        float consumo_estimado_idosos_kwh
+        float consumo_estimado_nao_idosos_kwh
+    }
+
+    censo2022_municipio {
+        bigint id_municipio PK
+        string sigla_uf
+        bigint domicilios
+        bigint populacao
+        float indice_envelhecimento
+    }
+
+    censo2022_municipio ||--o{ censo2022_indice_envelhecimento : possui
+    fato_consumo_domiciliar }|..|| projecoes_populacao_idade : "calibrado com"
+    fato_consumo_pof_historica }|..|| fato_consumo_domiciliar : "regressao temporal"
+```
 
 ---
 
@@ -39,7 +119,15 @@ Este dicionário mapeia integralmente as **9 tabelas** presentes no banco de dad
 
 ## 2. Tabela: `dim_coeficiente_consumo`
 
-**Descrição:** Tabela auxiliar (lookup) com 162 linhas (27 UFs $\times$ 3 arranjos $\times$ 2 grupos etários) que armazena médias simples de consumo e gasto por perfil, gerada pelo script [`CREATE-coeficientes.sql`](./scripts/CREATE-coeficientes.sql). **Nota:** não é consumida pela API nem pelo motor de projeção principal, que calculam as taxas diretamente sobre `fato_consumo_domiciliar` ponderadas por `peso_final`.
+**Descrição:** Tabela auxiliar (lookup) com 162 linhas (27 UFs $\times$ 3 arranjos $\times$ 2 grupos etários) que armazena médias simples de consumo e gasto por perfil, gerada pelo script [`CREATE-coeficientes.sql`](./scripts/CREATE-coeficientes.sql).
+
+> [!WARNING] Tabela Não Utilizada em Produção
+> Esta tabela **não é consumida pela API nem pelo motor de projeções** do PROCED. Ela foi desenvolvida como baseline exploratório na fase inicial do TCC no BigQuery. O sistema operacional não a utiliza porque:
+> 
+> 1. Suas médias foram geradas sem ponderação amostral (`peso_final`), violando a **Premissa P3**.
+> 2. Possui granularidade de apenas 2 faixas etárias (`is_60_mais`), enquanto o motor do PROCED requer 7 faixas etárias detalhadas (21 células por UF).
+> 
+> Todas as projeções e rotas da API calculam as médias ponderadas em tempo real diretamente a partir de `fato_consumo_domiciliar`.
 
 | Nome do Campo | Tipo (Supabase) | Descrição | Regra de Negócio / Origem |
 | --- | --- | --- | --- |
@@ -57,6 +145,9 @@ Este dicionário mapeia integralmente as **9 tabelas** presentes no banco de dad
 ## 3. Tabela: `consumo_estimado`
 
 **Descrição:** Tabela de integração exploratória (27 linhas, uma por UF) gerada pelo script [`CREATE-pofcenso.sql`](./scripts/CREATE-pofcenso.sql), que cruza indicadores municipais do Censo Demográfico 2022 com coeficientes da tabela `dim_coeficiente_consumo`.
+
+> [!NOTE] Artefato Exploratório do Ano Base 2022
+> Tabela conceitual de apoio restrita ao ano de 2022. O motor analítico do PROCED projeta a série temporal de 2026 a 2070 diretamente a partir de `fato_consumo_domiciliar` combinada com as projeções contínuas de população do IBGE (`projecoes_populacao_idade`), não utilizando `consumo_estimado` em nenhuma rota.
 
 | Nome do Campo | Tipo (Supabase) | Descrição | Regra de Negócio / Origem |
 | --- | --- | --- | --- |
@@ -199,6 +290,21 @@ Este dicionário mapeia integralmente as **9 tabelas** presentes no banco de dad
 | `indice_envelhecimento` | `TEXT` | Razão entre a população de 60+ anos e a população de 0 a 14 anos ($\times 100$) para o recorte racial no município. | Armazenado como texto na importação bruta; requer conversão numérica (`SAFE_CAST`) para agregações. |
 | `idade_mediana` | `TEXT` | Idade mediana da população do recorte racial no município. | Armazenado como texto na importação bruta. |
 | `razao_sexo` | `TEXT` | Número de homens por 100 mulheres para o recorte racial no município. | Armazenado como texto na importação bruta. |
+
+---
+
+## 10. Tabela: `cenario_salvo`
+
+**Descrição:** Tabela de persistência e aceleração de simulações do Simulador (RF09). Permite recuperar instantaneamente cenários já executados por qualquer usuário sem necessidade de recálculo no servidor. Chave única composta por `(parametros, versao_modelo)`. Apenas o backend da API possui permissão de leitura e gravação nesta tabela.
+
+| Nome do Campo | Tipo (Supabase) | Descrição | Origem / Observação |
+| --- | --- | --- | --- |
+| `id` | `UUID` / `BIGINT` (PK) | Identificador único sequencial do cenário salvo. | Chave primária gerada no banco. |
+| `parametros` | `JSONB` | Combinação exata de parâmetros que definem a simulação: `{ ano, localidade, faixa, arranjo, base, intensidade, k }`. | Extraído dos parâmetros de consulta da rota `/simulador`. |
+| `resultado` | `JSONB` | Payload JSON completo da resposta computada da simulação. | Resposta cacheada devolvida ao frontend com a flag `recuperado = true`. |
+| `versao_modelo` | `TEXT` | Versão do motor demográfico que gerou o cálculo (ex: `'2026-10-14'`). | Invalida automaticamente registros gerados por versões antigas da metodologia. |
+| `criado_em` | `TIMESTAMPTZ` | Data e hora exata da criação do registro no banco. | Gerado via `now()`. |
+| `atualizado_em` | `TIMESTAMPTZ` | Data e hora do último recálculo forçado pelo usuário (`recalcular=true`). | Atualizado na rotina de upsert. |
 
 ---
 

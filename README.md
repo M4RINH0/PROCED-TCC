@@ -55,8 +55,19 @@ cd backend && .venv/Scripts/python -m pytest   # API e ETL
 cd frontend && npm test                        # front-end
 ```
 
-## Documentação
+## Documentação Oficial & GitHub Pages
 
-- `docs/contrato-api.md`: endpoints
-- `docs/premissas.md`: premissas adotadas e fontes
-- `docs/banco-supabase.md`: o que existe no banco
+A documentação completa, interativa e detalhada do projeto está publicada no GitHub Pages:
+
+🔗 **[https://m4rinh0.github.io/PROCED-TCC/](https://m4rinh0.github.io/PROCED-TCC/)**
+
+Deploy automático configurado no GitHub Actions a cada commit na branch `main`.
+
+### Seções da Documentação:
+* **[Guia do Usuário](https://m4rinh0.github.io/PROCED-TCC/guia-usuario/):** Como utilizar as telas de Panorama, Domicílios, Estrutura Etária, Simulador, Comparador e Exportação.
+* **[Arquitetura do Sistema](https://m4rinh0.github.io/PROCED-TCC/arquitetura/):** Diagramas de blocos, ciclo de vida de requisição, motor assíncrono de cache e decisões técnicas.
+* **[Engenharia de Dados & Pipeline ETL](https://m4rinh0.github.io/PROCED-TCC/etl/):** Fases 1 a 6 do ETL (BigQuery, POF 2017, Censo 2022, POF histórica 2002/2008, Supabase e experimento de Machine Learning).
+* **[Banco & Dicionário de Dados](https://m4rinh0.github.io/PROCED-TCC/dicionario-dados/):** Diagrama ERD e mapeamento exaustivo das 9 tabelas do Supabase.
+* **[Metodologia Científica & Premissas](https://m4rinh0.github.io/PROCED-TCC/metodologia/):** Formulação matemática formal (TBC padronizada, decomposição aditiva de efeitos, calibração populacional e validação temporal).
+* **[Resultados & Cenários](https://m4rinh0.github.io/PROCED-TCC/resultados/):** Síntese numérica de 2026 a 2070 e análise do paradoxo do consumo no declínio demográfico.
+* **[Contrato da API](https://m4rinh0.github.io/PROCED-TCC/contrato-api/):** Endpoints REST, schemas e validações.

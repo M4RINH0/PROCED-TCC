@@ -14,3 +14,6 @@ dist/
 
 # Microdados das POFs anteriores (CSV de entrada do ETL, não versionados)
 backend/etl/entrada/
+
+# MkDocs
+site/

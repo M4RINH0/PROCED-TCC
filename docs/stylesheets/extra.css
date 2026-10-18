@@ -1,0 +1,372 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap');
+
+/* ── Modo Claro (Default) ─────────────────────────────────────────────────── */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0E6B5C;
+  /* PROCED Teal */
+  --md-primary-fg-color--light: #5B9F92;
+  /* PROCED Teal-2 */
+  --md-primary-fg-color--dark: #0A4F44;
+  --md-primary-bg-color: #FFFFFF;
+  --md-primary-bg-color--light: #F5F7F6;
+
+  --md-accent-fg-color: #F2B01E;
+  /* PROCED Energy Yellow */
+  --md-accent-fg-color--transparent: rgba(242, 176, 30, 0.15);
+  --md-accent-bg-color: #1D1603;
+
+  --md-default-bg-color: #FAFCFB;
+  /* Paper suave */
+  --md-default-bg-color--light: #FFFFFF;
+  --md-default-bg-color--lighter: #F5F7F6;
+  --md-default-fg-color: #13201C;
+  /* Ink */
+  --md-default-fg-color--light: #34423D;
+  /* Ink-2 */
+  --md-default-fg-color--lighter: #56635E;
+  /* Muted */
+  --md-default-fg-color--lightest: #8A9691;
+  /* Faint */
+
+  --md-typeset-a-color: #0E6B5C;
+  --md-typeset-mark-color: #FBEBC4;
+}
+
+/* ── Modo Escuro (Slate) ──────────────────────────────────────────────────── */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #141C19;
+  /* PROCED Dark Panel */
+  --md-primary-fg-color--light: #18211E;
+  /* PROCED Dark Panel-2 */
+  --md-primary-fg-color--dark: #0D1412;
+  /* PROCED Dark Paper */
+  --md-primary-bg-color: #E6EDEA;
+  --md-primary-bg-color--light: #C3CEC9;
+
+  --md-accent-fg-color: #F2B01E;
+  /* PROCED Energy Yellow */
+  --md-accent-fg-color--transparent: rgba(242, 176, 30, 0.2);
+  --md-accent-bg-color: #1D1603;
+
+  --md-default-bg-color: #0D1412;
+  /* PROCED Dark Paper */
+  --md-default-bg-color--light: #141C19;
+  /* PROCED Dark Panel */
+  --md-default-bg-color--lighter: #18211E;
+  /* PROCED Dark Panel-2 */
+  --md-default-fg-color: #E6EDEA;
+  /* PROCED Dark Ink */
+  --md-default-fg-color--light: #C3CEC9;
+  /* PROCED Dark Ink-2 */
+  --md-default-fg-color--lighter: #98A5A0;
+  /* PROCED Dark Muted */
+  --md-default-fg-color--lightest: #6C7974;
+  /* PROCED Dark Faint */
+
+  --md-typeset-a-color: #46B8A4;
+  /* PROCED Teal Dark */
+  --md-typeset-mark-color: #3A2F12;
+}
+
+/* ── Tipografia e Ajustes Globais ─────────────────────────────────────────── */
+body,
+input,
+select,
+textarea {
+  font-family: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #FBEBC4;
+  color: #13201C;
+}
+
+[data-md-color-scheme="slate"] ::selection {
+  background: #3A2F12;
+  color: #E6EDEA;
+}
+
+/* ── Logo e Cabeçalho do PROCED ───────────────────────────────────────────── */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  width: 28px;
+  height: 28px;
+}
+
+.md-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  border-bottom: 1px solid #26322E;
+}
+
+/* ── Abas de Navegação ──────────────────────────────────────────────────── */
+.md-tabs {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.md-tabs__item--active .md-tabs__link {
+  color: #F2B01E !important;
+  font-weight: 700;
+  border-bottom: 2.5px solid #F2B01E;
+}
+
+/* ── Admonitions ────────────────────────────────────────── */
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  border-left-color: #0E6B5C;
+}
+
+.md-typeset .note>.admonition-title,
+.md-typeset .note>summary {
+  border-left-color: #0E6B5C;
+}
+
+.md-typeset .admonition.important,
+.md-typeset details.important {
+  border-left-color: #F2B01E;
+}
+
+.md-typeset .important>.admonition-title,
+.md-typeset .important>summary {
+  border-left-color: #F2B01E;
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-left-color: #B5561B;
+}
+
+.md-typeset .warning>.admonition-title,
+.md-typeset .warning>summary {
+  border-left-color: #B5561B;
+}
+
+/* ── Tabelas ─────────────────────────────────────────────────────────────── */
+.md-typeset table:not([class]) {
+  border: 1px solid #D2DAD7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  border-color: #26322E;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: #F5F7F6;
+  color: #13201C;
+  font-weight: 650;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: #18211E;
+  color: #E6EDEA;
+}
+
+/* ── Diagramas e Figuras Mermaid ──────────── */
+.mermaid,
+.md-typeset .mermaid,
+pre.mermaid,
+.md-typeset pre.mermaid,
+.md-typeset pre.mermaid code,
+pre.mermaid>code {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--md-default-fg-color) !important;
+  text-align: center;
+}
+
+/* Subgrafos e Clusters: fundo suave, claro e borda */
+.mermaid .cluster rect,
+.md-typeset .mermaid .cluster rect,
+svg[id^="mermaid-"] .cluster rect,
+.cluster rect {
+  fill: #F5F7F6 !important;
+  stroke: #D2DAD7 !important;
+  stroke-width: 1.5px !important;
+  rx: 8px !important;
+  ry: 8px !important;
+}
+
+.mermaid .cluster-label text,
+.mermaid .cluster text,
+.cluster span.nodeLabel {
+  fill: #0E6B5C !important;
+  color: #0E6B5C !important;
+  font-weight: 700 !important;
+}
+
+/* Caixas de nós em Flowcharts e Grafos */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon,
+.mermaid .node path {
+  fill: #FFFFFF !important;
+  stroke: #0E6B5C !important;
+  stroke-width: 1.5px !important;
+  rx: 6px !important;
+  ry: 6px !important;
+}
+
+.mermaid .node .label,
+.mermaid .node text,
+.mermaid span.nodeLabel {
+  fill: #13201C !important;
+  color: #13201C !important;
+  font-weight: 550 !important;
+}
+
+/* Diagramas de Sequência */
+.mermaid .actor,
+.mermaid rect.actor {
+  fill: #FFFFFF !important;
+  stroke: #0E6B5C !important;
+  stroke-width: 1.5px !important;
+  rx: 6px !important;
+  ry: 6px !important;
+}
+
+.mermaid text.actor>tspan {
+  fill: #13201C !important;
+}
+
+.mermaid .note,
+.mermaid rect.note {
+  fill: #FBEBC4 !important;
+  stroke: #F2B01E !important;
+  stroke-width: 1.2px !important;
+  rx: 4px !important;
+  ry: 4px !important;
+}
+
+.mermaid text.note>tspan {
+  fill: #13201C !important;
+}
+
+.mermaid line.actor-line {
+  stroke: #D2DAD7 !important;
+}
+
+.mermaid .messageLine0,
+.mermaid .messageLine1 {
+  stroke: #0E6B5C !important;
+}
+
+.mermaid .messageText {
+  fill: #13201C !important;
+}
+
+/* Diagramas Entidade-Relacionamento (ERD) */
+.mermaid .er.entityBox {
+  fill: #FFFFFF !important;
+  stroke: #0E6B5C !important;
+  stroke-width: 1.5px !important;
+}
+
+.mermaid .er.entityLabel {
+  fill: #0E6B5C !important;
+  font-weight: 700 !important;
+}
+
+.mermaid .er.attributeBoxOdd {
+  fill: #FAFCFB !important;
+  stroke: #D2DAD7 !important;
+}
+
+.mermaid .er.attributeBoxEven {
+  fill: #F5F7F6 !important;
+  stroke: #D2DAD7 !important;
+}
+
+.mermaid .er.attributeBoxOdd text,
+.mermaid .er.attributeBoxEven text {
+  fill: #13201C !important;
+}
+
+.mermaid .er.relationshipLine {
+  stroke: #5B9F92 !important;
+}
+
+/* ── Adaptação para o Modo Escuro ─────────────────────────────────────────── */
+[data-md-color-scheme="slate"] .mermaid .cluster rect,
+[data-md-color-scheme="slate"] .md-typeset .mermaid .cluster rect,
+[data-md-color-scheme="slate"] svg[id^="mermaid-"] .cluster rect,
+[data-md-color-scheme="slate"] .cluster rect {
+  fill: #18211E !important;
+  stroke: #26322E !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .cluster-label text,
+[data-md-color-scheme="slate"] .mermaid .cluster text,
+[data-md-color-scheme="slate"] .cluster span.nodeLabel {
+  fill: #46B8A4 !important;
+  color: #46B8A4 !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .node rect,
+[data-md-color-scheme="slate"] .mermaid .node circle,
+[data-md-color-scheme="slate"] .mermaid .node ellipse,
+[data-md-color-scheme="slate"] .mermaid .node polygon,
+[data-md-color-scheme="slate"] .mermaid .node path {
+  fill: #141C19 !important;
+  stroke: #46B8A4 !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .node .label,
+[data-md-color-scheme="slate"] .mermaid .node text,
+[data-md-color-scheme="slate"] .mermaid span.nodeLabel {
+  fill: #E6EDEA !important;
+  color: #E6EDEA !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .actor,
+[data-md-color-scheme="slate"] .mermaid rect.actor {
+  fill: #141C19 !important;
+  stroke: #46B8A4 !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid text.actor>tspan {
+  fill: #E6EDEA !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .note,
+[data-md-color-scheme="slate"] .mermaid rect.note {
+  fill: #2A2310 !important;
+  stroke: #F2B01E !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid text.note>tspan {
+  fill: #E6EDEA !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .er.entityBox {
+  fill: #141C19 !important;
+  stroke: #46B8A4 !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .er.entityLabel {
+  fill: #46B8A4 !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .er.attributeBoxOdd {
+  fill: #18211E !important;
+  stroke: #26322E !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .er.attributeBoxEven {
+  fill: #141C19 !important;
+  stroke: #26322E !important;
+}
+
+[data-md-color-scheme="slate"] .mermaid .er.attributeBoxOdd text,
+[data-md-color-scheme="slate"] .mermaid .er.attributeBoxEven text {
+  fill: #E6EDEA !important;
+}
