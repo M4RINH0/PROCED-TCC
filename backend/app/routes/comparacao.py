@@ -17,11 +17,49 @@ from app.dominio import (
     GrupoId,
     Localidade,
 )
-from app.schemas.comparacao import ComparacaoResposta, FormaComparacao, IndicadorComparacao
+from app.schemas.comparacao import (
+    ComparacaoResposta,
+    FormaComparacao,
+    IndicadorComparacao,
+    LinhaSensibilidadeCobertura,
+    LinhaSensibilidadeIntensidade,
+    SensibilidadeCoberturaResposta,
+    SensibilidadeIntensidadeResposta,
+)
 from app.schemas.panorama import CenarioId
 from app.services.comparacao import obter_comparacao, validar_grupos
 
 router = APIRouter(prefix="/comparacao", tags=["comparacao"])
+
+TABELA_SENSIBILIDADE_INTENSIDADE = [
+    LinhaSensibilidadeIntensidade(ano=2050, intensidade=0.0, tbc_kwh=74.94, efeito_arranjos_kwh=0.00, consumo_por_pessoa_kwh=63.15, consumo_total_bi_kwh=13.79, part_mono_60_pct=28.04, div_populacao_pct=13.72),
+    LinhaSensibilidadeIntensidade(ano=2050, intensidade=0.5, tbc_kwh=77.96, efeito_arranjos_kwh=3.02, consumo_por_pessoa_kwh=66.09, consumo_total_bi_kwh=14.43, part_mono_60_pct=32.53, div_populacao_pct=5.77),
+    LinhaSensibilidadeIntensidade(ano=2050, intensidade=0.6, tbc_kwh=78.52, efeito_arranjos_kwh=3.59, consumo_por_pessoa_kwh=66.70, consumo_total_bi_kwh=14.57, part_mono_60_pct=33.38, div_populacao_pct=4.26),
+    LinhaSensibilidadeIntensidade(ano=2050, intensidade=1.0, tbc_kwh=80.60, efeito_arranjos_kwh=5.66, consumo_por_pessoa_kwh=69.19, consumo_total_bi_kwh=15.11, part_mono_60_pct=36.54, div_populacao_pct=-1.39),
+    LinhaSensibilidadeIntensidade(ano=2070, intensidade=0.0, tbc_kwh=76.79, efeito_arranjos_kwh=0.00, consumo_por_pessoa_kwh=64.58, consumo_total_bi_kwh=12.87, part_mono_60_pct=33.26, div_populacao_pct=18.23),
+    LinhaSensibilidadeIntensidade(ano=2070, intensidade=0.5, tbc_kwh=81.85, efeito_arranjos_kwh=5.06, consumo_por_pessoa_kwh=70.26, consumo_total_bi_kwh=14.00, part_mono_60_pct=42.12, div_populacao_pct=3.78),
+    LinhaSensibilidadeIntensidade(ano=2070, intensidade=0.6, tbc_kwh=82.68, efeito_arranjos_kwh=5.88, consumo_por_pessoa_kwh=71.40, consumo_total_bi_kwh=14.23, part_mono_60_pct=43.63, div_populacao_pct=1.33),
+    LinhaSensibilidadeIntensidade(ano=2070, intensidade=1.0, tbc_kwh=85.24, efeito_arranjos_kwh=8.45, consumo_por_pessoa_kwh=75.62, consumo_total_bi_kwh=15.07, part_mono_60_pct=48.59, div_populacao_pct=-6.60),
+]
+
+TABELA_SENSIBILIDADE_COBERTURA = [
+    LinhaSensibilidadeCobertura(ano=2026, fator_peso=1.0000, cobertura_pct=92.4, domicilios_mi=72.39, moradores_mi=208.54, div_populacao_pct=-2.65, calibracao_p12=1.0272, tbc_kwh=71.54, consumo_por_pessoa_kwh=60.58, consumo_total_bi_kwh=12.98),
+    LinhaSensibilidadeCobertura(ano=2026, fator_peso=1.0819, cobertura_pct=100.0, domicilios_mi=78.32, moradores_mi=225.62, div_populacao_pct=5.33, calibracao_p12=0.9494, tbc_kwh=71.54, consumo_por_pessoa_kwh=60.58, consumo_total_bi_kwh=12.98),
+    LinhaSensibilidadeCobertura(ano=2050, fator_peso=1.0000, cobertura_pct=92.4, domicilios_mi=90.62, moradores_mi=227.76, div_populacao_pct=4.26, calibracao_p12=0.9591, tbc_kwh=78.52, consumo_por_pessoa_kwh=66.70, consumo_total_bi_kwh=14.57),
+    LinhaSensibilidadeCobertura(ano=2050, fator_peso=1.0819, cobertura_pct=100.0, domicilios_mi=98.04, moradores_mi=246.42, div_populacao_pct=12.80, calibracao_p12=0.8865, tbc_kwh=78.52, consumo_por_pessoa_kwh=66.70, consumo_total_bi_kwh=14.57),
+    LinhaSensibilidadeCobertura(ano=2070, fator_peso=1.0000, cobertura_pct=92.4, domicilios_mi=88.13, moradores_mi=201.88, div_populacao_pct=1.33, calibracao_p12=0.9869, tbc_kwh=82.68, consumo_por_pessoa_kwh=71.40, consumo_total_bi_kwh=14.23),
+    LinhaSensibilidadeCobertura(ano=2070, fator_peso=1.0819, cobertura_pct=100.0, domicilios_mi=95.35, moradores_mi=218.41, div_populacao_pct=9.63, calibracao_p12=0.9121, tbc_kwh=82.68, consumo_por_pessoa_kwh=71.40, consumo_total_bi_kwh=14.23),
+]
+
+
+@router.get("/sensibilidade-intensidade", response_model=SensibilidadeIntensidadeResposta, summary="Sensibilidade à intensidade I (Tabela 5.6)")
+def obter_sensibilidade_intensidade() -> SensibilidadeIntensidadeResposta:
+    return SensibilidadeIntensidadeResposta(linhas=TABELA_SENSIBILIDADE_INTENSIDADE)
+
+
+@router.get("/sensibilidade-cobertura", response_model=SensibilidadeCoberturaResposta, summary="Sensibilidade à cobertura POF (Tabela 5.7)")
+def obter_sensibilidade_cobertura() -> SensibilidadeCoberturaResposta:
+    return SensibilidadeCoberturaResposta(linhas=TABELA_SENSIBILIDADE_COBERTURA)
 
 DESCRICAO_GRUPOS = (
     f"De {MINIMO_GRUPOS} a {MAXIMO_GRUPOS} grupos separados por vírgula: "

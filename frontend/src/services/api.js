@@ -51,6 +51,21 @@ export function buscarLocalidades(opcoes) {
   return apiGet('/localidades', {}, opcoes)
 }
 
+/* Síntese Regional: GET /localidades/sintese-regional */
+export function buscarSinteseRegional(opcoes) {
+  return apiGet('/localidades/sintese-regional', {}, opcoes)
+}
+
+/* Sensibilidade da Intensidade: GET /comparacao/sensibilidade-intensidade */
+export function buscarSensibilidadeIntensidade(opcoes) {
+  return apiGet('/comparacao/sensibilidade-intensidade', {}, opcoes)
+}
+
+/* Sensibilidade da Cobertura: GET /comparacao/sensibilidade-cobertura */
+export function buscarSensibilidadeCobertura(opcoes) {
+  return apiGet('/comparacao/sensibilidade-cobertura', {}, opcoes)
+}
+
 export function exportarDados({ formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes) {
   return apiBaixar('/exportar', { formato, escopo, ano, recorte, localidade, intensidade, k }, opcoes)
 }

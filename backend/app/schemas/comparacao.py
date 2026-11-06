@@ -70,3 +70,39 @@ class ComparacaoResposta(Simulacao):
     tabela: list[LinhaComparacao]
     dados_ilustrativos: bool = False
     fonte: str = FONTE
+
+
+class LinhaSensibilidadeIntensidade(BaseModel):
+    ano: int
+    intensidade: float
+    tbc_kwh: float
+    efeito_arranjos_kwh: float
+    consumo_por_pessoa_kwh: float
+    consumo_total_bi_kwh: float
+    part_mono_60_pct: float
+    div_populacao_pct: float
+
+
+class SensibilidadeIntensidadeResposta(BaseModel):
+    linhas: list[LinhaSensibilidadeIntensidade]
+    fonte: str = FONTE
+    nota: str = "Valores mensais para o Brasil. Efeito arr.: TBC_EA(t) - TBC_SE(t)."
+
+
+class LinhaSensibilidadeCobertura(BaseModel):
+    ano: int
+    fator_peso: float
+    cobertura_pct: float
+    domicilios_mi: float
+    moradores_mi: float
+    div_populacao_pct: float
+    calibracao_p12: float
+    tbc_kwh: float
+    consumo_por_pessoa_kwh: float
+    consumo_total_bi_kwh: float
+
+
+class SensibilidadeCoberturaResposta(BaseModel):
+    linhas: list[LinhaSensibilidadeCobertura]
+    fonte: str = FONTE
+    nota: str = "Demonstração da propriedade de invariância da calibração populacional (P12)."
