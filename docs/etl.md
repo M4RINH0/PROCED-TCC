@@ -87,7 +87,7 @@ flowchart TD
 > A tabela `dim_coeficiente_consumo` **não é consumida pela API (FastAPI) nem pelo motor de projeções (`pipeline.py` e `projecao.py`)**. Ela foi concebida nas etapas exploratórias iniciais do TCC no BigQuery e foi formalmente substituída no sistema operacional pelos seguintes motivos:
 > 
 > 1. **Ausência de Ponderação Amostral:** Foi calculada via média aritmética simples (`AVG`), ignorando o fator de expansão populacional (`peso_final`). A **Premissa P3** do projeto estabeleceu que toda média e taxa deve obrigatoriamente ponderar pelo desenho amostral da POF para evitar viés estatístico.
-> 2. **Resolução Etária Insuficiente:** A tabela estratifica a idade em apenas duas classes binárias (`is_60_mais = TRUE/FALSE`), enquanto o motor do PROCED e a API requerem **7 faixas etárias detalhadas** do chefe de família (*até 29, 30–39, 40–49, 50–59, 60–69, 70–79 e 80+ anos*), totalizando 21 células sociodemográficas por localidade.
+> 2. **Resolução Etária Insuficiente:** A tabela estratifica a idade em apenas duas classes binárias (`is_60_mais = TRUE/FALSE`), enquanto o motor do PROCED e a API requerem **7 faixas etárias detalhadas** do chefe de família (*até 29, 30 a 39, 40 a 49, 50 a 59, 60 a 69, 70 a 79 e 80+ anos*), totalizando 21 células sociodemográficas por localidade.
 > 
 > **O que o sistema utiliza no lugar:** O backend lê diretamente a tabela `fato_consumo_domiciliar` e calcula todas as taxas em tempo de execução com `peso_final`, aplicando desduplicação de chefes (Premissa P8) e calibração demográfica com o IBGE.
 

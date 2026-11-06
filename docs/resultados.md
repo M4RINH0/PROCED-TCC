@@ -66,7 +66,7 @@ graph TD
 
 Se o planejamento energético nacional assumisse uma correlação direta simples entre população total e demanda residencial (como no cenário `contrafactual`), projetaria um consumo de apenas **12,07 bilhões de kWh/mês** em 2070. 
 
-A modelagem do PROCED revela que a demanda real sustentada será de **14,23 bilhões de kWh/mês** — uma diferença de **2,16 bilhões de kWh/mês a mais** (equivalente à geração média contínua de duas usinas hidrelétricas de porte médio).
+A modelagem do PROCED revela que a demanda real sustentada será de **14,23 bilhões de kWh/mês**, uma diferença de **2,16 bilhões de kWh/mês a mais** (equivalente à geração média contínua de duas usinas hidrelétricas de porte médio).
 
 ---
 

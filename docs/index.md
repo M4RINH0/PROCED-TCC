@@ -1,4 +1,4 @@
-# PROCED-TCC — Projeção de Consumo por Estrutura Demográfica
+# PROCED-TCC: Projeção de Consumo por Estrutura Demográfica
 
 Bem-vindo à documentação oficial do **PROCED** (**P**rojeção de Consumo por **E**strutura **D**emográfica), uma plataforma analítica desenvolvida para projetar e decompor o impacto do envelhecimento populacional e da transição dos arranjos familiares sobre o consumo residencial de energia elétrica no Brasil, no horizonte de **2026 a 2070**.
 

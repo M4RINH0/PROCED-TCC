@@ -1,4 +1,4 @@
-# Guia do Usuário — Como Utilizar o PROCED
+# Guia do Usuário: como Utilizar o PROCED
 
 O PROCED é uma aplicação web rica e responsiva, desenvolvida em React e estruturada em páginas acessíveis através de abas no cabeçalho ou por rotas baseadas em *hash* (`#pan`, `#dom`, `#eta`, `#sim`, `#comp`).
 
@@ -10,7 +10,7 @@ Este guia explica detalhadamente o funcionamento de cada módulo, como manipular
 
 Ao abrir o PROCED (por padrão em `http://localhost:5173`), o usuário é recebido com uma barra superior contendo:
 
-1. **Logo e Título do Sistema:** PROCED — Projeção de Consumo por Estrutura Demográfica.
+1. **Logo e Título do Sistema:** PROCED: Projeção de Consumo por Estrutura Demográfica.
 2. **Navegação Principal (Abas):**
    * **Panorama:** Visão macro temporal de 2026 a 2070 e decomposição analítica dos efeitos.
    * **Domicílios:** Padrões de consumo e distribuição dos 6 arranjos domiciliares.

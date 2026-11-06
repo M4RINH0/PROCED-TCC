@@ -146,9 +146,9 @@ flowchart TD
 ### 4.3. Camada de Persistência e Dados (Supabase)
 * **SGBD:** PostgreSQL 15 hospedado no Supabase.
 * **Tabelas Operacionais em Produção:**
-  * `fato_consumo_domiciliar`: 52.102 microdados da POF 2017–2018 com `peso_final`.
+  * `fato_consumo_domiciliar`: 52.102 microdados da POF 2017 a 2018 com `peso_final`.
   * `fato_consumo_pof_historica`: 88.726 microdados das POFs 2002 e 2008 para estimação da tendência de arranjos (P13).
-  * `projecoes_populacao_idade`: 639.639 registros de população IBGE (2000–2070).
+  * `projecoes_populacao_idade`: 639.639 registros de população IBGE (2000 a 2070).
   * `cenario_salvo`: Tabela de persistência e aceleração de simulações em `jsonb` (RF09).
 * **Tabelas Exploratórias de Baseline:**
   * `dim_coeficiente_consumo` e `consumo_estimado`: Criadas na fase inicial de exploração no BigQuery. Não são consumidas pela API nem pelo motor de projeções, pois foram geradas com médias simples (sem `peso_final`) e resolução binária de idade.

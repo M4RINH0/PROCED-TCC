@@ -52,7 +52,7 @@ flowchart TD
   * Cruza os microdados da tabela `basedosdados.br_ibge_censo_2022.municipio` com os coeficientes de consumo per capita da POF.
   * Calcula a população total e a população idosa recenseada em cada uma das 27 UFs em 2022.
   * Estima o montante mensal de consumo elétrico atribuível a idosos e a não idosos por estado.
-* **Status no Sistema Operacional:** Script exploratório do Ano Base 2022. O motor analítico do PROCED projeta a série contínua 2026–2070 sem depender desta tabela.
+* **Status no Sistema Operacional:** Script exploratório do Ano Base 2022. O motor analítico do PROCED projeta a série contínua 2026 a 2070 sem depender desta tabela.
 
 ---
 
