@@ -1,6 +1,7 @@
 """Configuração lida só de variáveis de ambiente (RNF05) e erros comuns."""
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,6 +22,11 @@ class Configuracao:
     cors_origin: str
     supabase_url: str | None
     supabase_secret_key: str | None = None
+    cors_origin_regex: str | None = None
+
+    def origens_cors(self) -> list[str]:
+        """Origens liberadas no CORS; CORS_ORIGIN aceita várias, separadas por vírgula."""
+        return [origem.strip() for origem in self.cors_origin.split(",") if origem.strip()]
 
 
 def _ler_dotenv(caminho: Path) -> dict[str, str]:
@@ -43,8 +49,15 @@ def carregar_configuracao(
     """Monta a configuração. Variáveis do ambiente têm prioridade sobre o .env."""
     arquivo = _ler_dotenv(dotenv) if dotenv else {}
     env = {**arquivo, **(ambiente if ambiente is not None else os.environ)}
+    regex = env.get("CORS_ORIGIN_REGEX") or None
+    if regex:
+        try:
+            re.compile(regex)
+        except re.error as erro:
+            raise ErroConfiguracao(f"CORS_ORIGIN_REGEX inválida: {erro}") from erro
     return Configuracao(
         cors_origin=env.get("CORS_ORIGIN") or ORIGEM_PADRAO,
         supabase_url=env.get("SUPABASE_URL") or None,
         supabase_secret_key=env.get("SUPABASE_SECRET_KEY") or None,
+        cors_origin_regex=regex,
     )

@@ -22,7 +22,7 @@ cd PROCED-TCC
 ```bash
 cd backend
 python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt
+.venv/Scripts/python -m pip install -r requirements-dev.txt
 cp .env.example .env    # só na primeira vez: sobrescreve o .env existente
 ```
 
@@ -55,8 +55,12 @@ cd backend && .venv/Scripts/python -m pytest   # API e ETL
 cd frontend && npm test                        # front-end
 ```
 
+O GitHub Actions roda esses testes, o build do front-end e a checagem de travessão
+a cada push e pull request (`.github/workflows/ci.yml`).
+
 ## Documentação
 
 - `docs/contrato-api.md`: endpoints
 - `docs/premissas.md`: premissas adotadas e fontes
 - `docs/banco-supabase.md`: o que existe no banco
+- `docs/deploy.md`: publicação no Vercel e integração contínua no GitHub Actions
