@@ -179,10 +179,10 @@ export default function EstruturaEtaria({
                     const casal = l.casal_ou_dupla ?? l.casal
                     const multi = l.multipessoal ?? l.multi
                     const formataCel = (cel) => {
-                      if (!cel) return '—'
+                      if (!cel) return 'sem dado'
                       const val = cel.consumo_per_capita_kwh ?? cel.kwh
                       const amostra = cel.domicilios_amostra ?? cel.amostra
-                      return `${val != null ? umaCasa(val) : '—'} (${amostra ? inteiro(amostra) : 0})`
+                      return `${val != null ? umaCasa(val) : 'sem dado'} (${amostra ? inteiro(amostra) : 0})`
                     }
                     return (
                       <tr key={faixaRotulo} className={inEstudo ? 'in' : ''}>

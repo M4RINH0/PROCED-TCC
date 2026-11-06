@@ -22,7 +22,7 @@ import {
 import { RECORTES, rotuloDaSerie, SERIES, seriesComDado } from '../utils/series.js'
 import { SIMULACAO_PADRAO } from '../utils/simulacao.js'
 
-const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
+const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => { } }
 const definido = (v) => v !== null && v !== undefined
 const rotulo = (id) => rotuloDaSerie(id).toLowerCase()
 const ANOS_TABELA_PANORAMA = [2026, 2030, 2040, 2050, 2060, 2070]
@@ -67,8 +67,8 @@ export default function Panorama({
   ano,
   aoMudarAno,
   versao = 0,
-  abrirGaveta = () => {},
-  avisar = () => {},
+  abrirGaveta = () => { },
+  avisar = () => { },
   buscar = buscarSerie,
   local = LOCAL_PADRAO,
   simulacao = SIMULACAO_PADRAO,
@@ -218,7 +218,7 @@ export default function Panorama({
         </aside>
       </div>
       {dados && status !== 'erro' && (
-        <section className={atualizando ? 'pan esmaecido' : 'pan'} aria-labelledby="h-tab-dec" style={{ marginTop: 16 }}>
+        <section className={atualizando ? 'pan pan-decomposicao esmaecido' : 'pan pan-decomposicao'} aria-labelledby="h-tab-dec">
           <div className="ph">
             <h2 id="h-tab-dec">
               Trajetória dos cenários e decomposição demográfica <small>2026 a 2070 decenal</small>
@@ -268,17 +268,17 @@ export default function Panorama({
                             <td>
                               <b>{p.ano}</b> {ativo && <small style={{ color: 'var(--teal)' }}>(selecionado)</small>}
                             </td>
-                            <td className="n">{taxas?.valor != null ? umaCasa(taxas.valor) : '—'}</td>
-                            <td className="n">{soEnv?.valor != null ? umaCasa(soEnv.valor) : '—'}</td>
-                            <td className="n">{semMud?.valor != null ? umaCasa(semMud.valor) : '—'}</td>
-                            <td className="n">{p.efeito_envelhecimento_kwh != null ? `${comSinal(p.efeito_envelhecimento_kwh)} kWh` : '—'}</td>
-                            <td className="n">{p.efeito_idade_kwh != null ? `${comSinal(p.efeito_idade_kwh)} kWh` : '—'}</td>
-                            <td className="n">{p.efeito_arranjos_kwh != null ? `${comSinal(p.efeito_arranjos_kwh)} kWh` : '—'}</td>
-                            <td className="n">{taxas?.consumo_por_pessoa_kwh != null ? `${umaCasa(taxas.consumo_por_pessoa_kwh)} kWh` : '—'}</td>
+                            <td className="n">{taxas?.valor != null ? umaCasa(taxas.valor) : 'sem dado'}</td>
+                            <td className="n">{soEnv?.valor != null ? umaCasa(soEnv.valor) : 'sem dado'}</td>
+                            <td className="n">{semMud?.valor != null ? umaCasa(semMud.valor) : 'sem dado'}</td>
+                            <td className="n">{p.efeito_envelhecimento_kwh != null ? `${comSinal(p.efeito_envelhecimento_kwh)} kWh` : 'sem dado'}</td>
+                            <td className="n">{p.efeito_idade_kwh != null ? `${comSinal(p.efeito_idade_kwh)} kWh` : 'sem dado'}</td>
+                            <td className="n">{p.efeito_arranjos_kwh != null ? `${comSinal(p.efeito_arranjos_kwh)} kWh` : 'sem dado'}</td>
+                            <td className="n">{taxas?.consumo_por_pessoa_kwh != null ? `${umaCasa(taxas.consumo_por_pessoa_kwh)} kWh` : 'sem dado'}</td>
                             <td className="n">
                               {taxas?.consumo_total_calibrado_kwh_mes != null
                                 ? `${(taxas.consumo_total_calibrado_kwh_mes / 1e9).toFixed(2)} bi kWh`
-                                : '—'}
+                                : 'sem dado'}
                             </td>
                           </tr>
                         )
