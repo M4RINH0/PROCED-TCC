@@ -23,9 +23,11 @@ from app.dominio import (
     memorizado,
 )
 from app.schemas.estrutura_etaria import (
+    CelulaMatriz,
     ConsumoChefeResposta,
     FaixaConsumo,
     FaixaPiramide,
+    LinhaMatrizConsumo,
     PiramideResposta,
     PiramidesResposta,
 )
@@ -108,8 +110,40 @@ def obter_piramides(dados, localidade: str = BRASIL, ano_final: int = ANO_FINAL,
     )
 
 
+def montar_matriz_consumo(domicilios: Iterable[Domicilio]) -> list[LinhaMatrizConsumo]:
+    """Matriz bidimensional 7x3 da Tabela 5.1 do TCC (faixas do chefe x arranjos)."""
+    uni = {f.faixa: f for f in consumo_por_faixa(domicilios, FiltroArranjo.unipessoal)}
+    casal = {f.faixa: f for f in consumo_por_faixa(domicilios, FiltroArranjo.casal_ou_dupla)}
+    multi = {f.faixa: f for f in consumo_por_faixa(domicilios, FiltroArranjo.multipessoal)}
+    return [
+        LinhaMatrizConsumo(
+            faixa=faixa.rotulo,
+            unipessoal=CelulaMatriz(
+                consumo_per_capita_kwh=uni[faixa.rotulo].consumo_per_capita_kwh,
+                domicilios_amostra=uni[faixa.rotulo].domicilios_amostra,
+                baixa_confiabilidade=uni[faixa.rotulo].baixa_confiabilidade,
+            ),
+            casal_ou_dupla=CelulaMatriz(
+                consumo_per_capita_kwh=casal[faixa.rotulo].consumo_per_capita_kwh,
+                domicilios_amostra=casal[faixa.rotulo].domicilios_amostra,
+                baixa_confiabilidade=casal[faixa.rotulo].baixa_confiabilidade,
+            ),
+            multipessoal=CelulaMatriz(
+                consumo_per_capita_kwh=multi[faixa.rotulo].consumo_per_capita_kwh,
+                domicilios_amostra=multi[faixa.rotulo].domicilios_amostra,
+                baixa_confiabilidade=multi[faixa.rotulo].baixa_confiabilidade,
+            ),
+        )
+        for faixa in FAIXAS_CHEFE
+    ]
+
+
 def obter_consumo_chefe(filtro: FiltroArranjo, dados, localidade: str = BRASIL) -> ConsumoChefeResposta:
+    domicilios = domicilios_da_localidade(dados, localidade)
     faixas = memorizado(
-        dados, f"consumo_chefe:{localidade}:{filtro.value}", lambda: consumo_por_faixa(domicilios_da_localidade(dados, localidade), filtro)
+        dados, f"consumo_chefe:{localidade}:{filtro.value}", lambda: consumo_por_faixa(domicilios, filtro)
     )
-    return ConsumoChefeResposta(arranjo=filtro, faixas=faixas, localidade=localidade)
+    matriz = memorizado(
+        dados, f"matriz_consumo_chefe:{localidade}", lambda: montar_matriz_consumo(domicilios)
+    )
+    return ConsumoChefeResposta(arranjo=filtro, faixas=faixas, matriz=matriz, localidade=localidade)

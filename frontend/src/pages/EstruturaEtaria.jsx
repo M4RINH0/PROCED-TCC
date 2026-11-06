@@ -22,6 +22,16 @@ export const ARRANJOS = [
   { id: 'todos', rotulo: 'Todos' },
 ]
 
+export const MATRIZ_7X3_PADRAO = [
+  { faixa: 'até 29 anos', uni: { kwh: 107.8, amostra: 503 }, casal: { kwh: 65.7, amostra: 1311 }, multi: { kwh: 44.1, amostra: 2756 } },
+  { faixa: '30 a 39', uni: { kwh: 114.8, amostra: 725 }, casal: { kwh: 76.2, amostra: 1668 }, multi: { kwh: 47.7, amostra: 7533 } },
+  { faixa: '40 a 49', uni: { kwh: 111.3, amostra: 940 }, casal: { kwh: 79.0, amostra: 2004 }, multi: { kwh: 52.9, amostra: 8347 } },
+  { faixa: '50 a 59', uni: { kwh: 112.8, amostra: 1442 }, casal: { kwh: 83.7, amostra: 3038 }, multi: { kwh: 58.8, amostra: 6482 } },
+  { faixa: '60 a 69', uni: { kwh: 117.7, amostra: 1605 }, casal: { kwh: 86.1, amostra: 3063 }, multi: { kwh: 57.7, amostra: 3877 } },
+  { faixa: '70 a 79', uni: { kwh: 120.5, amostra: 1218 }, casal: { kwh: 85.7, amostra: 1888 }, multi: { kwh: 55.2, amostra: 1760 } },
+  { faixa: '80+', uni: { kwh: 119.5, amostra: 592 }, casal: { kwh: 80.1, amostra: 754 }, multi: { kwh: 54.2, amostra: 596 } },
+]
+
 const FAIXAS_60 = new Set(['60 a 69', '70 a 79', '80+'])
 
 const LOCAL_PADRAO = { valor: 'Brasil', nome: 'Brasil', regioes: [], aoMudar: () => {} }
@@ -40,6 +50,7 @@ export default function EstruturaEtaria({
   simulacao = SIMULACAO_PADRAO,
 }) {
   const [arranjo, setArranjo] = useState('mononucleares')
+  const [modoMatriz, setModoMatriz] = useState(false)
   const { k } = simulacao.aplicados
   const pir = useConsulta((o) => buscarPir({ localidade: local.valor, k }, o), [local.valor, k, versao])
   const consumo = useConsulta((o) => buscarConsumo({ arranjo, localidade: local.valor }, o), [arranjo, local.valor, versao])
@@ -125,19 +136,74 @@ export default function EstruturaEtaria({
           </div>
         </section>
         <section className={atualizandoConsumo ? 'pan split-v esmaecido' : 'pan split-v'} aria-labelledby="h-ch">
-          <div className="ph">
+          <div className="ph" style={{ flexWrap: 'wrap', gap: 8 }}>
             <h2 id="h-ch">
               Consumo por faixa etária do chefe <small>kWh/mês por pessoa</small>
             </h2>
-            <div className="seg" role="group" aria-label="Arranjo domiciliar">
-              {ARRANJOS.map((a) => (
-                <button key={a.id} type="button" aria-pressed={arranjo === a.id} onClick={() => setArranjo(a.id)}>
-                  {a.rotulo}
-                </button>
-              ))}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="lnk"
+                onClick={() => setModoMatriz((m) => !m)}
+                style={{ fontWeight: 600, fontSize: 13 }}
+              >
+                {modoMatriz ? '← Ver por arranjo' : 'Ver Matriz 7 × 3 completa'}
+              </button>
+              {!modoMatriz && (
+                <div className="seg" role="group" aria-label="Arranjo domiciliar">
+                  {ARRANJOS.map((a) => (
+                    <button key={a.id} type="button" aria-pressed={arranjo === a.id} onClick={() => setArranjo(a.id)}>
+                      {a.rotulo}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          {consumo.dados && consumo.status !== 'erro' ? (
+          {modoMatriz ? (
+            <div className="twrap" style={{ marginTop: 8 }}>
+              <table className="tbl" data-testid="tabela-matriz-7x3">
+                <thead>
+                  <tr>
+                    <th>Faixa do chefe</th>
+                    <th className="n">Unipessoal</th>
+                    <th className="n">Casal ou dupla</th>
+                    <th className="n">Multipessoal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(consumo.dados?.matriz ?? MATRIZ_7X3_PADRAO).map((l) => {
+                    const faixaRotulo = l.faixa
+                    const inEstudo = FAIXAS_60.has(faixaRotulo)
+                    const uni = l.unipessoal ?? l.uni
+                    const casal = l.casal_ou_dupla ?? l.casal
+                    const multi = l.multipessoal ?? l.multi
+                    const formataCel = (cel) => {
+                      if (!cel) return 'sem dado'
+                      const val = cel.consumo_per_capita_kwh ?? cel.kwh
+                      const amostra = cel.domicilios_amostra ?? cel.amostra
+                      return `${val != null ? umaCasa(val) : 'sem dado'} (${amostra ? inteiro(amostra) : 0})`
+                    }
+                    return (
+                      <tr key={faixaRotulo} className={inEstudo ? 'in' : ''}>
+                        <td>
+                          <b>{faixaRotulo}</b> {inEstudo && <small style={{ color: 'var(--teal)' }}>(60+)</small>}
+                        </td>
+                        <td className="n">{formataCel(uni)}</td>
+                        <td className="n">{formataCel(casal)}</td>
+                        <td className="n">{formataCel(multi)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              <div className="pf">
+                <span>
+                  Médias ponderadas pelo peso amostral; entre parênteses, o número de domicílios na amostra (POF 2017 a 2018).
+                </span>
+              </div>
+            </div>
+          ) : consumo.dados && consumo.status !== 'erro' ? (
             <>
               <BarrasFaixa faixas={faixas} />
               <div className="twrap">

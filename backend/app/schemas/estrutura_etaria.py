@@ -18,6 +18,19 @@ class FaixaConsumo(BaseModel):
     consumo_per_capita_kwh: float | None = Field(description="TEC ponderada da faixa; null sem domicílios na amostra")
 
 
+class CelulaMatriz(BaseModel):
+    consumo_per_capita_kwh: float | None = Field(description="TEC ponderada da célula; null sem domicílios na amostra")
+    domicilios_amostra: int = Field(description="número de domicílios amostrais na célula")
+    baixa_confiabilidade: bool = Field(default=False, description="menos de 30 domicílios na amostra")
+
+
+class LinhaMatrizConsumo(BaseModel):
+    faixa: str
+    unipessoal: CelulaMatriz
+    casal_ou_dupla: CelulaMatriz
+    multipessoal: CelulaMatriz
+
+
 class FaixaPiramide(BaseModel):
     faixa: str
     homens_pct: float
@@ -35,6 +48,7 @@ class ConsumoChefeResposta(BaseModel):
     arranjo: FiltroArranjo
     unidade: Literal["kWh/mes/pessoa"] = "kWh/mes/pessoa"
     faixas: list[FaixaConsumo]
+    matriz: list[LinhaMatrizConsumo] | None = None
     fonte: str = FONTE_CONSUMO
     localidade: str = "Brasil"
 

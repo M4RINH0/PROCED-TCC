@@ -137,7 +137,7 @@ describe('Comparar', () => {
   it('envia forma, cenário, localidade e os controles de simulação aplicados', async () => {
     const buscar = buscarOk()
     const simulacao = { valores: { k: 1.3, intensidade: 1 }, aplicados: { k: 1.3, intensidade: 1 }, ativa: true, aoMudar: vi.fn(), restaurar: vi.fn() }
-    render(<Comparar buscar={buscar} simulacao={simulacao} local={{ valor: 'DF', nome: 'Distrito Federal', regioes: [], aoMudar: () => {} }} />)
+    render(<Comparar buscar={buscar} simulacao={simulacao} local={{ valor: 'DF', nome: 'Distrito Federal', regioes: [], aoMudar: () => { } }} />)
     await screen.findByTestId('tabela-comparacao')
     fireEvent.click(screen.getByRole('button', { name: 'Valores absolutos' }))
     fireEvent.change(screen.getByLabelText('Cenário'), { target: { value: 'contrafactual' } })
@@ -168,6 +168,23 @@ describe('Comparar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'CSV' }))
     await waitFor(() => expect(avisar).toHaveBeenCalledWith('Comparação exportada em CSV'))
     expect(exportar).toHaveBeenCalledWith(expect.objectContaining({ formato: 'csv', grupos: ['uni_60', 'cas_60', 'mul_60'], forma: 'indice' }))
+  })
+
+  it('permite alternar para os modos de sensibilidade e síntese regional', async () => {
+    render(<Comparar buscar={buscarOk()} />)
+    await screen.findByTestId('tabela-comparacao')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sensibilidade Intensidade (I)' }))
+    expect(await screen.findByTestId('tabela-sensibilidade-intensidade')).toBeInTheDocument()
+    expect(screen.getByText('Sensibilidade da Intensidade (I)')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sensibilidade Cobertura POF' }))
+    expect(await screen.findByTestId('tabela-sensibilidade-cobertura')).toBeInTheDocument()
+    expect(screen.getByText('Sensibilidade da Cobertura Amostral da POF')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Síntese Regional' }))
+    expect(await screen.findByTestId('tabela-sintese-regional')).toBeInTheDocument()
+    expect(screen.getByText('Síntese Comparativa Regional')).toBeInTheDocument()
   })
 })
 
