@@ -37,6 +37,25 @@ def test_cors_nao_libera_outra_origem():
     assert "access-control-allow-origin" not in r.headers
 
 
+def test_cors_libera_varias_origens():
+    config = Configuracao(cors_origin=f"https://proced.exemplo,{ORIGEM}", supabase_url=None)
+    cliente = TestClient(criar_app(config))
+    for origem in ["https://proced.exemplo", ORIGEM]:
+        r = cliente.get("/fontes", headers={"Origin": origem})
+        assert r.headers.get("access-control-allow-origin") == origem
+
+
+def test_cors_libera_previews_pela_regex():
+    config = Configuracao(
+        cors_origin=ORIGEM, supabase_url=None, cors_origin_regex=r"https://proced-[a-z0-9-]+\.vercel\.app"
+    )
+    cliente = TestClient(criar_app(config))
+    preview = "https://proced-abc123-time.vercel.app"
+    assert cliente.get("/fontes", headers={"Origin": preview}).headers.get("access-control-allow-origin") == preview
+    r = cliente.get("/fontes", headers={"Origin": "https://proced-abc.vercel.app.golpe.exemplo"})
+    assert "access-control-allow-origin" not in r.headers
+
+
 def test_documentacao_gerada_pelo_codigo():
     caminhos = _cliente().get("/openapi.json").json()["paths"]
     for caminho in ["/projecoes", "/projecoes/serie", "/arranjos", "/estrutura-etaria/piramide",

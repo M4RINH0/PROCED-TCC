@@ -1,0 +1,8 @@
+# Desenvolvimento local, ETL e testes (inclui as dependências da API)
+-r requirements.txt
+uvicorn>=0.30,<1
+pandas>=2.2,<3      # ETL
+scikit-learn>=1.5,<2  # ETL: experimento de machine learning (etl/modelagem.py)
+
+# testes
+pytest>=8,<9

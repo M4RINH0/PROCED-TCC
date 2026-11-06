@@ -22,7 +22,7 @@ cd PROCED-TCC
 ```bash
 cd backend
 python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt
+.venv/Scripts/python -m pip install -r requirements-dev.txt
 cp .env.example .env    # só na primeira vez: sobrescreve o .env existente
 ```
 
@@ -55,6 +55,9 @@ cd backend && .venv/Scripts/python -m pytest   # API e ETL
 cd frontend && npm test                        # front-end
 ```
 
+O GitHub Actions roda esses testes, o build do front-end e a checagem de travessão
+a cada push e pull request (`.github/workflows/ci.yml`).
+
 ## Documentação Oficial & GitHub Pages
 
 A documentação completa, interativa e detalhada do projeto está publicada no GitHub Pages:
@@ -71,3 +74,4 @@ Deploy automático configurado no GitHub Actions a cada commit na branch `main`.
 * **[Metodologia Científica & Premissas](https://m4rinh0.github.io/PROCED-TCC/metodologia/):** Formulação matemática formal (TBC padronizada, decomposição aditiva de efeitos, calibração populacional e validação temporal).
 * **[Resultados & Cenários](https://m4rinh0.github.io/PROCED-TCC/resultados/):** Síntese numérica de 2026 a 2070 e análise do paradoxo do consumo no declínio demográfico.
 * **[Contrato da API](https://m4rinh0.github.io/PROCED-TCC/contrato-api/):** Endpoints REST, schemas e validações.
+* **Publicação no Vercel:** `docs/deploy.md` explica a publicação da API e do front-end e a integração contínua.

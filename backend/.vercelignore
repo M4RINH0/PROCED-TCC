@@ -1,0 +1,8 @@
+# Fica fora da função Python do Vercel: só app/ é necessário em produção
+.venv/
+.env
+.pytest_cache/
+__pycache__/
+etl/
+test/
+requirements-dev.txt

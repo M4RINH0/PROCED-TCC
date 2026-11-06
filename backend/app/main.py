@@ -68,7 +68,8 @@ def criar_app(config: Configuracao | None = None) -> FastAPI:
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[config.cors_origin],
+        allow_origins=config.origens_cors(),
+        allow_origin_regex=config.cors_origin_regex,  # previews do front-end no Vercel
         allow_methods=["GET"],
         allow_headers=["*"],
         expose_headers=["Content-Disposition"],

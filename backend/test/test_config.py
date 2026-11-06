@@ -1,4 +1,6 @@
-from app.config import ORIGEM_PADRAO, carregar_configuracao
+import pytest
+
+from app.config import ORIGEM_PADRAO, ErroConfiguracao, carregar_configuracao
 
 
 def test_configuracao_usa_padroes_quando_ambiente_vazio():
@@ -31,3 +33,21 @@ def test_configuracao_ignora_dotenv_inexistente(tmp_path):
     config = carregar_configuracao(ambiente={}, dotenv=tmp_path / "nao-existe.env")
     assert config.cors_origin == ORIGEM_PADRAO
 
+
+
+def test_cors_origin_aceita_varias_origens_separadas_por_virgula():
+    config = carregar_configuracao(
+        ambiente={"CORS_ORIGIN": "https://proced.vercel.app, http://localhost:5173,"}
+    )
+    assert config.origens_cors() == ["https://proced.vercel.app", "http://localhost:5173"]
+
+
+def test_cors_origin_regex_e_opcional():
+    assert carregar_configuracao(ambiente={}).cors_origin_regex is None
+    config = carregar_configuracao(ambiente={"CORS_ORIGIN_REGEX": r"https://proced-.*\.vercel\.app"})
+    assert config.cors_origin_regex == r"https://proced-.*\.vercel\.app"
+
+
+def test_cors_origin_regex_invalida_gera_erro_de_configuracao():
+    with pytest.raises(ErroConfiguracao):
+        carregar_configuracao(ambiente={"CORS_ORIGIN_REGEX": "https://(proced"})
