@@ -38,6 +38,20 @@ describe('App', () => {
     expect(document.documentElement.dataset.theme).not.toBe(antes)
   })
 
+  it('acorda a API uma vez na abertura', () => {
+    const aquecer = vi.fn()
+    render(<App aquecer={aquecer} />)
+    expect(aquecer).toHaveBeenCalledTimes(1)
+  })
+
+  it('fora de produção não acorda a API (nenhuma chamada extra)', () => {
+    const fetch = vi.fn(() => new Promise(() => {}))
+    vi.stubGlobal('fetch', fetch)
+    render(<App />)
+    const urls = fetch.mock.calls.map(([url]) => String(url))
+    expect(urls.filter((u) => u.includes('/estrutura-etaria/piramides'))).toHaveLength(0)
+  })
+
   it('não exibe mais o selo de dados ilustrativos', () => {
     render(<App />)
     expect(screen.queryByText('Dados ilustrativos')).not.toBeInTheDocument()

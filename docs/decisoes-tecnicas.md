@@ -124,3 +124,12 @@ mesmo tempo foi testado e piorou (cerca de 93 s), porque elas disputam as mesmas
 regiões e 27 UFs): base da projeção e somas de população por idade e por sexo. Medição: a
 primeira consulta de uma região ou UF depois da pré-carga leva de 0,002 a 0,034 s (série,
 pirâmide e composição).
+
+**Partida a frio no Vercel (11/11/2026).** Publicada, a API é uma função serverless que o
+Vercel desliga quando fica ociosa, e a instância nova refaz a pré-carga: a primeira série
+levou 37,6 s e a primeira pirâmide 57,6 s. Para a abertura do site não depender disso, o
+build do front-end grava as respostas da visão padrão de cada tela (`dados-iniciais.json`),
+a página acorda a API por trás ao abrir e as respostas ficam em memória durante a visita.
+Um cron externo (cron-job.org, a cada 5 minutos) mantém a instância ligada. Detalhes e
+configuração em [Publicação](deploy.md). Conferido num navegador headless com a API
+bloqueada pelo CORS: o Panorama abriu com os valores, sem mensagem de erro.

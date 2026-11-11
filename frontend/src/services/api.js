@@ -1,5 +1,12 @@
 /* Todas as chamadas do front-end à API do PROCED, uma função por endpoint */
+import { CONSULTAS_AQUECIMENTO } from './dadosIniciais.js'
 import { apiBaixar, apiGet } from './http.js'
+
+/* Abertura do site: acorda a API por trás, sem cache, para que ela já esteja com as
+   tabelas carregadas quando o usuário mudar um filtro. Erros são ignorados. */
+export function aquecerApi(opcoes = {}) {
+  return Promise.allSettled(CONSULTAS_AQUECIMENTO.map(({ caminho, parametros }) => apiGet(caminho, parametros, { ...opcoes, cache: false })))
+}
 
 /* Panorama: GET /projecoes/serie?recorte= (RF01, RF02, RF11); intensidade e k são os controles de simulação */
 export function buscarSerie({ recorte, localidade, intensidade, k }, opcoes) {

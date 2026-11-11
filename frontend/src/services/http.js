@@ -1,4 +1,7 @@
 /* Cliente HTTP único do front-end. Só fala com a API do PROCED (RNF10). */
+import { guardarCache, lerCache } from './cache.js'
+import { chaveDe } from './dadosIniciais.js'
+
 const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 
 export class ErroApi extends Error {
@@ -39,9 +42,20 @@ async function requisitar(caminho, parametros, { fetcher = fetch, base = BASE, s
   return resposta
 }
 
-export async function apiGet(caminho, parametros, opcoes = {}) {
+/* Consulta com cache: a mesma consulta só vai à API uma vez por visita (services/cache.js).
+   `cache: false` força a ida à API; `recalcular` (Simulador, RF09) nunca usa o cache. */
+export async function apiGet(caminho, parametros = {}, opcoes = {}) {
+  if (falhaSimulada) throw new ErroApi('Não foi possível conectar à API (falha simulada)', 0)
+  const usarCache = opcoes.cache !== false && !parametros.recalcular
+  const chave = chaveDe(caminho, parametros)
+  if (usarCache) {
+    const guardado = await lerCache(chave)
+    if (guardado !== undefined) return guardado
+  }
   const resposta = await requisitar(caminho, parametros, opcoes)
-  return resposta.json()
+  const dados = await resposta.json()
+  if (usarCache) guardarCache(chave, dados)
+  return dados
 }
 
 export async function apiBaixar(caminho, parametros, opcoes = {}) {

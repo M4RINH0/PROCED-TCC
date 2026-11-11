@@ -7,7 +7,7 @@ import { useAdiado } from './hooks/useAdiado.js'
 import { useConsulta } from './hooks/useConsulta.js'
 import { useRotaHash } from './hooks/useRotaHash.js'
 import { ROTAS } from './rotas.js'
-import { buscarLocalidades } from './services/api.js'
+import { aquecerApi, buscarLocalidades } from './services/api.js'
 import { definirFalhaSimulada } from './services/http.js'
 import { BRASIL, nomeDaLocalidade } from './utils/localidades.js'
 import { ESPERA_MS, PADRAO_SIMULACAO, emSimulacao } from './utils/simulacao.js'
@@ -16,7 +16,11 @@ import { lerTema, salvarTema, temaEfetivo } from './utils/tema.js'
 const prefereEscuro = () => globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
 const reduzMovimento = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
-export default function App() {
+/* Em produção, a abertura acorda a API por trás (partida a frio do Vercel); nos testes e
+   no desenvolvimento local não há nada a acordar */
+const AQUECER_PADRAO = import.meta.env.PROD ? aquecerApi : null
+
+export default function App({ aquecer = AQUECER_PADRAO }) {
   const [rota, navegar] = useRotaHash()
   const [tema, setTema] = useState(() => temaEfetivo(lerTema(), prefereEscuro()))
   const [ano, setAno] = useState(ANO_FINAL)
@@ -36,6 +40,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = tema
   }, [tema])
+
+  /* abertura: enquanto as telas usam os dados de abertura, a API carrega as tabelas */
+  useEffect(() => {
+    aquecer?.()
+  }, [aquecer])
 
   /* abertura: o único movimento automático, o ano percorre o horizonte uma vez */
   useEffect(() => {

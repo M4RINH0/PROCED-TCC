@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { valoresDoCenario } from '../../src/utils/series.js'
-import { buscarSerie, exportarDados } from '../../src/services/api.js'
+import { aquecerApi, buscarSerie, exportarDados } from '../../src/services/api.js'
+import { guardarCache } from '../../src/services/cache.js'
 
 describe('buscarSerie', () => {
   it('chama GET /projecoes/serie com o recorte', async () => {
@@ -32,5 +33,30 @@ describe('valoresDoCenario', () => {
       { ano: 2070, valor: null },
       { ano: 2069, valor: null },
     ])
+  })
+})
+
+describe('aquecerApi', () => {
+  it('chama as consultas que carregam todas as tabelas da API', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) })
+    await aquecerApi({ fetcher, base: 'http://api' })
+    const urls = fetcher.mock.calls.map(([url]) => url)
+    expect(urls).toHaveLength(2)
+    expect(urls.some((u) => u.startsWith('http://api/projecoes/serie?'))).toBe(true)
+    expect(urls.some((u) => u.startsWith('http://api/estrutura-etaria/piramides?'))).toBe(true)
+  })
+
+  it('vai à API mesmo com as respostas já guardadas', async () => {
+    guardarCache('/estrutura-etaria/piramides?k=1&localidade=Brasil', {})
+    guardarCache('/projecoes/serie?intensidade=0.6&k=1&localidade=Brasil&recorte=todos_domicilios', {})
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) })
+    await aquecerApi({ fetcher, base: 'http://api' })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('ignora erros: a API fora do ar não quebra a abertura', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
+    const resultados = await aquecerApi({ fetcher, base: 'http://api' })
+    expect(resultados.every((r) => r.status === 'rejected')).toBe(true)
   })
 })

@@ -41,6 +41,60 @@ Variáveis de ambiente (Settings, Environment Variables), nunca no repositório 
 | `CORS_ORIGIN` | endereço de produção do front-end, por exemplo `https://proced-web.vercel.app` (aceita vários, separados por vírgula) |
 | `CORS_ORIGIN_REGEX` | opcional, libera os previews do front-end, por exemplo `^https://proced-web-[a-z0-9-]+-seu-time\.vercel\.app$` |
 
+## Partida a frio da API e como ela é contornada
+
+No Vercel a API é uma função serverless: o Vercel liga uma instância quando chega uma
+requisição e a desliga depois de um tempo ociosa (o Vercel não publica esse tempo). O
+cache da API mora na memória da instância, então cada instância nova relê as tabelas do
+Supabase antes de responder.
+
+**Medição de 11/11/2026** (`proced-tcc.vercel.app`, instância desligada):
+
+| Chamada | Primeira, com a instância desligada | Depois |
+|---|---|---|
+| `/fontes` (só ligar a função) | 9,2 s | 0,3 s |
+| `/projecoes/serie` (Panorama) | 37,6 s | 0,3 s |
+| `/estrutura-etaria/piramides` | 57,6 s | 0,2 s |
+
+Três medidas, que se somam:
+
+1. **Dados de abertura no front-end.** No build, o Vite grava em `dist/dados-iniciais.json`
+   as respostas da API para a visão padrão de cada tela (Brasil, controles no padrão; 21
+   consultas, 263 kB, 32 kB comprimido). A lista fica em
+   `frontend/src/services/dadosIniciais.js`. São respostas da própria API, sem cálculo no
+   front-end. Se a API não responder no build, o build segue sem o arquivo e o site
+   consulta a API como antes.
+2. **Aquecimento na abertura.** Em produção, o front-end chama por trás a série e a
+   pirâmide do Brasil assim que a página abre, para a API carregar as tabelas enquanto o
+   usuário vê a tela inicial.
+3. **Cache na memória do navegador.** Cada consulta vai à API uma vez por visita
+   (`frontend/src/services/cache.js`). A falha simulada do menu Demonstração continua
+   valendo, e o Simulador com `recalcular` nunca usa o cache.
+
+Como os dados de abertura são gravados no build do front-end, **uma mudança na API que
+altere essas respostas exige republicar o `proced-web` depois do `proced-api`** (no Vercel,
+Deployments, Redeploy).
+
+### Cron para manter a API ligada
+
+Um serviço gratuito de cron chama a API a cada 5 minutos, para a instância não ficar
+ociosa. Configuração no [cron-job.org](https://cron-job.org) (conta gratuita), com duas
+tarefas:
+
+| Campo | Tarefa 1 | Tarefa 2 |
+|---|---|---|
+| Title | PROCED série | PROCED pirâmide |
+| URL | `https://proced-tcc.vercel.app/projecoes/serie?recorte=todos_domicilios&localidade=Brasil&intensidade=0.6&k=1` | `https://proced-tcc.vercel.app/estrutura-etaria/piramides?localidade=Brasil&k=1` |
+| Execution schedule | Every 5 minutes | Every 5 minutes |
+| Request method | GET | GET |
+
+As duas chamadas obrigam a API a carregar todas as tabelas; chamar só `/fontes` liga a
+função, mas não carrega os dados. A primeira execução, com a instância desligada, pode
+aparecer como falha por tempo limite no cron-job.org; as seguintes devem levar menos de
+1 segundo. O cron reduz as partidas a frio, mas não as elimina: o Vercel pode reciclar a
+instância, abrir uma segunda quando há acessos simultâneos e começa do zero a cada
+publicação. Os itens 1 a 3 cobrem esses casos.
+
 ## Front-end (`proced-web`)
 
 - `frontend/vercel.json` fixa o Vite como framework, `npm ci`, `npm run build`
