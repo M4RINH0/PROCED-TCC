@@ -1,0 +1,26 @@
+# Religa a API no Vercel quando ela desliga por ociosidade (partida a frio, docs/deploy.md).
+# O cron-job.org chama a API a cada minuto, mas desiste em 30 s e não consegue religá-la;
+# aqui cada chamada espera até 2 minutos. Também pode ser acionado à mão, na aba Actions.
+name: Aquecer API
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: aquecer-api
+  cancel-in-progress: false
+
+jobs:
+  aquecer:
+    name: Chamar a série e a pirâmide
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      API: https://proced-tcc.vercel.app
+    steps:
+      - name: Série do Panorama
+        run: curl -sS -o /dev/null --fail --retry 2 --max-time 120 -w "%{http_code} em %{time_total} s\n" "$API/projecoes/serie?recorte=todos_domicilios&localidade=Brasil&intensidade=0.6&k=1"
+      - name: Pirâmide etária
+        run: curl -sS -o /dev/null --fail --retry 2 --max-time 120 -w "%{http_code} em %{time_total} s\n" "$API/estrutura-etaria/piramides?localidade=Brasil&k=1"

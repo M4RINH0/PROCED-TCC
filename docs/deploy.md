@@ -95,6 +95,13 @@ aparecer como falha por tempo limite no cron-job.org; as seguintes devem levar m
 instância, abrir uma segunda quando há acessos simultâneos e começa do zero a cada
 publicação. Os itens 1 a 3 cobrem esses casos.
 
+O plano gratuito do cron-job.org desiste em 30 s, menos do que a API leva para religar:
+ele mantém a instância ligada, mas não a religa. Para isso existe o workflow
+`.github/workflows/aquecer-api.yml`, que a cada 10 minutos faz as mesmas duas chamadas
+esperando até 2 minutos por resposta. Ele também pode ser acionado à mão (aba Actions,
+Aquecer API, Run workflow), por exemplo antes de uma apresentação. O GitHub pode atrasar
+execuções agendadas, por isso ele complementa o cron-job.org em vez de substituí-lo.
+
 ## Front-end (`proced-web`)
 
 - `frontend/vercel.json` fixa o Vite como framework, `npm ci`, `npm run build`
